@@ -1,4 +1,4 @@
 # jianxin liu's blog
 
 ## 学习笔记
-[learn git](post/learn_git.md)
+[learn git](post/learning_note/learn_git.md)
