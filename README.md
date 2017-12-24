@@ -7,7 +7,7 @@
 - [linux command](post/learning_note/LinuxCommandLine.md)
 - [oracle issue](post/learning_note/oracle_issue_fix.md)
 
-##   
+## script
 <button class='btn btn-success' onclick='test'>test</button>
 <script>
     function test(){
