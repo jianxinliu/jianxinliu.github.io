@@ -8,4 +8,4 @@
 - [oracle issue](post/learning_note/oracle_issue_fix.md)
 
 ## script
-<button class='btn btn-success' onclick='javascript:alter("nothing! test!")'>test</button>
+<button class='btn btn-success' onclick='javascript:alert("nothing! test!")'>test</button>
