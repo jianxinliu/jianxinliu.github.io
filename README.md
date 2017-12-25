@@ -5,7 +5,10 @@
 - [jquery](post/learning_note/Jquery.md)
 - [jquery ajax](post/learning_note/Jquery_Ajax.md)
 - [linux command](post/learning_note/LinuxCommandLine.md)
-- [oracle issue](post/learning_note/oracle_issue_fix.md)
 
-## script
+## 纠错历程
+- [oracle issue:ORA-30043](post/issue/oracle_issue_fix.md)
+
+## 文章收集
+- [oracle之数据库一致性读原理](www.cnblogs.com/Ronger/archive/2012/05/09/2492160.html)
 <button class='btn btn-success' onclick='javascript:alert("nothing! test!")'>test</button>
