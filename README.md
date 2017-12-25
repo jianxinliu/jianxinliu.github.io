@@ -10,5 +10,5 @@
 - [oracle issue:ORA-30043](post/issue/oracle_issue_fix.md)
 
 ## 文章收集
-- [oracle之数据库一致性读原理](www.cnblogs.com/Ronger/archive/2012/05/09/2492160.html)
+- [oracle之数据库一致性读原理](http://www.cnblogs.com/Ronger/archive/2012/05/09/2492160.html)
 <button class='btn btn-success' onclick='javascript:alert("nothing! test!")'>test</button>
