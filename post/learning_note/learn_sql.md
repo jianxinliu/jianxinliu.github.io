@@ -141,7 +141,7 @@ WHERE (A.x + A.y) = 10
 
  
 
-<from clause> ::= FROM <tablereference> [ { <comma> <table reference> }... ]
+<from clause> = FROM <tablereference> [ { <comma> <table reference> }... ]
 
  
 
@@ -183,27 +183,22 @@ FROM 输出的结果被 WHERE 语句筛选后要经过 GROUP BY 语句处理，�
 
 灵活引用表能使 SQL 语句变得更强大。一个简单的例子就是 JOIN 的使用。严格的说 JOIN 语句并非是 SELECT 中的一部分，而是一种特殊的表引用语句。 SQL 语言标准中表的连接定义如下：
 
- 
-
-<**table** reference> ::=
-
-    <**table** name>
-
-  | <derived **table**>
-
-  | <joined **table**>
+<table reference>
+    <table name>
+    <derived table>
+ <joined table>
 
 就拿之前的例子来说：
 
-FROM a, b
+	FROM a, b
 
 a 可能输如下表的连接：
 
-a1 JOIN a2 ON a1.id = a2.id
+	a1 JOIN a2 ON a1.id = a2.id
 
 将它放到之前的例子中就变成了：
 
-FROM a1 JOIN a2 ON a1.id = a2.id, b
+	FROM a1 JOIN a2 ON a1.id = a2.id, b
 
 尽管将一个连接表用逗号跟另一张表联合在一起并不是常用作法，但是你的确可以这么做。结果就是，最终输出的表就有了 a1+a2+b 个字段了。
 
@@ -215,28 +210,29 @@ FROM a1 JOIN a2 ON a1.id = a2.id, b
 
 思考问题时，要从表引用的角度出发，这样就很容易理解数据是怎样被 SQL 语句处理的，并且能够帮助你理解那些复杂的表引用是做什么的。
 
-更重要的是，要理解 JOIN 是构建连接表的关键词，并不是 SELECT 语句的一部分。有一些数据库允许在 INSERT 、 UPDATE 、DELETE 中使用 JOIN 。
+更重要的是，要理解 JOIN 是构建连接表的关键词，并不是 SELECT 语句的一部分。有一些数据库允许在 INSERT、UPDATE 、DELETE 中使用 JOIN 。
 
 **5、 SQL 语句中推荐使用表连接**
 
 我们先看看刚刚这句：
 
-FROMa, b
+	FROMa, b
 
 高级 SQL程序员也许学会给你忠告：尽量不要使用逗号来代替 JOIN 进行表的连接，这样会提高你的 SQL 语句的可读性，并且可以避免一些错误。
 
 利用逗号来简化 SQL 语句有时候会造成思维上的混乱，想一下下面的语句：
 
-**FROM** a, b, c, d, e, f, g, h
+```SQL
+FROM a, b, c, d, e, f, g, h
 
-**WHERE** a.a1 = b.bx
+WHERE a.a1 = b.bx
 
-**AND** a.a2 = c.c1
+AND a.a2 = c.c1
 
-**AND** d.d1 = b.bc
+AND d.d1 = b.bc
 
-*--etc...*
-
+--etc...
+```
 我们不难看出使用 JOIN 语句的好处在于： 
 
 安全。 JOIN 和要连接的表离得非常近，这样就能避免错误。 
@@ -266,50 +262,38 @@ OUTER JOIN（包括： LEFT 、 RIGHT、 FULL OUTER JOIN）
 
 用例子最容易说明其中区别：
 
- 
-
-*-- Thistable reference contains authors and their books.*
-
-*-- Thereis one record for each book and its author.*
-
-*--authors without books are NOT included*
-
-author **JOIN** book **ON** author.id = book.author_id
+> -- Thistable reference contains authors and their books.
+>
+> -- Thereis one record for each book and its author.
+>
+> --authors without books are NOT included
+>
+> author **JOIN** book **ON** author.id = book.author_id
 
  
 
-*-- Thistable reference contains authors and their books*
-
-*-- Thereis one record for each book and its author.*
-
-*-- ... ORthere is an "empty" record for authors without books*
-
-*--("empty" meaning that all book columns are NULL)*
-
-author **LEFTOUTER JOIN** book **ON** author.id = book.author_id
+> -- Thistable reference contains authors and their books
+>
+> -- Thereis one record for each book and its author.
+>
+> -- ... ORthere is an "empty" record for authors without books
+>
+> --("empty" meaning that all book columns are NULL)
+>
+> author **LEFTOUTER JOIN** book **ON** author.id = book.author_id
 
  
 
 这种连接关系在 SQL 中有两种表现方式：使用 IN，或者使用 EXISTS。“ SEMI ”在拉丁文中是“半”的意思。这种连接方式是只连接目标表的一部分。这是什么意思呢？再想一下上面关于作者和书名的连接。我们想象一下这样的情况：我们不需要作者 / 书名这样的组合，只是需要那些在书名表中的书的作者信息。那我们就能这么写：
 
- 
-
-*-- UsingIN*
-
-**FROM** author
-
-**WHERE** author.id **IN** (**SELECT** book.author_id **FROM** book)
-
- 
-
-*-- UsingEXISTS*
-
-**FROM** author
-
-**WHERE** **EXISTS** (**SELECT** 1 **FROM** book **WHERE** book.author_id = author.id)
-
- 
-
+```SQL
+-- UsingIN
+FROM author
+WHERE author.id IN (SELECT book.author_id FROM book)
+-- UsingEXISTS
+FROM author
+WHERE EXISTS (SELECT 1 FROM book WHERE book.author_id = author.id)
+```
 尽管没有严格的规定说明你何时应该使用 IN ，何时应该使用 EXISTS ，但是这些事情你还是应该知道的：
 
 IN比 EXISTS 的可读性更好
@@ -320,16 +304,12 @@ EXISTS 比IN 的表达性更好（更适合复杂的语句）
 
 因为使用INNER JOIN 也能得到书名表中书所对应的作者信息，所以很多初学者机会认为可以通过 DISTINCT 进行去重，然后将 SEMI JOIN 语句写成这样：
 
-*-- Findonly those authors who also have books*
-
-**SELECT** **DISTINCT** first_name, last_name
-
-**FROM** author
-
-**JOIN** book **ON** author.id = book.author_id
-
- 
-
+>  Findonly those authors who also have books
+```SQL
+SELECT DISTINCT first_name, last_name
+FROM author
+JOIN book ON author.id = book.author_id
+```
 这是一种很糟糕的写法，原因如下：
 
 SQL 语句性能低下：因为去重操作（ DISTINCT ）需要数据库重复从硬盘中读取数据到内存中。（译者注： DISTINCT 的确是一种很耗费资源的操作，但是每种数据库对于 DISTINCT 的操作方式可能不同）。
@@ -344,22 +324,14 @@ SQL 语句性能低下：因为去重操作（ DISTINCT ）需要数据库重复
 
 这种连接的关系跟 SEMI JOIN 刚好相反。在 IN 或者 EXISTS 前加一个 NOT 关键字就能使用这种连接。举个例子来说，我们列出书名表里没有书的作者：
 
-*-- UsingIN*
-
-**FROM** author
-
-**WHERE** author.id **NOT** **IN** (**SELECT** book.author_id **FROM** book)
-
- 
-
-*-- UsingEXISTS*
-
-**FROM** author
-
-**WHERE** **NOT** **EXISTS** (**SELECT** 1 **FROM** book **WHERE** book.author_id = author.id)
-
- 
-
+```SQL
+-- UsingIN
+FROM author
+WHERE author.id NOT IN (SELECT book.author_id FROM book)
+-- UsingEXISTS
+FROM author
+WHERE NOT EXISTS (SELECT 1 FROM book WHERE book.author_id = author.id)
+```
 关于性能、可读性、表达性等特性也完全可以参考 SEMI JOIN。
 
  
@@ -424,9 +396,9 @@ DIVISION的确是一个怪胎。简而言之，如果 JOIN 是一个乘法运算
 
 *-- Aderived table*
 
-**FROM** (**SELECT** * **FROM** author)
+	**FROM** (**SELECT** * **FROM** author)
 
- 
+
 
 需要注意的是有些时候我们可以给派生表定义一个相关名（即我们所说的别名）。
 
@@ -434,51 +406,35 @@ DIVISION的确是一个怪胎。简而言之，如果 JOIN 是一个乘法运算
 
 *-- Aderived table with an alias*
 
-**FROM** (**SELECT** * **FROM** author) a
+	**FROM** (**SELECT** * **FROM** author) a
 
- 
 
 派生表可以有效的避免由于 SQL 逻辑而产生的问题。举例来说：如果你想重用一个用 SELECT 和 WHERE 语句查询出的结果，这样写就可以（以 Oracle 为例）：
 
- 
-
-*-- Getauthors' first and last names, and their age in days*
-
-**SELECT** first_name, last_name, age
-
-**FROM** (
-
-  **SELECT** first_name, last_name, **current_date** - date_of_birth age
-
-  **FROM** author
-
+```SQL
+-- Getauthors' first and last names, and their age in days
+SELECT first_name, last_name, age
+FROM (
+  SELECT first_name, last_name, current_date - date_of_birth age
+  FROM author
 )
-
-*-- Ifthe age is greater than 10000 days*
-
-**WHERE** age > 10000
-
- 
+-- Ifthe age is greater than 10000 days
+WHERE age > 10000
+```
 
 需要我们注意的是：在有些数据库，以及 SQL ： 1990 标准中，派生表被归为下一级——通用表语句（ common table experssion）。这就允许你在一个 SELECT 语句中对派生表多次重用。上面的例子就（几乎）等价于下面的语句：
 
- 
-
-**WITH** a **AS** (
-
-  **SELECT** first_name, last_name, **current_date** - date_of_birth age
-
-  **FROM** author
-
+```SQL
+WITH a AS (
+  SELECT first_name, last_name, current_date - date_of_birth age
+  FROM author
 )
+SELECT *
+FROM a
+WHERE age > 10000
+```
 
-**SELECT** *
 
-**FROM** a
-
-**WHERE** age > 10000
-
- 
 
 当然了，你也可以给“ a ”创建一个单独的视图，这样你就可以在更广泛的范围内重用这个派生表了。更多信息可以阅读下面的文章（http://en.wikipedia.org/wiki/View_%28SQL%29）。
 
@@ -494,63 +450,35 @@ DIVISION的确是一个怪胎。简而言之，如果 JOIN 是一个乘法运算
 
 **8、 SQL 语句中 GROUP BY 是对表的引用进行的操作**
 
- 
-
 让我们再回想一下之前的 FROM 语句：
 
- 
-
-FROM a, b
-
- 
+	FROM a, b
 
 现在，我们将GROUP BY 应用到上面的语句中：
 
- 
-
-GROUP BY A.x, A.y, B.z
-
- 
+	GROUP BY A.x, A.y, B.z
 
 上面语句的结果就是产生出了一个包含三个字段的新的表的引用。我们来仔细理解一下这句话：当你应用 GROUP BY 的时候， SELECT 后没有使用聚合函数的列，都要出现在 GROUP BY 后面。（译者注：原文大意为“当你是用 GROUP BY 的时候，你能够对其进行下一级逻辑操作的列会减少，包括在 SELECT 中的列”）。
 
- 
-
 需要注意的是：其他字段能够使用聚合函数：
 
- 
-
-**SELECT** A.x, A.y, SUM(A.z)
-
-**FROM** A
-
-**GROUP** **BY** A.x, A.y
-
- 
+```SQL
+SELECT A.x, A.y, SUM(A.z)
+FROM A
+GROUP BY A.x, A.y
+```
 
 还有一点值得留意的是： MySQL 并不坚持这个标准，这的确是令人很困惑的地方。（译者注：这并不是说MySQL 没有 GROUP BY 的功能）但是不要被MySQL 所迷惑。 GROUP BY 改变了对表引用的方式。你可以像这样既在 SELECT 中引用某一字段，也在 GROUP BY 中对其进行分组。
 
- 
-
 **我们学到了什么？**
-
- 
 
 GROUP BY，再次强调一次，是在表的引用上进行了操作，将其转换为一种新的引用方式。
 
- 
-
 **9、 SQL 语句中的 SELECT 实质上是对关系的映射**
-
- 
 
 我个人比较喜欢“映射”这个词，尤其是把它用在关系代数上。（译者注：原文用词为 projection ，该词有两层含义，第一种含义是预测、规划、设计，第二种意思是投射、映射，经过反复推敲，我觉得这里用映射能够更直观的表达出 SELECT 的作用）。一旦你建立起来了表的引用，经过修改、变形，你能够一步一步的将其映射到另一个模型中。 SELECT 语句就像一个“投影仪”，我们可以将其理解成一个将源表中的数据按照一定的逻辑转换成目标表数据的函数。
 
- 
-
 通过SELECT语句，你能对每一个字段进行操作，通过复杂的表达式生成所需要的数据。
-
- 
 
 SELECT 语句有很多特殊的规则，至少你应该熟悉以下几条：
 
@@ -595,13 +523,13 @@ SELECT 语句可能是 SQL 语句中最难的部分了，尽管他看上去很�
 
  
 
-集合运算（DISTINCT 和 UNION ）
+- 集合运算（DISTINCT 和 UNION ）
 
-排序运算（ORDER BY，OFFSET…FETCH）
+- 排序运算（ORDER BY，OFFSET…FETCH）
 
-集合运算（set operation）：
+- 集合运算（set operation）：
 
- 
+
 
 集合运算主要操作在于集合上，事实上指的就是对表的一种操作。从概念上来说，他们很好理解：
 
@@ -638,5 +566,3 @@ OFFSET…SET是一个没有统一确定语法的语句，不同的数据库有�
  
 
 正如其他语言一样，想要学好 SQL 语言就要大量的练习。上面的 10 个简单的步骤能够帮助你对你每天所写的 SQL 语句有更好的理解。另一方面来讲，从平时常见的错误中也能积累到很多经验。
-
- 
