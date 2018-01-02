@@ -141,7 +141,7 @@ WHERE (A.x + A.y) = 10
 
  
 
-<from clause> = FROM <tablereference> [ { <comma> <table reference> }... ]
+from clause = FROM tablereference [ { comma table reference }... ]
 
  
 
@@ -183,10 +183,12 @@ FROM 输出的结果被 WHERE 语句筛选后要经过 GROUP BY 语句处理，�
 
 灵活引用表能使 SQL 语句变得更强大。一个简单的例子就是 JOIN 的使用。严格的说 JOIN 语句并非是 SELECT 中的一部分，而是一种特殊的表引用语句。 SQL 语言标准中表的连接定义如下：
 
+```XML
 <table reference>
     <table name>
     <derived table>
  <joined table>
+```
 
 就拿之前的例子来说：
 

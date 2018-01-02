@@ -14,11 +14,10 @@
 **PO.Address.java**
 ```JAVA
 public class Address{
-//省略若干一般属性
-private ...;
-private Client client;
-
-//省略setter getter 方法
+	//省略若干一般属性
+	private ...;
+	private Client client;
+	//省略setter getter 方法
 }
 ```
 
@@ -26,17 +25,11 @@ private Client client;
 
 ```JAVA
 public class Client{
-
-//省略若干一般属性
-
-private ...;
-
-private Address address;
-
-//省略setter getter 方法
-
+	//省略若干一般属性
+	private ...;
+	private Address address;
+	//省略setter getter 方法
 }
-
 ```
 
 
@@ -45,68 +38,42 @@ private Address address;
 
 ```XML
 <class name = "Address" table = "address">
-
-<id column = "ID" name = "id" type = "Integer">
-
-<generator....../>
-
-</id>
-
-<property...../>
-
-..
-
-..
-
-<!-- 映射Clent 与Address 的一对一外键关联,双向关联是需要写以下部分，单向关联则不用 -->
-
-<!-- one-to-one标签不维护关联关系，所以需要其他标签来维护关系 -->
-
-<one-to-one name = "clint" class = "PO.Client" property-ref = "address"/>
-
-<!-- 其中的 property-ref属性表示对方哪个属性引用我，此处为Client类中的address属性为外键引用我方的主键 -->
-
+	<id column = "ID" name = "id" type = "Integer">
+		<generator....../>
+	</id>
+	<property...../>
+	..
+	..
+	<!-- 映射Clent 与Address 的一对一外键关联,双向关联是需要写以下部分，单向关联则不用 -->
+	<!-- one-to-one标签不维护关联关系，所以需要其他标签来维护关系 -->
+	<one-to-one name = "clint" class = "PO.Client" property-ref = "address"/>
+	<!-- 其中的 property-ref属性表示对方哪个属性引用我，此处为Client类中的address属性为外键引用我方的主键 -->
 </class>
 ```
-
-
 
 **Client.hbm.xml部分文件示例如下：**
 
 ```XML
 <class name = "Client" table = "client">
-
-<id column = "ID" name = "id" type = "Integer">
-
-<generator....../>
-
-</id>
-
-<property...../>
-
-..
-
-..
-
-<!-- 映射Clent 与Address 的一对一外键关联,唯一的多对一(unique = "true")，实际上变成了一对一-->
-
-<many-to-one name = "address" class = "PO.Address" column = "address"
-
-cascade = "save-update" unique = "true"/>
-
+	<id column = "ID" name = "id" type = "Integer">
+		<generator....../>
+	</id>
+	<property...../>
+	..
+	..
+	<!-- 映射Clent 与Address 的一对一外键关联,唯一的多对一(unique = "true")，实际上变成了一对一-->
+	<many-to-one name = "address" class = "PO.Address" column = "address" ascade = "save-update" unique = "true"/>
 </class>
 ```
 
-
-
 **总结**：
 
-1. 一对一关联关系，一般使用外键关联。若是双向关联，则需要在一方使用<one-to-one>标签，
+1. 一对一关联关系，一般使用外键关联。若是双向关联，则需要在一方使用one-to-one标签，
 
-并用**property-ref**属性标明对方的哪个属性引用我方的主键。在另一方使用<many-to-one>标签，并使用**unique="true"**来将外键唯一。
+并用**property-ref**属性标明对方的哪个属性引用我方的主键。在另一方使用many-to-one标签，并使用**unique=true**来将外键唯一。
 
-2. 若是单向关联，则不需要使用<one-to-one>标签。
-3. 不论是<many-to-one>还是<one-to-one>或是<many-to-many>，可以将to 后面的词换成 who ，然后向 hibernate回答这个问题。必须要回答的是从哪里到哪里。比如此处<many-to-one>，从 Client类中的类型为PO.Address的属性address 到 PO.Address对应表中列名为 address的列。
+2. 若是单向关联，则不需要使用one-to-one标签。
+3. 不论是many-to-one还是one-to-one或是many-to-many，可以将to 后面的词换成 who ，然后向 hibernate回答这个问题。必须要回答的是从哪里到哪里。比如此处many-to-one，从 Client类中的类型为PO.Address的属性address 到 PO.Address对应表中列名为 address的列。
 
 ## 2. 一对多关联关系
 
@@ -119,40 +86,43 @@ cascade = "save-update" unique = "true"/>
 
 ```JAVA
 public class Customer{
-
-//省略若干一般属性
-
-private ...;
-
-private Set<Orders> 【orders】 = new HashSet<>();
-
-//省略setter getter 方法
-
+	//省略若干一般属性
+	private ...;
+	private Set<Orders> orders = new HashSet<>();
+	//省略setter getter 方法
 }
 ```
 
 **Customer.hbm.xml**
 
 ```XML
-如果还需要设置一对多双向关联，那还需要在多的一方使用**<many-to-one>**
+<class name = "Customer" table = "customer">
+			<id column = "ID" name = "id" type = "Integer">
+				<generator....../>
+			</id>
+			<property...../>
+			..
+			..
+			<!-- 一对多.多的一方维护关系，Customer为单的一方 -->
+			<set name = "orders" table = "orders" csacade = "save-update" inverse = "true">
+				<key column = "CUSTOMER_ID"/><!-- key标签的column 属性指定关联表（此处为Orders表）的外键列 -->
+				<one-to-many class = "PO.Orders"/>
+				<!-- I am Customer.I have many Orders.I needn't to find them.They all can find me in their foreign key: CUSTOMER_ID-->
+			</set>
+</class>
 ```
 
 二：双向关联：
-如果还需要设置一对多双向关联，那还需要在多的一方使用**<many-to-one>**
+如果还需要设置一对多双向关联，那还需要在多的一方使用many-to-one标签
 
 **PO.Orders.java**
 
 ```JAVA
 public class Customer{
-
-//省略若干一般属性
-
-private ...;
-
-private Customer 【customer】;
-
-//省略setter getter 方法
-
+	//省略若干一般属性
+	private ...;
+	private Customer customer;
+	//省略setter getter 方法
 }
 ```
 
@@ -160,27 +130,15 @@ private Customer 【customer】;
 
 ```XML
 <class name = "Orders" table = "orders">
-
-<id column = "ID" name = "id" type = "Integer">
-
-<generator....../>
-
-</id>
-
-<property...../>
-
-..
-
-..
-
-<!-- 一对多中多的一方的配置 -->
-
-<many-to-one name = "customer" class = "PO.Customer" 
-
-column = "CUSTOMER_ID"/>
-
-<!--many-to-one means many orders to one customer.who is customer? PO.Customer is!where can I find her? from my froeign key: CUSTOMER_ID-->
-
+	<id column = "ID" name = "id" type = "Integer">
+		<generator....../>
+	</id>
+	<property...../>
+	..
+	..
+	<!-- 一对多中多的一方的配置 -->
+	<many-to-one name = "customer" class = "PO.Customer" column = "CUSTOMER_ID"/>
+	<!--many-to-one means many orders to one customer.who is customer? PO.Customer is!where can I find her? from my froeign key: CUSTOMER_ID-->
 </class>
 ```
 
@@ -193,37 +151,40 @@ column = "CUSTOMER_ID"/>
 
 ```JAVA
 public class Items{
-
-//省略若干一般属性
-
-private ...;
-
-private Set<Orders> 【orders】 = new HashSet<>();
-
-//省略setter getter 方法
-
+	//省略若干一般属性
+	private ...;
+	private Set<Orders> orders = new HashSet<>();
+	//省略setter getter 方法
 }
 ```
 
 **Item.hbm.xml**
 
 ```XML
-
+<class name = "Items" table = "items">
+		<id column = "ID" name = "id" type = "Integer">
+			<generator....../>
+		</id>
+		<property...../>
+		..
+		..
+		<!-- 此处的table为第三方表 -->
+		<set name = "orders" table = "selected_items" cascade = "save-update" inverse = "true">
+			<key column = "Items_id"/><!-- key标签的column 属性指定第三方表中自己对应的字段列 -->
+			<many-to-many class = "PO.Orders" column = "Order_id">
+			<!-- key 中 column 属性的值和 many-to-many 中的 column 属性值刚好相反 -->
+		</set>
+</class>
 ```
 
 **PO.Orders.java**
 
 ```JAVA
 public class Orders{
-
-//省略若干一般属性
-
-private ...;
-
-private Set<Items> items = new HashSet<>();
-
-//省略setter getter 方法
-
+	//省略若干一般属性
+	private ...;
+	private Set<Items> items = new HashSet<>();
+	//省略setter getter 方法
 }
 ```
 
@@ -231,29 +192,17 @@ private Set<Items> items = new HashSet<>();
 
 ```XML
 <class name = "Orders" table = "orders">
-
-<id column = "ID" name = "id" type = "Integer">
-
-<generator....../>
-
-</id>
-
-<property...../>
-
-..
-
-..
-
-<set name = "items" table = "selected_items">
-
-<key column = "Order_id"/><!-- key标签的column 属性指定第三方表中自己对应的字段列 -->
-
-<many-to-many class = "PO.Orders" column = "Items_id">
-
-<!-- key 中 column 属性的值和 many-to-many 中的 column 属性值刚好相反 -->
-
-</set>
-
+	<id column = "ID" name = "id" type = "Integer">	
+		<generator....../>	
+	</id>	
+	<property...../>
+	..
+	..
+	<set name = "items" table = "selected_items">
+		<key column = "Order_id"/><!-- key标签的column 属性指定第三方表中自己对应的字段列 -->
+		<many-to-many class = "PO.Orders" column = "Items_id">
+		<!-- key 中 column 属性的值和 many-to-many 中的 column 属性值刚好相反 -->
+	</set>
 </class>
 ```
 
