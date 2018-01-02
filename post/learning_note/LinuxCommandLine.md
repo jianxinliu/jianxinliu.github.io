@@ -217,13 +217,16 @@ echo $USER 显示环境变量的值
 编辑多个文件：
 
 - vi file1 file2 ...   ：打开多个文件
+
 - :n 切换到下一个文件（ex命令）
+
 - :N 切换到上一个文件
+
 - :buffers 查看当前正在编辑的文件列表
   - :e fileName 载入文件
-- :r ，read a file 将文件读入但钱光标处
 
-  ## 软件包管理	
+- :r ，read a file 将文件读入但钱光标处
+## 软件包管理
 
 在库里搜索包：
 Debain:
