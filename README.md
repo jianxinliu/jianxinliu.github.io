@@ -8,7 +8,7 @@
 - [Hibernate 关系映射辨析](post/learning_note/hibernate_mapping.md)/2018-01-02
 
 ## Java 学习
-- [java 中的 static](post/java/java_static.md)/2018-03-28
+- [java 中的 static](post/java/Java_static.md)/2018-03-28
 
 ## 纠错历程
 - [oracle issue:ORA-30043](post/issue/oracle_issue_fix.md)
