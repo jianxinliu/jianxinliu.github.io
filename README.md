@@ -7,6 +7,8 @@
 - [linux command](post/learning_note/LinuxCommandLine.md)
 - [Hibernate 关系映射辨析](post/learning_note/hibernate_mapping.md)/2018-01-02
 
+## Java 学习
+- [java 中的 static](post/java/java_static.md)/2018-03-28
 ## 纠错历程
 - [oracle issue:ORA-30043](post/issue/oracle_issue_fix.md)
 - [Spring MVC 自带的字符编码过滤器以及Tomcat字符编码设置，彻底解决中文参数乱码问题](http://blog.csdn.net/beauxie/article/details/53389856)
