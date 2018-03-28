@@ -17,4 +17,4 @@
 ## 文章收集
 - [oracle之数据库一致性读原理](http://www.cnblogs.com/Ronger/archive/2012/05/09/2492160.html)
 - [learning SQL](post/learning_note/learn_sql.md)/2018-01-02
-  <button class='btn btn-success' onclick='javascript:alert("nothing! test!")'>test</button>
+  <button class='btn btn-success' onclick='javascript:alert("nothing! test! and script test ")'>test</button>
