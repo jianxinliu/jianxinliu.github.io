@@ -17,4 +17,5 @@
 ## 文章收集
 - [oracle之数据库一致性读原理](http://www.cnblogs.com/Ronger/archive/2012/05/09/2492160.html)
 - [learning SQL](post/learning_note/learn_sql.md)/2018-01-02
+- [Lock、ReentrantLock、ReentrantReadWriteLock原理及应用深入解析](https://blog.scdn.net/u011479540/article/details/52013187)
   <button class='btn btn-success' onclick='javascript:alert("nothing! test! and script test ")'>test</button>
