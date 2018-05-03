@@ -18,4 +18,4 @@
 - [oracle之数据库一致性读原理](http://www.cnblogs.com/Ronger/archive/2012/05/09/2492160.html)
 - [learning SQL](post/learning_note/learn_sql.md)/2018-01-02
 - [Lock、ReentrantLock、ReentrantReadWriteLock原理及应用深入解析](https://blog.csdn.net/u011479540/article/details/52013187)
-  <button style="background-color:green;border:0" onclick="javascript:pwd=prompt('请输入密码');if(pwd=='03080123'){location.href='/post/xiu.html'}else{alert('密码错误')}">诗集</button>
+  <button style="background-color:green;border:0" onclick="javascript:pwd=prompt('请输入密码');if(pwd=='0123'){location.href='/post/xiu.html'}else{alert('密码错误')}">诗集</button>
