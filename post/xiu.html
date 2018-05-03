@@ -1,0 +1,228 @@
+<!doctype html>
+<html>
+<head>
+<meta charset='UTF-8'><meta name='viewport' content='width=device-width initial-scale=1'>
+<title>xiu.md</title><link href='https://fonts.googleapis.com/css?family=Open+Sans:400italic,700italic,700,400&subset=latin,latin-ext' rel='stylesheet' type='text/css' /><style type='text/css'>html {overflow-x: initial !important;}:root { --bg-color: #ffffff; --text-color: #333333; --code-block-bg-color: inherit; }
+html { font-size: 14px; background-color: var(--bg-color); color: var(--text-color); font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+body { margin: 0px; padding: 0px; height: auto; bottom: 0px; top: 0px; left: 0px; right: 0px; font-size: 1rem; line-height: 1.42857; overflow-x: hidden; background: inherit; }
+a:active, a:hover { outline: 0px; }
+.in-text-selection, ::selection { background: rgb(181, 214, 252); text-shadow: none; }
+#write { margin: 0px auto; height: auto; width: inherit; word-break: normal; word-wrap: break-word; position: relative; padding-bottom: 70px; white-space: pre-wrap; overflow-x: visible; }
+.for-image #write { padding-left: 8px; padding-right: 8px; }
+body.typora-export { padding-left: 30px; padding-right: 30px; }
+@media screen and (max-width: 500px) {
+  body.typora-export { padding-left: 0px; padding-right: 0px; }
+  .CodeMirror-sizer { margin-left: 0px !important; }
+  .CodeMirror-gutters { display: none !important; }
+}
+.typora-export #write { margin: 0px auto; }
+#write > p:first-child, #write > ul:first-child, #write > ol:first-child, #write > pre:first-child, #write > blockquote:first-child, #write > div:first-child, #write > table:first-child { margin-top: 30px; }
+#write li > table:first-child { margin-top: -20px; }
+img { max-width: 100%; vertical-align: middle; }
+input, button, select, textarea { color: inherit; font-style: inherit; font-variant: inherit; font-weight: inherit; font-stretch: inherit; font-size: inherit; line-height: inherit; font-family: inherit; }
+input[type="checkbox"], input[type="radio"] { line-height: normal; padding: 0px; }
+::before, ::after, * { box-sizing: border-box; }
+#write p, #write h1, #write h2, #write h3, #write h4, #write h5, #write h6, #write div, #write pre { width: inherit; }
+#write p, #write h1, #write h2, #write h3, #write h4, #write h5, #write h6 { position: relative; }
+h1 { font-size: 2rem; }
+h2 { font-size: 1.8rem; }
+h3 { font-size: 1.6rem; }
+h4 { font-size: 1.4rem; }
+h5 { font-size: 1.2rem; }
+h6 { font-size: 1rem; }
+p { -webkit-margin-before: 1rem; -webkit-margin-after: 1rem; -webkit-margin-start: 0px; -webkit-margin-end: 0px; }
+.typora-export p { white-space: normal; }
+.mathjax-block { margin-top: 0px; margin-bottom: 0px; -webkit-margin-before: 0rem; -webkit-margin-after: 0rem; }
+.hidden { display: none; }
+.md-blockmeta { color: rgb(204, 204, 204); font-weight: bold; font-style: italic; }
+a { cursor: pointer; }
+sup.md-footnote { padding: 2px 4px; background-color: rgba(238, 238, 238, 0.7); color: rgb(85, 85, 85); border-radius: 4px; }
+#write input[type="checkbox"] { cursor: pointer; width: inherit; height: inherit; margin: 4px 0px 0px; }
+#write > figure:first-child { margin-top: 16px; }
+figure { overflow-x: auto; margin: -8px 0px 0px -8px; max-width: calc(100% + 16px); padding: 8px; }
+tr { break-inside: avoid; break-after: auto; }
+thead { display: table-header-group; }
+table { border-collapse: collapse; border-spacing: 0px; width: 100%; overflow: auto; break-inside: auto; text-align: left; }
+table.md-table td { min-width: 80px; }
+.CodeMirror-gutters { border-right: 0px; background-color: inherit; }
+.CodeMirror { text-align: left; }
+.CodeMirror-placeholder { opacity: 0.3; }
+.CodeMirror pre { padding: 0px 4px; }
+.CodeMirror-lines { padding: 0px; }
+div.hr:focus { cursor: none; }
+pre { white-space: pre-wrap; }
+.CodeMirror-gutters { margin-right: 4px; }
+.md-fences { font-size: 0.9rem; display: block; break-inside: avoid; text-align: left; overflow: visible; white-space: pre; background: var(--code-block-bg-color); position: relative !important; }
+.md-diagram-panel { width: 100%; margin-top: 10px; text-align: center; padding-top: 0px; padding-bottom: 8px; overflow-x: auto; }
+.md-fences .CodeMirror.CodeMirror-wrap { top: -1.6em; margin-bottom: -1.6em; }
+.md-fences.mock-cm { white-space: pre-wrap; }
+.show-fences-line-number .md-fences { padding-left: 0px; }
+.show-fences-line-number .md-fences.mock-cm { padding-left: 40px; }
+.CodeMirror-line { break-inside: avoid; }
+.footnotes { opacity: 0.8; font-size: 0.9rem; padding-top: 1em; padding-bottom: 1em; }
+.footnotes + .footnotes { margin-top: -1em; }
+.md-reset { margin: 0px; padding: 0px; border: 0px; outline: 0px; vertical-align: top; background: transparent; text-decoration: none; text-shadow: none; float: none; position: static; width: auto; height: auto; white-space: nowrap; cursor: inherit; -webkit-tap-highlight-color: transparent; line-height: normal; font-weight: normal; text-align: left; box-sizing: content-box; direction: ltr; }
+li div { padding-top: 0px; }
+blockquote { margin: 1rem 0px; }
+li p, li .mathjax-block { margin: 0.5rem 0px; }
+li { margin: 0px; position: relative; }
+blockquote > :last-child { margin-bottom: 0px; }
+blockquote > :first-child { margin-top: 0px; }
+.footnotes-area { color: rgb(136, 136, 136); margin-top: 0.714rem; padding-bottom: 0.143rem; }
+@media print {
+  html, body { border: 1px solid transparent; height: 99%; break-after: avoid; break-before: avoid; }
+  .typora-export * { -webkit-print-color-adjust: exact; }
+  h1, h2, h3, h4, h5, h6 { break-after: avoid-page; orphans: 2; }
+  p { orphans: 4; }
+  html.blink-to-pdf { font-size: 13px; }
+  .typora-export #write { padding-left: 1cm; padding-right: 1cm; padding-bottom: 0px; break-after: avoid; }
+  .typora-export #write::after { height: 0px; }
+  @page { margin: 20mm 0mm; }
+}
+.footnote-line { margin-top: 0.714em; font-size: 0.7em; }
+a img, img a { cursor: pointer; }
+pre.md-meta-block { font-size: 0.8rem; min-height: 2.86rem; white-space: pre-wrap; background: rgb(204, 204, 204); display: block; overflow-x: hidden; }
+p > img:only-child { display: block; margin: auto; }
+p .md-image:only-child { display: inline-block; width: 100%; text-align: center; }
+#write .MathJax_Display { margin: 0.8em 0px 0px; }
+.mathjax-block { white-space: pre; overflow: hidden; width: 100%; }
+p + .mathjax-block { margin-top: -1.143rem; }
+.mathjax-block:not(:empty)::after { display: none; }
+[contenteditable="true"]:active, [contenteditable="true"]:focus { outline: none; box-shadow: none; }
+.task-list { list-style-type: none; }
+.task-list-item { position: relative; padding-left: 1em; }
+.task-list-item input { position: absolute; top: 0px; left: 0px; }
+.math { font-size: 1rem; }
+.md-toc { min-height: 3.58rem; position: relative; font-size: 0.9rem; border-radius: 10px; }
+.md-toc-content { position: relative; margin-left: 0px; }
+.md-toc::after, .md-toc-content::after { display: none; }
+.md-toc-item { display: block; color: rgb(65, 131, 196); }
+.md-toc-item a { text-decoration: none; }
+.md-toc-inner:hover { }
+.md-toc-inner { display: inline-block; cursor: pointer; }
+.md-toc-h1 .md-toc-inner { margin-left: 0px; font-weight: bold; }
+.md-toc-h2 .md-toc-inner { margin-left: 2em; }
+.md-toc-h3 .md-toc-inner { margin-left: 4em; }
+.md-toc-h4 .md-toc-inner { margin-left: 6em; }
+.md-toc-h5 .md-toc-inner { margin-left: 8em; }
+.md-toc-h6 .md-toc-inner { margin-left: 10em; }
+@media screen and (max-width: 48em) {
+  .md-toc-h3 .md-toc-inner { margin-left: 3.5em; }
+  .md-toc-h4 .md-toc-inner { margin-left: 5em; }
+  .md-toc-h5 .md-toc-inner { margin-left: 6.5em; }
+  .md-toc-h6 .md-toc-inner { margin-left: 8em; }
+}
+a.md-toc-inner { font-size: inherit; font-style: inherit; font-weight: inherit; line-height: inherit; }
+.footnote-line a:not(.reversefootnote) { color: inherit; }
+.md-attr { display: none; }
+.md-fn-count::after { content: "."; }
+.md-tag { opacity: 0.5; }
+pre, code, tt { font-family: var(--monospace); }
+.md-comment { color: rgb(162, 127, 3); opacity: 0.8; font-family: var(--monospace); }
+code { text-align: left; }
+h1 .md-tag, h2 .md-tag, h3 .md-tag, h4 .md-tag, h5 .md-tag, h6 .md-tag { font-weight: initial; opacity: 0.35; }
+a.md-print-anchor { border-width: initial !important; border-style: none !important; border-color: initial !important; display: inline-block !important; position: absolute !important; width: 1px !important; right: 0px !important; outline: none !important; background: transparent !important; text-decoration: initial !important; text-shadow: initial !important; }
+.md-inline-math .MathJax_SVG .noError { display: none !important; }
+.mathjax-block .MathJax_SVG_Display { text-align: center; margin: 1em 0em; position: relative; text-indent: 0px; max-width: none; max-height: none; min-height: 0px; min-width: 100%; width: auto; display: block !important; }
+.MathJax_SVG_Display, .md-inline-math .MathJax_SVG_Display { width: auto; margin: inherit; display: inline-block !important; }
+.MathJax_SVG .MJX-monospace { font-family: monospace; }
+.MathJax_SVG .MJX-sans-serif { font-family: sans-serif; }
+.MathJax_SVG { display: inline; font-style: normal; font-weight: normal; line-height: normal; zoom: 90%; text-indent: 0px; text-align: left; text-transform: none; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; direction: ltr; max-width: none; max-height: none; min-width: 0px; min-height: 0px; border: 0px; padding: 0px; margin: 0px; }
+.MathJax_SVG * { transition: none; }
+.md-diagram-panel > svg { max-width: 100%; }
+[lang="flow"] svg, [lang="mermaid"] svg { max-width: 100%; }
+table tr th { border-bottom: 0px; }
+
+
+:root { --side-bar-bg-color: #fafafa; --control-text-color: #777; }
+@font-face { font-family: "Open Sans"; font-style: normal; font-weight: normal; src: local("Open Sans Regular"), url("./github/400.woff") format("woff"); }
+@font-face { font-family: "Open Sans"; font-style: italic; font-weight: normal; src: local("Open Sans Italic"), url("./github/400i.woff") format("woff"); }
+@font-face { font-family: "Open Sans"; font-style: normal; font-weight: bold; src: local("Open Sans Bold"), url("./github/700.woff") format("woff"); }
+@font-face { font-family: "Open Sans"; font-style: italic; font-weight: bold; src: local("Open Sans Bold Italic"), url("./github/700i.woff") format("woff"); }
+html { font-size: 16px; }
+body { font-family: "Open Sans", "Clear Sans", "Helvetica Neue", Helvetica, Arial, sans-serif; color: rgb(51, 51, 51); line-height: 1.6; }
+#write { max-width: 860px; margin: 0px auto; padding: 20px 30px 100px; }
+#write > ul:first-child, #write > ol:first-child { margin-top: 30px; }
+body > :first-child { margin-top: 0px !important; }
+body > :last-child { margin-bottom: 0px !important; }
+a { color: rgb(65, 131, 196); }
+h1, h2, h3, h4, h5, h6 { position: relative; margin-top: 1rem; margin-bottom: 1rem; font-weight: bold; line-height: 1.4; cursor: text; }
+h1:hover a.anchor, h2:hover a.anchor, h3:hover a.anchor, h4:hover a.anchor, h5:hover a.anchor, h6:hover a.anchor { text-decoration: none; }
+h1 tt, h1 code { font-size: inherit; }
+h2 tt, h2 code { font-size: inherit; }
+h3 tt, h3 code { font-size: inherit; }
+h4 tt, h4 code { font-size: inherit; }
+h5 tt, h5 code { font-size: inherit; }
+h6 tt, h6 code { font-size: inherit; }
+h1 { padding-bottom: 0.3em; font-size: 2.25em; line-height: 1.2; border-bottom: 1px solid rgb(238, 238, 238); }
+h2 { padding-bottom: 0.3em; font-size: 1.75em; line-height: 1.225; border-bottom: 1px solid rgb(238, 238, 238); }
+h3 { font-size: 1.5em; line-height: 1.43; }
+h4 { font-size: 1.25em; }
+h5 { font-size: 1em; }
+h6 { font-size: 1em; color: rgb(119, 119, 119); }
+p, blockquote, ul, ol, dl, table { margin: 0.8em 0px; }
+li > ol, li > ul { margin: 0px; }
+hr { height: 4px; padding: 0px; margin: 16px 0px; background-color: rgb(231, 231, 231); border-width: 0px 0px 1px; border-style: none none solid; border-top-color: initial; border-right-color: initial; border-left-color: initial; border-image: initial; overflow: hidden; box-sizing: content-box; border-bottom-color: rgb(221, 221, 221); }
+body > h2:first-child { margin-top: 0px; padding-top: 0px; }
+body > h1:first-child { margin-top: 0px; padding-top: 0px; }
+body > h1:first-child + h2 { margin-top: 0px; padding-top: 0px; }
+body > h3:first-child, body > h4:first-child, body > h5:first-child, body > h6:first-child { margin-top: 0px; padding-top: 0px; }
+a:first-child h1, a:first-child h2, a:first-child h3, a:first-child h4, a:first-child h5, a:first-child h6 { margin-top: 0px; padding-top: 0px; }
+h1 p, h2 p, h3 p, h4 p, h5 p, h6 p { margin-top: 0px; }
+li p.first { display: inline-block; }
+ul, ol { padding-left: 30px; }
+ul:first-child, ol:first-child { margin-top: 0px; }
+ul:last-child, ol:last-child { margin-bottom: 0px; }
+blockquote { border-left: 4px solid rgb(221, 221, 221); padding: 0px 15px; color: rgb(119, 119, 119); }
+blockquote blockquote { padding-right: 0px; }
+table { padding: 0px; word-break: initial; }
+table tr { border-top: 1px solid rgb(204, 204, 204); margin: 0px; padding: 0px; }
+table tr:nth-child(2n) { background-color: rgb(248, 248, 248); }
+table tr th { font-weight: bold; border-width: 1px 1px 0px; border-top-style: solid; border-right-style: solid; border-left-style: solid; border-top-color: rgb(204, 204, 204); border-right-color: rgb(204, 204, 204); border-left-color: rgb(204, 204, 204); border-image: initial; border-bottom-style: initial; border-bottom-color: initial; text-align: left; margin: 0px; padding: 6px 13px; }
+table tr td { border: 1px solid rgb(204, 204, 204); text-align: left; margin: 0px; padding: 6px 13px; }
+table tr th:first-child, table tr td:first-child { margin-top: 0px; }
+table tr th:last-child, table tr td:last-child { margin-bottom: 0px; }
+.CodeMirror-gutters { border-right: 1px solid rgb(221, 221, 221); }
+.md-fences, code, tt { border: 1px solid rgb(221, 221, 221); background-color: rgb(248, 248, 248); border-radius: 3px; font-family: Consolas, "Liberation Mono", Courier, monospace; padding: 2px 4px 0px; font-size: 0.9em; }
+.md-fences { margin-bottom: 15px; margin-top: 15px; padding: 8px 1em 6px; }
+.task-list { padding-left: 0px; }
+.task-list-item { padding-left: 32px; }
+.task-list-item input { top: 3px; left: 8px; }
+@media screen and (min-width: 914px) {
+}
+@media print {
+  html { font-size: 13px; }
+  table, pre { break-inside: avoid; }
+  pre { word-wrap: break-word; }
+}
+.md-fences { background-color: rgb(248, 248, 248); }
+#write pre.md-meta-block { padding: 1rem; font-size: 85%; line-height: 1.45; background-color: rgb(247, 247, 247); border: 0px; border-radius: 3px; color: rgb(119, 119, 119); margin-top: 0px !important; }
+.mathjax-block > .code-tooltip { bottom: 0.375rem; }
+#write > h3.md-focus::before { left: -1.5625rem; top: 0.375rem; }
+#write > h4.md-focus::before { left: -1.5625rem; top: 0.285714rem; }
+#write > h5.md-focus::before { left: -1.5625rem; top: 0.285714rem; }
+#write > h6.md-focus::before { left: -1.5625rem; top: 0.285714rem; }
+.md-image > .md-meta { border: 1px solid rgb(221, 221, 221); border-radius: 3px; font-family: Consolas, "Liberation Mono", Courier, monospace; padding: 2px 4px 0px; font-size: 0.9em; color: inherit; }
+.md-tag { color: inherit; }
+.md-toc { margin-top: 20px; padding-bottom: 20px; }
+.sidebar-tabs { border-bottom: none; }
+#typora-quick-open { border: 1px solid rgb(221, 221, 221); background-color: rgb(248, 248, 248); }
+#typora-quick-open-item { background-color: rgb(250, 250, 250); border-color: rgb(254, 254, 254) rgb(229, 229, 229) rgb(229, 229, 229) rgb(238, 238, 238); border-style: solid; border-width: 1px; }
+#md-notification::before { top: 10px; }
+.on-focus-mode blockquote { border-left-color: rgba(85, 85, 85, 0.12); }
+header, .context-menu, .megamenu-content, footer { font-family: "Segoe UI", Arial, sans-serif; }
+.file-node-content:hover .file-node-icon, .file-node-content:hover .file-node-open-state { visibility: visible; }
+.mac-seamless-mode #typora-sidebar { background-color: var(--side-bar-bg-color); }
+.md-lang { color: rgb(180, 101, 77); }
+
+
+
+
+
+
+</style>
+</head>
+<body class='typora-export' >
+<div  id='write'  class = 'is-node'><h1><a name='header-n0' class='md-header-anchor '></a>季秀诗集</h1><p>将高中及以后所写的诗都归集于此，不论好坏</p><p>&nbsp;</p><h3><a name='header-n6' class='md-header-anchor '></a>疏亭-无题</h3><blockquote><p>我昏倒在这个世界</p><p>以为时间陪着我静止</p><p>等着我苏醒</p><p>我难以前行</p><p>成为凝固的空气</p><p>沧海桑田的变化是独立的美感</p><p>我才觉一眼万年</p><p>等待是件多么难熬的事情</p><p>我等待苏醒</p><p>来不及新生</p><p>是一缕新空气</p><p>游荡在缺失的天地                                        0000-00-00</p></blockquote><p>&nbsp;</p><h3><a name='header-n34' class='md-header-anchor '></a>杜鹃花与鸟</h3><p>墙外久雨骤歇</p><p>墙里人儿笑别</p><p>&nbsp;</p><p>似朵朵青莲</p><p>清风过</p><p>泛层波</p><p>朵朵波上托					2014-06-29</p><p>&nbsp;</p><h3><a name='header-n51' class='md-header-anchor '></a>记一些相处短暂却记忆深刻的人</h3><p><em>注：季秀出此题，疏亭作此诗</em></p><p>有一扇门</p><p>你走进去</p><p>背影化成一团雾气</p><p>我的睫毛染上湿意</p><p>门在面前关闭</p><p>我只听到落锁的声音</p><p>来不及说出的别离</p><p>上帝说无法帮我传递</p><p>天涯是分割时空的利器</p><p>一扇门，两颗心</p><p>叹声不息，</p><p>离歌不停											0000-00-00</p><p>&nbsp;</p><h3><a name='header-n80' class='md-header-anchor '></a>无题</h3><p>清风恋着柳絮</p><p>他给她承诺</p><p>要带她脱离树的束缚</p><p>他翩翩起舞</p><p>双手轻托着她</p><p>他一不小心</p><p>让她落回凡尘</p><p>&nbsp;</p><p>远处灞桥边</p><p>几点离人挥泪别</p><p>本是离愁拜别手</p><p>却误作了</p><p>与君割袍意</p><p>自恨更离愁</p><p>清风叹！</p><p>何日愁到头？										2014-06-22</p><p>&nbsp;</p><h3><a name='header-n115' class='md-header-anchor '></a>战</h3><p>七月，一杯开水</p><p>雾气攀上鼻梁</p><p>晕开在眼前的玻璃</p><p>升腾，升腾</p><p>隐在了白发苍苍</p><p>先头部队上了</p><p>轻装，消失在迷茫</p><p>大部队下了</p><p>带着全部热情</p><p>五洋深处</p><p>扮演着血与泪</p><p>将它们的热情染在我的心灵</p><p>这冷与热，血与泪的斗争</p><p>何时能停？</p><p>一番</p><p>错毂兵接</p><p>终得</p><p>戈残破甲</p><p>罢</p><p>残兵剩勇</p><p>相搀下夕阳</p><p>带着还剩的一点斗志</p><p>从我的眼皮底下走</p><p>化为平民					2014-06-24</p><p>&nbsp;</p><h3><a name='header-n166' class='md-header-anchor '></a>Letting go?No!</h3><p>When I see</p><p>The yellow leave leave from branch</p><p>Winds with the wind pass by</p><p>Falling down,kiss the soil</p><p>Melt in the land</p><p>Flow all over the world.</p><p>&nbsp;</p><p>When i see</p><p>The colorful petal past it&#39;s stem</p><p>Winds with the wind pass by</p><p>Falling down,kiss the soil</p><p>Melt in the land</p><p>Flow all over the world.</p><p>...(未完)</p><p>Letting go?No!</p><p>The sky cry</p><p>Land never dry</p><p>How do blossom lie</p><p>She never to die?						0000-00-00</p><p>&nbsp;</p><h3><a name='header-n207' class='md-header-anchor '></a>气旋</h3><p>从四面八方来的</p><p>到高空中央去的</p><p>你们，</p><p>能顺道把我捎上吗？、</p><p>我的要求不算高</p><p>把我挂在你们</p><p>升空的列车的尾巴上</p><p>在下一个轻盈的腾空中</p><p>让我的世界也安静一回</p><p>希望不养掉下来</p><p>在下一个华丽的旋转中</p><p>让我的短发也飘逸一回</p><p>希望不要落下满地银霜</p><p>在下一个</p><p>高空的行进中</p><p>让我的外衣也湿润一回</p><p>希望不要弄脏了洁白的云朵</p><p>腾空，旋转，高空行进</p><p>这样的路总也走不完</p><p>因为</p><p>我不喜欢待在那</p><p>我总是要他们把我捎上</p><p>到空中走一遭</p><p>这样的路走也走不完</p><p>因为</p><p>快要落地时</p><p>快要落回那儿时</p><p>我蹬一脚云彩</p><p>作别升空的列车</p><p>飞向</p><p>空中那一片光芒</p><p>在此之前</p><p>我已转遍所有经筒</p><p>只为能在你面前</p><p>落发为僧								0000-00-00</p><p>&nbsp;</p><h3><a name='header-n280' class='md-header-anchor '></a>我要吃糖</h3><p>天空下</p><p>一群孩子抬着头</p><p>看着上面</p><p>一个说</p><p>我要星星</p><p>一个说</p><p>我要月亮</p><p>一个说</p><p>我要整个天空</p><p>一个老者过来</p><p>给每个孩子身上绑个大石头</p><p>不声不响地</p><p>一人发一个糖					0000-00-00</p><p>&nbsp;</p><h3><a name='header-n309' class='md-header-anchor '></a>无题</h3><p>教室里</p><p>大喇叭放着歌</p><p>声声震着我的桌子</p><p>然后</p><p>声声震到我的心里</p><p>声波领着我的心跳了</p><p>我的心跟着它跳了</p><p>盔甲找不到了				2014-12-05</p><p>&nbsp;</p><h3><a name='header-n328' class='md-header-anchor '></a>我放风筝</h3><p>我死死的扯住风筝线</p><p>扯着风筝线，不让它走的太远</p><p>它挣扎着，我也束缚着</p><p>没有商量的余地，因为它从来也没有和我商量过</p><p>自从把它放上去那天</p><p>它就一路向上</p><p>完全把我抛在脑后</p><p>我一定要给我的风筝以束缚</p><p>不让它走的太远</p><p>不让它走向太空</p><p>束缚，束缚，束缚</p><p>我就是风筝，</p><p>风筝就是我							2014-12-04</p><p>&nbsp;</p><h3><a name='header-n357' class='md-header-anchor '></a>心里的表情和脸上的表情</h3><p>曼珠沙华，彼岸花，石蒜</p><p>讲的都是她</p><p>那个花叶永不相见的人</p><p>心里的表情是花</p><p>脸上的表情是叶</p><p>她们永远不会相见</p><p>你看到了花，并不能知道叶怎么想</p><p>你看到了叶，并不能知道花怎么想</p><p>就像她的名字那般多变						0000-00-00</p><p>&nbsp;</p><h2><a name='header-n378' class='md-header-anchor '></a>废话集</h2><h3><a name='header-n379' class='md-header-anchor '></a>无题</h3><p>为什么我的头会痛</p><p>因为我的忧思在里面捣乱</p><p>为什么我的忧思在里面捣乱</p><p>因为我的头在痛			2014-12-07</p><p>&nbsp;</p><h3><a name='header-n390' class='md-header-anchor '></a>无题</h3><p>我说我写诗</p><p>你说哇，你好厉害</p><p>我不厉害，谁都可以的</p><p>我和诗站到了一边</p><p>你把诗看得太高</p><p>于是就把我也看高了</p><p>其实我很低</p><p>我把诗拉到了我的身边</p><p>它本没有那么高不可及					2014-12-10</p><p>&nbsp;</p><h3><a name='header-n411' class='md-header-anchor '></a>无题</h3><p>为什么这光景这么熟悉？</p><p>课桌上</p><p>左边一堆资料书，右边一堆草稿纸</p><p>课桌里</p><p>左边一堆书，右边一堆书</p><p>不过左边是满满一堆课外书</p><p>右边是更满的一堆卷子</p><p>为何这光景这般熟悉？</p><p>因为昨天也是这样的</p><p>好像前天也是这样的</p><p>应该大前天也是这样的吧</p><p>哦，一直以来都是这样的哦</p><p>我都不愿意改变这般光景</p><p>在上面的还在上面</p><p>在下面的还在下面  					2014-12-08</p><p>&nbsp;</p><h3><a name='header-n444' class='md-header-anchor '></a>无题</h3><p>我们是幸福的！</p><p>寒冬里</p><p>窗外的花、草、树被吹得东摇西摆</p><p>没有寒衣给它披</p><p>没有陋室给它避</p><p>没有热粥给它吸</p><p>有的是</p><p>薄衣寒帐枯纱披</p><p>天穹地底透窗避</p><p>微光寒露彻骨泥</p><p>我们是幸福的！</p><p>我们有</p><p>寒衣、陋舍和热粥</p><p>华服、宫殿和珍馐</p><p>我们不会被吹得东摇西摆</p><p>因为我们有爸爸</p><p>但我们会被吹得东倒西歪  						2014-12-09</p><p>&nbsp;</p><h3><a name='header-n481' class='md-header-anchor '></a>无题</h3><p>作这首诗</p><p>花了好长时间</p><p>有一天</p><p>因为我要</p><p>遣词造句配格律</p><p>都是要花时间的呀</p><p>这么长的时间跨度</p><p>消磨了我的诗情</p><p>改变了我的诗本意</p><p>而其他几首则不会						0000-00-00</p><p>&nbsp;</p><h3><a name='header-n504' class='md-header-anchor '></a>无题</h3><p>——Thank you </p><p>——you&#39;re welcome</p><p>外国人对话是这样的</p><p>意思是</p><p>——谢谢你</p><p>——你是受欢迎的				2014-12-10</p><p>&nbsp;</p><h3><a name='header-n519' class='md-header-anchor '></a>无题</h3><p>我不轻易对别人说谢谢</p><p>但我会对你说 Thank you</p><p>只因我想听你对我说</p><p>——you&#39;re welcome. 					2014-12-14</p><p>&nbsp;</p><h3><a name='header-n530' class='md-header-anchor '></a>前桌女生的头发</h3><p><em>注：此诗是用篆刻时写的镜面字</em></p><p>前桌女生头上的几根白发</p><p>藏在黑发中间</p><p>显得很白很白</p><p>非常白</p><p>白得耀眼</p><p>所以被我发现了</p><p>其实我同桌的白头发更多</p><p>其实我的白头发也很多</p><p>其实大家白头发都多</p><p>老师在讲台上一看</p><p>还以为刚下雪呢 							2014-12-11</p><p>&nbsp;</p><h3><a name='header-n557' class='md-header-anchor '></a>无题</h3><p>我改变了这光景</p><p>课桌上</p><p>左边一堆书，是课本，右边只几张草稿纸</p><p>抽屉里</p><p>左边满满一堆资料书，右边还是满满一堆试卷</p><p>桌子下</p><p>是各科的所有课本</p><p>有事没事拿出来瞧瞧</p><p>就像重温一个老友</p><p>一切看上去都是新的开始</p><p>希望它继续新下去</p><p>直到黑板上的数字变为零</p><p>今天是177 					2014-12-12</p><p>&nbsp;</p><h3><a name='header-n586' class='md-header-anchor '></a>一生一世</h3><p><em>注：此诗的左边一夜纸，用橡皮刻的章，印满了一面爱心</em></p><p>时间如流水，能侵蚀一切</p><p>一切</p><p>一切</p><p>哲学里说</p><p>没有什么永垂不朽</p><p>是的，我同意</p><p>不得不同意</p><p>一枚刻着爱心的印章</p><p>在不断印着</p><p>虽然渐渐没了水</p><p>但它仍然在不断地印着</p><p>印着</p><p>印着</p><p>到最后</p><p>虽然你看不到</p><p>但它却是是印了满满一面</p><p>满满的一面				2014-12-18</p><p>&nbsp;</p><h3><a name='header-n625' class='md-header-anchor '></a>无题</h3><p>我来到青藏</p><p>因为我向往它的高</p><p>如果不是我向往它的高</p><p>我不会来</p><p>我来到闽南</p><p>因为我喜欢土楼和小吃</p><p>如果不是我喜欢它</p><p>我不会来</p><p>我来到婺源</p><p>因为我享受骑行的快乐</p><p>如果不是因为它近且美</p><p>我不会来</p><p>我来到民国</p><p>因为我爱上了它的自由和那种氛围</p><p>如果不是现实生活中没有</p><p>我不会来</p><p>我来到大理</p><p>因为乌青在这里</p><p>如果不是乌青在这里</p><p>我不会来</p><p>我来到自己的世界</p><p>因为别人的世界里没有我</p><p>如果不是因为世界不同</p><p>我不会来</p><p>我来到这个世界</p><p>因为						2014-12-22</p><p>&nbsp;</p><h3><a name='header-n680' class='md-header-anchor '></a>响指</h3><p>一个响指</p><p>咔</p><p>催眠师用它唤醒被催眠的人</p><p>把他拉回现实</p><p>可我没学过催眠</p><p>所以我的响指没有用				2014-12-26</p><p>&nbsp;</p><h3><a name='header-n695' class='md-header-anchor '></a>无题</h3><p><em>注：给逆境中的自己</em></p><p>一切决定都是好的</p><p>一切结局都是好的</p><p>我决定明天待在家里</p><p>那是好的</p><p>可能我看电视时学到了知识</p><p>我决定明天去见见朋友</p><p>那是好的</p><p>可能又多了解了朋友几分</p><p>我决定明天骑车出去玩</p><p>那是好的</p><p>可能多见了几道风景</p><p>无论明天决定干什么</p><p>都是好的</p><p>所以明天来得都有意义</p><p>但不能每个明天都是一样的</p><p>那样便可能失去意义</p><p>只要你足够乐观向上</p><p>任何被认为坏的结局也都是好的。				2014-12-26</p><p>&nbsp;</p><h3><a name='header-n736' class='md-header-anchor '></a>无题</h3><p>有些事情你总会懂</p><p>只是时间问题</p><p>有些事情别人看来很简单</p><p>但就是要耗费你很长的时间去懂</p><p>不过没关系</p><p>你生命中注定了要花这些时间</p><p>不过没关系</p><p>你终究还是会懂的							2014-12-26</p><p>&nbsp;</p><h3><a name='header-n755' class='md-header-anchor '></a>无题</h3><p>爱就是要放在心里</p><p>就像小兔子那样</p><p>不要说出来惊了她</p><p>那她就跳走了								2014-12-27</p><p>&nbsp;</p><h3><a name='header-n766' class='md-header-anchor '></a>无题</h3><p>昨天堆在眼角的泪</p><p>现在我已经把它逼出来了</p><p>鼻子一捏一用力</p><p>泪就往外冒</p><p>像喷泉一样</p><p>你说谢谢</p><p>谢谢我离开你							2014-12-27</p><p>&nbsp;</p><h3><a name='header-n783' class='md-header-anchor '></a>无题</h3><p>烟花自有它的音乐美</p><p>是视觉的享受</p><p>是音乐的享受</p><p>是鼻孔里每个细胞的享受</p><p>只是现在后两个享受</p><p>我们还没享受  									2015-01-09</p><p>&nbsp;</p><h3><a name='header-n798' class='md-header-anchor '></a>新年到底有多新</h3><p>今天是新年第一天</p><p>听说从今天开始</p><p>每天都是新的</p><p>可是</p><p>我只发现</p><p>下午洗了个头</p><p>头还挺新的</p><p>可是我忘记洗脸了</p><p>脸还是旧的</p><p>还藏着昨天的灰尘呢</p><p>&nbsp;</p><p>我不知道以后的每天</p><p>是不是都是新的</p><p>是不是都是开心的</p><p>是不是都是不开心的</p><p>我都能接受</p><p>新的，旧的，开心的，不开心的</p><p>我好想听到刘建新说他都习惯了</p><p>&nbsp;</p><p>我不奢望以后每天都开心</p><p>我不奢望以后每天都是新的</p><p>因为我不是土豪</p><p>我不任性</p><p>因为我不是土豪</p><p>我还有昨天</p><p>要不就这样吧</p><p>设：</p><p>刘建新以后有开心有不开心</p><p>一个不开心接着一个开心</p><p>一个开心接着一个不开心</p><p>设：</p><p>刘建新以后有新有旧</p><p>一个新的接一个旧的</p><p>一个旧的接一个新的</p><p>不过</p><p>令：新的多一点</p><p>：“数学老师，我这样设可以吗？” 				2015-01-01</p><p>&nbsp;</p><h3><a name='header-n875' class='md-header-anchor '></a>无题——致逆境中的自己</h3><p>落在生活凄凉处</p><p>记得保持乐观</p><p>记得你还活着</p><p>记得你还是个人</p><p>有血的</p><p>有肉的</p><p>和其他任何人都一样的</p><p>没有什么不同呀</p><p>记得活着</p><p>是任何事情继续下去的基础、前提</p><p>继续爱你爱的人</p><p>继续被爱你的人爱着</p><p>继续读你喜欢的书</p><p>继续去你喜欢的地方玩</p><p>继续抬头仰望你的星光</p><p>所以你不能闭上眼睛</p><p>不然你眼中只用黑夜</p><p>没有星光</p><p>那星光不正是你努力摆脱白昼而追求的吗？</p><p>&nbsp;</p><p>未来的生活像水</p><p>于动处长流</p><p>于静处干涸</p><p>既然是动的，那就不要管</p><p>流入水是河</p><p>流入土是沼</p><p>任它流，不要羡慕别人是河</p><p>而你是沼</p><p>只要你够强大</p><p>沼也能变成河							2015-01-19</p><p>&nbsp;</p><h3><a name='header-n938' class='md-header-anchor '></a>无题</h3><p>我常与自己探讨生活的意义</p><p>双鱼座强大的想象力</p><p>早已把将来的各种生活</p><p>在脑中模拟出来</p><p>又对比了生活中各种其他人的生活</p><p>发现</p><p>竟然我找不到存在的意义</p><p>即便是找到了</p><p>也会在不久将它推翻							2015-01-27</p><p>&nbsp;</p><h3><a name='header-n959' class='md-header-anchor '></a>无题</h3><p>我们总是看着一张试卷的尾巴</p><p>一张试卷的红头发							2015-01-27</p><p>&nbsp;</p><h3><a name='header-n966' class='md-header-anchor '></a>无题</h3><p>我的鸢尾说：“讨厌！人家只是在冬眠，你居然说人家死了”		2015-02-11</p><p>&nbsp;</p><h3><a name='header-n971' class='md-header-anchor '></a>我的头发</h3><ol start='' ><li>​</li></ol><p>我的头发与众不同</p><p>让我来与你们说说</p><p>从小外婆就说我</p><p>头发真黑、真密</p><p>听那语气我就觉得</p><p>我是世界上头发最密、最黑的人</p><p>为此我还嘚瑟了好几年</p><p>后来妈妈说</p><p>这头发真粗、跟猪毛一样硬</p><p>剃头匠也说我这头发会弄坏剃刀</p><p>那是我才明白</p><p>这世界变了</p><p>居然没人欣赏我的黑发！</p><p>&nbsp;</p><ol start='2' ><li>​</li></ol><p>我的头发很长</p><p>长得像拖地的窗帘</p><p>遮住了眼睛</p><p>我的头发很密</p><p>隔墙有耳也不怕</p><p>我的头发很黑</p><p>黑得像那山谷里黑夜的颜色</p><p>再强的阳光也无能为力</p><p>&nbsp;</p><p>我有长发</p><p>我有密发</p><p>我有黑发</p><p>&nbsp;</p><p>我能随时随地</p><p>感受夜的颜色</p><p>山谷的寂静</p><p>&nbsp;</p><p>我能</p><p>白天收集太阳的热</p><p>晚上保存太阳的热</p><p>第二天白天再收集</p><p>晚上再保存</p><p>这样我的头脑从来不会冷</p><p>&nbsp;</p><ol start='3' ><li>​</li></ol><p>同学说</p><p>你的头发真长</p><p>老师说</p><p>什么时候把头发理一理咯</p><p>爸爸说</p><p>这像什么样子！</p><p>&nbsp;</p><p>我头发一长</p><p>脸就小了</p><p>就有人说我像女生了</p><p>或许老爸是因为这个才那样说的吧</p><p>后来</p><p>同学不说</p><p>老师不说</p><p>爸爸也不主动说</p><p>难道现在我长头发就不像女生了吗</p><p>如果是这样的话</p><p>那我是不是应该好好高兴一下呢</p><p>真是一个奇怪的问题哟</p><p>&nbsp;</p><ol start='4' ><li>​</li></ol><p>好多人一看到我</p><p>“你头发好长，</p><p>什么时候去理一下”</p><p>我头发好长</p><p>让你们一眼就注意到了</p><p>哈哈，中我的计了吧</p><p>围魏救赵</p><p>脸上不变的愁容</p><p>渐增的皱纹</p><p>你们是看不到的</p><p>&nbsp;</p><ol start='5' ><li>​</li></ol><p>其实</p><p>我的头发也没多长</p><p>就是脑后够用皮筋</p><p>扎个小辣椒而已</p><p>&nbsp;</p><ol start='6' ><li>​</li></ol><p>我把我的眼睛</p><p>安在头顶的天花板上</p><p>本来是想安在夜空中的</p><p>可是我近视</p><p>看着我的头发</p><p>整一个晚上 				2015-01-28</p><p>&nbsp;</p><h3><a name='header-n1158' class='md-header-anchor '></a>快过年了</h3><p>一个个声音涌入我耳</p><p>“我二十了，正月办酒，你来吗？”</p><p>“你也二十啦！”</p><p>“不好意思啊，</p><p>实在没空</p><p>正月的日期都排满了”</p><p>“原来大家都二十啦！”</p><p>&nbsp;</p><p>最后一个声音是我自己的</p><p>好像我也快二十了</p><p>明年</p><p>小屁孩们也该抬着头看我了</p><p>&nbsp;</p><p>至此，我的生命告一段落</p><p>但，幸运的是</p><p>我还有两次重生的机会</p><p>除此之外</p><p>我，一无所有							2015-02-03</p><p>&nbsp;</p><h3><a name='header-n1197' class='md-header-anchor '></a>无题</h3><p>闭上眼</p><p>世界陷入一片黑暗</p><p>眼皮就像镜子</p><p>让我看到身后的世界</p><p>把眼球转移到身后</p><p>很大</p><p>很大</p><p>只是很黑暗</p><p>但很安全</p><p>很舒适</p><p>对，就是这样</p><p>跟着我做一遍</p><p>认真点						2015-02-08</p><p>&nbsp;</p><h3><a name='header-n1226' class='md-header-anchor '></a>墓碑为灯</h3><p>从我上高中开始</p><p>我就明白</p><p>从那以后</p><p>每顿在家吃的反都有非凡的意义</p><p>&nbsp;</p><p>从我上高中开始</p><p>我就明白</p><p>从那以后</p><p>家的感觉于我</p><p>已不再如包围我的空气那般陪伴</p><p>&nbsp;</p><p>从我上高中开始</p><p>我就明白</p><p>从那以后</p><p>家里的那两个人</p><p>衰老便可知可觉				2015-03-02</p><p>&nbsp;</p><h3><a name='header-n1261' class='md-header-anchor '></a>我明白的和我不明白的</h3><p>从昨天开始</p><p>我就明白</p><p>从那以后，每过一年</p><p>我都说又老了一岁</p><p>而不是又长大了一岁</p><p>&nbsp;</p><p>从昨天开始</p><p>我就不明白</p><p>这世界除了我</p><p>都说我长大了</p><p>可我现在每年都在说</p><p>我又长大了一岁耶</p><p>&nbsp;</p><p>从昨天开始</p><p>我就明白</p><p>从那以后</p><p>我应该可以拥有想家的感觉了</p><p>我应该可以淋雨一直走</p><p>而不用等谁来送伞了</p><p>&nbsp;</p><p>从昨天开始</p><p>我就不明白</p><p>从那以后</p><p>我还是站在那屋檐下</p><p>迟迟不知该做什么</p><p>不能潇洒地淋雨一直走</p><p>&nbsp;</p><p>从昨天开始</p><p>我就明白</p><p>家中的那两个人的</p><p>衰老应该可以变得不知不觉</p><p>&nbsp;</p><p>从昨天开始</p><p>我就不明白</p><p>半百的他们还很年轻</p><p>衰老才刚刚找上他们</p><p>&nbsp;</p><p>从昨天开始</p><p>我就明白</p><p>我应该是长大了</p><p>&nbsp;</p><p>从昨天开始</p><p>我就不明白</p><p>我怎么还没长大							2015-03-02</p><p>----------------------------------废话集完-------------------------------------------------</p><p>&nbsp;</p><h3><a name='header-n1354' class='md-header-anchor '></a>哪一个才是真正的我</h3><p>特地走向镜子</p><p>看看身后是否真的站着</p><p>另一个我</p><p>&nbsp;</p><p>可是</p><p>我并没有看见两个人</p><p>而是一个人</p><p>但那不是我</p><p>而是</p><p>另一个我</p><p>&nbsp;</p><p>跟女同学借来镜子</p><p>看看额头上是否真的</p><p>长了痘痘</p><p>&nbsp;</p><p>偶然瞥见</p><p>背后的墙很白</p><p>显然</p><p>身后并没有人</p><p>只有百墙的旁边</p><p>我额头上的痘痘</p><p>&nbsp;</p><p>呵呵，她俩真调皮</p><p>管都管不住</p><p>硬是要拉着我说</p><p>哥哥，捉迷藏</p><p>规则 是她们定的</p><p>需要两个同时找到</p><p>找到谁就得听谁的</p><p>&nbsp;</p><p>捉迷藏开始了</p><p>她俩走散了</p><p>&nbsp;</p><p>单位思考时</p><p>我找到了另一个我</p><p>她的嘴唇靠向我耳</p><p>呢喃</p><p>于是起身去寻找我</p><p>&nbsp;</p><p>当我不思考时</p><p>我遇到了我</p><p>她的嘴唇靠向我耳</p><p>咬</p><p>于是我起身去寻找另一个我</p><p>留下身后</p><p>那个叫作我的叛徒</p><p>和那一只耳朵</p><p>&nbsp;</p><p>于是我又开始思考</p><p>于是又遇见了她</p><p>揽她入怀</p><p>虽然我知道</p><p>在一起注定没结果</p><p>但当我想起耳边的那句</p><p>我喜欢和你在一起</p><p>时，我并没有放手</p><p>紧紧相拥</p><p>脑中久久回荡心中那句</p><p>我也是</p><p>我也是															2015-03-10</p><p>&nbsp;</p><h3><a name='header-n1477' class='md-header-anchor '></a>无题</h3><p>要想长智商</p><p>做数学题吧</p><p>要想长情商</p><p>读诗吧</p><p>朦胧诗太缥缈</p><p>乌青他们的</p><p>废话诗最佳										2015-02-11</p><p>&nbsp;</p><h3><a name='header-n1494' class='md-header-anchor '></a>无题</h3><p>此处窗边</p><p>不知名鸟在枝头抽噎</p><p>远处天边</p><p>塔吊在和天空缠绵</p><p>我好奇趋上前</p><p>鸟儿飞不见</p><p>不远与我诉衷情</p><p>那你又能找到谁</p><p>作为你的听众呢？								2015-03-11</p><p>&nbsp;</p><h3><a name='header-n1515' class='md-header-anchor '></a>进京赶考</h3><p>太阳从那遥远的南回归线</p><p>北上进京赶考</p><p>它准备充分</p><p>慢悠悠，轻飘飘</p><p>毫无怯意</p><p>那是因为</p><p>世界上</p><p>是京南下赶烤</p><p>他没有准备</p><p>以为是太阳</p><p>北上追随他来了								2015-03-29</p><p>&nbsp;</p><h3><a name='header-n1540' class='md-header-anchor '></a>我是一只鱼</h3><p>原来以为爱情是水</p><p>我离开了就会死</p><p>现在发现原来是面包</p><p>我不需要</p><p>但看起来还是挺好吃的样子						2015-04-20</p><p>&nbsp;</p><p>&nbsp;</p><h3><a name='header-n1555' class='md-header-anchor '></a>惜花人（其一）</h3><p>芬芳翠色斥寒风</p><p>下自成蹊悴花容</p><p>待到花枯瓣落时</p><p>落花黄发同席梦							0000-00-00</p><p>&nbsp;</p><h3><a name='header-n1566' class='md-header-anchor '></a>一些我想和蚊子妈妈说的悄悄话</h3><p>蚊子妈妈</p><p>如果你能做到洁身自好</p><p>不往垃圾堆和</p><p>那些脏的地方钻</p><p>我可以在夏天</p><p>撩开一只袖子</p><p>帮你孕育</p><p>你腹中的小生命</p><p>&nbsp;</p><p>蚊子妈妈</p><p>如果你能够教育你的女儿</p><p>也洁身自好</p><p>我可以在夏天</p><p>撩开一只袖子</p><p>给你们一生的幸福</p><p>&nbsp;</p><p>蚊子妈妈</p><p>如果你觉得我说得对</p><p>那就去做吧</p><p>这样</p><p>蚊类和人类不是可以和睦相处吗</p><p>别饿了就去找那些坏人</p><p>来找我啊</p><p>我可不会拿芭蕉扇拍你</p><p>“啪“的声音太大</p><p>会震破你脆弱的耳膜</p><p>&nbsp;</p><p>蚊子妈妈</p><p>虽然我也不知道</p><p>你们蚊类存在有什么意义</p><p>只是不断得吸血</p><p>不断得繁衍生孩子</p><p>虽然我也不知道</p><p>我们人类存在有什么意义</p><p>只是不断得吃饭</p><p>不断得繁衍生孩子</p><p>但你我都存在</p><p>我也有照顾你的能力</p><p>那我们就相亲相爱吧</p><p>反正我们都一样</p><p>同病相怜											2015-03-13</p><p>&nbsp;</p><h3><a name='header-n1651' class='md-header-anchor '></a>无题</h3><p>春天所有的绿</p><p>都恨不得上去啃一口</p><p>羡慕所有的牛</p><p>肥汁在嘴里流</p><p>青翠欲滴						2015-04-07</p><p>&nbsp;</p><h3><a name='header-n1664' class='md-header-anchor '></a>无题</h3><p>春天来了</p><p>到处都绿</p><p>地上，树上</p><p>还有我的眼睛</p><p>那绿，绿得诱人</p><p>&nbsp;</p><p>我想冲上去啃一口</p><p>我想冲上去啃一口</p><p>我想冲上去啃一口</p><p>我想冲上去啃一口</p><p>我想冲上去啃一口</p><p>&nbsp;</p><p>可那树太高</p><p>可那草太涩</p><p>可那人儿眼神太扑朔</p><p>那我，惟默、寞、没、陌</p><p>至于“莫”，我还不知道怎么做				2015-04-06</p><p>&nbsp;</p><h3><a name='header-n1701' class='md-header-anchor '></a>无题</h3><p>晨光照耀的迷雾中</p><p>只隐约见你</p><p>淡红色只勾勒出你的轮廓</p><p>我只见你的背影</p><p>嵌在一轮淡红色</p><p>&nbsp;</p><p>只我刚觉醒</p><p>揉一揉睡眼</p><p>揉不掉的是眼屎</p><p>硬生生横亘在</p><p>我的眼球和你之间</p><p>它不让我看见</p><p>你脸上优柔的曲线				2015-04-15</p><p>&nbsp;</p><h3><a name='header-n1730' class='md-header-anchor '></a>狂热的爱</h3><p>这春天美得</p><p>让我无话可说</p><p>我怕一开口</p><p>便泄露了那些</p><p>早先知春者的</p><p>秘密</p><p>所以我无话可说				2015-04-19</p><p>&nbsp;</p><h3><a name='header-n1747' class='md-header-anchor '></a>无题</h3><p>转眼已深春</p><p>一路走来</p><p>有息，无声</p><p>树长累了，停下来的呼吸声</p><p>鸟唱累了，停下来的呼吸声</p><p>人走累了，停下来的呼吸声</p><p>脚步声，不要</p><p>放屁声，不要</p><p>喇叭声，更不要							2015-04-25 </p><p>&nbsp;</p><h3><a name='header-n1768' class='md-header-anchor '></a>无题</h3><p>迎春花都谢了</p><p>可我还沉浸在春的喜悦之中</p><p>是的，春天她走了</p><p>无声无息，在迎春花小黄花瓣落下之后				2015-05-08</p><p>&nbsp;</p><h3><a name='header-n1779' class='md-header-anchor '></a>孤岛</h3><p>世上本没有孤岛</p><p>每个人都是一座孤岛</p><p>遥遥相望，一水相隔</p><p>&nbsp;</p><p>孤岛所以是孤岛</p><p>到底是地壳冷漠的拒绝</p><p>还是大陆无情的排挤</p><p>抑或是乘着流水，冲至（从自？）远方</p><p>终成孤岛</p><p>&nbsp;</p><p>孤岛</p><p>是否畏惧怒号的海浪</p><p>心灵是否被夜时的平静所侵蚀</p><p>是否渴望鲁冰孙划水而来</p><p>&nbsp;</p><p>我是一座孤岛</p><p>在无声无息中形成</p><p>然后静默成长</p><p>什么白浪滔天、风起云涌、云卷云舒</p><p>都看腻了，我要看海子</p><p>他在那边劈柴喂马</p><p>应该看得到我吧</p><p>快，快把我写进你的诗里去吧</p><p>让我挤进你的诗集里去</p><p>鲁冰逊会偶尔翻一下					2015-05-15</p><p>&nbsp;</p><h3><a name='header-n1832' class='md-header-anchor '></a>回家，遂想起</h3><p>回家，遂想起</p><p>最后一日的不辞而别</p><p>独自行走在陌生的大楼</p><p>因走错教室而尴尬脸红</p><p>&nbsp;</p><p>回家，遂想起</p><p>俞老师和蔼的面容</p><p>潘老师温暖的手掌</p><p>周老师突变的声调</p><p>&nbsp;</p><p>回家，遂想起</p><p>住校的第一晚彻夜难眠</p><p>教室里汗水的味道</p><p>夏天的校园懵懂又好闻</p><p>&nbsp;</p><p>回家，遂想起</p><p>那日窗前看雨</p><p>雨丝细如银针</p><p>刺破大地的心脏</p><p>自此，我爱上了看雨</p><p>&nbsp;</p><p>回家，遂想起</p><p>逝者如斯夫</p><p>奔流不复回								2015-05-21</p><p>&nbsp;</p><h3><a name='header-n1883' class='md-header-anchor '></a>疏亭-无题</h3><blockquote><p>一个人胡言乱语的时候</p><p>他其实需要安慰</p><p>然而没有人可以看得出来的时候</p><p>他就突然安静了，放弃了</p><p>好像这个世界都安慰不了他</p><p>只有他自己可以</p><p>静静的，不说话</p><p>凭空胡乱得想着什么</p><p>一只犀牛奔跑在星空中</p><p>后面追着一团星云</p><p>月亮圆得像一轮太阳</p><p>小鸟站在屋顶说</p><p>好漂亮的犀牛</p><p>如果你不懂一个人的孤独</p><p>你会觉得那无关紧要</p><p>你若是懂得一个人的孤独</p><p>那多半是感同身受</p><p>到头来你反而理解的是你自己</p><p>如果你看出来我一直在胡言乱语</p><p>那不代表我需要安慰</p><p>如果你相信上面那句话</p><p>那我会高兴而无助</p><p>我有一把刀经常捅进心里去</p><p>如果你以为我在开玩笑</p><p>我会苍白的微笑</p><p>如果你握住我的刀</p><p>我会觉得你多管闲事</p><p>可是那一秒，一滴眼泪落在你的手背</p><p>我的泪								0000-00-00</p></blockquote><p>&nbsp;</p><h3><a name='header-n1945' class='md-header-anchor '></a>午睡</h3><p>在这样一个五月</p><p>春夏之交的五月</p><p>在这样的一天</p><p>五月里微风习习的一天</p><p>不冷不热的风</p><p>撩扯着我的长发</p><p>衣服、腿毛和鞋带</p><p>似乎想拉着我朝午睡的反方向去</p><p>但拉不住的</p><p>是我不断下垂的眼皮</p><p>如此美景，我却无力欣赏</p><p>闭着眼躺着，想着：</p><p>操场大树偶尔被吹弯的枝丫</p><p>会倒向哪边</p><p>旁人家的鸽子</p><p>会停在哪个棵树上</p><p>一旁是覆盆子</p><p>会被谁采了去吃</p><p>那个我又会选择哪块草地</p><p>躺下，然后										2015-05-20</p><p>&nbsp;</p><h3><a name='header-n1988' class='md-header-anchor '></a>Run away</h3><p>Forest</p><p>Birds</p><p>Sounds</p><p>Fragrance									0000-00-00</p><p>&nbsp;</p><h3><a name='header-n1999' class='md-header-anchor '></a>一只廋马</h3><p>曾经的象牙塔里</p><p>我是一只带翅膀的飞马</p><p>在思维的海洋里遨游</p><p>和另一只飞马在异度空间</p><p>畅聊</p><p>&nbsp;</p><p>现在的象牙塔外</p><p>我是一只勤勤恳恳</p><p>推磨拉货的廋马</p><p>在和精明的主人同一空间里</p><p>没有话说</p><p>&nbsp;</p><p>我不是古道上</p><p>被西风吹得趔趄的廋马</p><p>而是一只被割去翅膀</p><p>被放逐的飞马</p><p>趁主人不在</p><p>蹲坐在古磨坊的角落里</p><p>回忆									2015-05-28</p><p>&nbsp;</p><h3><a name='header-n2040' class='md-header-anchor '></a>书，我想对你说</h3><p><em>注：临近毕业，送友人一本书，用语文答题纸自制封面，此诗塞于封面内</em></p><p>书，你知道吗？</p><p>Joe很喜欢你哦</p><p>也很赏识作者的诗哦</p><p>那么，书</p><p>快到Joe的手里去</p><p>那么，诗</p><p>快到Joe的心里去</p><p>Joe会替我好好爱你的呢</p><p>&nbsp;</p><p>书，你知道吗？</p><p>我们快毕业了</p><p>毕业了</p><p>毕业了</p><p>&nbsp;</p><p>书，你知道吗？</p><p>我对你有种说不出的感觉</p><p>我不知道怎么说</p><p>只是默默的不断把你买回来</p><p>直到堆满书柜</p><p>从不向人说起</p><p>每次看到你被别人买走</p><p>便心里暗暗骂道：</p><p>你爱书没我多</p><p>虽然我为你付出的只有那么一点</p><p>但我就是觉得</p><p>我爱书比别人多</p><p>&nbsp;</p><p>书，你知道吗？						2015-06-01</p><p>&nbsp;</p><h3><a name='header-n2101' class='md-header-anchor '></a>等风来-同学录填写之辞</h3><p>六月是离别的日子</p><p>&nbsp;</p><p>亲情是泡腾片</p><p>沸腾在岁月里</p><p>丰满少年的羽翼</p><p>那时</p><p>一头扎进那风中</p><p>别管离别</p><p>&nbsp;</p><p>梦想是肥皂泡</p><p>阳光斜射</p><p>内里生出彩虹</p><p>我们就等风来</p><p>等吹起梦想的风来</p><p>那时</p><p>徜徉在哪风中</p><p>别管破裂</p><p>&nbsp;</p><p>我们就等六月的风来</p><p>莫奏伤音</p><p>休说离情</p><p>有泪，风干</p><p>有笑，抚平</p><p>不急不躁</p><p>不骄不傲	</p><p>&nbsp;</p><p>我们就等风来</p><p>鼓起的那条白裙</p><p>是一朵盛大的年华 					2015-06-02</p><p>&nbsp;</p><h3><a name='header-n2162' class='md-header-anchor '></a>梦中飞翔的蛤蟆-高中毕业聚会后</h3><p>你是那只天鹅</p><p>洁白羽毛</p><p>展翅高飞</p><p>向往远方</p><p>可我不是那只癞蛤蟆</p><p>奇丑无比</p><p>低矮身段</p><p>跻身沼泽</p><p>你往天上看</p><p>我往地下钻</p><p>其实我也有一个关于飞翔的梦   						2015-06-09</p><p>&nbsp;</p><h3><a name='header-n2187' class='md-header-anchor '></a>无题</h3><p>今晚我不是诗人</p><p>我只是任性的孩子</p><p>尽管星星被乌云挡住</p><p>我还是要任性地数星星</p><p>站在门口</p><p>被大人拽着</p><p>却死死不肯走</p><p>眼角的最后一滴泪</p><p>祭奠了乌云后的星</p><p>秀说离情、莫奏伤音，该来的</p><p>得来，该走的还得走，过客匆匆流！									2015-06-18</p><p>&nbsp;</p><h3><a name='header-n2212' class='md-header-anchor '></a>无题</h3><p>听着青蛙在数星星</p><p>我也想披个绿衣</p><p>露个肚皮</p><p>趴在那儿和它一起数</p><p>一，二，三，</p><p>呱，呱，呱</p><p>我说是八千，它说是一万</p><p>不，不，不，重来</p><p>呱，呱，呱，</p><p>一，二，三</p><p>我说是一万，它说是八千  					0000-00-00</p><p>&nbsp;</p><h3><a name='header-n2237' class='md-header-anchor '></a>记一女声</h3><p>“下雨啦，收被子啦！”</p><p>一个路过男生宿舍的女生大喊道								2017-09-26</p><p>&nbsp;</p><h3><a name='header-n2244' class='md-header-anchor '></a>如果有来生</h3><p>如果有来生，愿做一只狗。一身毛发是上帝的馈赠</p><p>露宿不再是露宿，流浪不再是流浪</p><p>富贵时吃肉，贫困时吃草，不再因为自己狗的身份</p><p>而担心来自别狗的眼光。									2018-03-20</p><p>&nbsp;</p><h3><a name='header-n2255' class='md-header-anchor '></a>不得要领的生活者</h3><p>想要过好生活却总是不得要领</p><p>但因为是生活者，和</p><p>工人要接着做工</p><p>农民要接着种地</p><p>老师要接着教书</p><p>一样</p><p>生活者要继续生活</p><p>至于这其中的苦闷与烦恼</p><p>有人写成诗</p><p>有人酿成泪</p><p>没有差别</p><p>​	不都是为了把心里的苦水倒一倒，然后接着装吗？</p><p>有差别</p><p>​	写成诗的人笑酿成泪的人怎么不酿成酒，泪那么哭；</p><p>​	酿成泪的人笑写成诗的人怎么不写成歌，诗那么愁。</p><p>没有差别</p><p>​	不都是你笑笑我，我笑笑你嘛</p><p>时间就在一片笑声中悄悄溜走。</p><p>“它走了吗？”</p><p>“走了！”</p><p>“嘻嘻嘻”</p><p>“嘻嘻嘻”													2018-04-08</p></div>
+</body>
+</html>
