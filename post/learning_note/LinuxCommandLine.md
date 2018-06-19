@@ -225,50 +225,82 @@ echo $USER 显示环境变量的值
 - :buffers 查看当前正在编辑的文件列表
   - :e fileName 载入文件
 
-- :r ，read a file 将文件读入但钱光标处
+- :r ，read a file 将文件读入当前光标处
 ## 软件包管理
 
 在库里搜索包：
 Debain:
-	apt-get update
-	apt-cache search search_string
+```shell
+apt-get update
+apt-cache search search_string
+```
 Red Hat(CentOS,Fedora):	
-	yum search packageName
+```shell
+yum search packageName
+```
 安装库内的包：
 Debain:
-	[apt-get update]apt-get install packageName
+```shell
+[apt-get update]apt-get install packageName
+```
 Red Hat(CentOS,Fedora):	
-	yum install packageName
+```shell
+yum install packageName
+```
 删除软件包：
 Debain:
-	apt-get remove packageName
+```shell
+apt-get remove packageName
+```
 Red Hat(CentOS,Fedora):	
-	yum erase packageName
+```shell
+yum erase packageName
+```
 更新库中的软件包：
 Debain:
-	[apt-get update]apt-get upgrade
+```shell
+[apt-get update]apt-get upgrade
+```
 Red Hat(CentOS,Fedora):	
-	yum update
+```shell
+yum update
+```
 列出已安装的软件包列表：
 Debain:
-	dkcp --list
+```shell
+dkcp --list
+```
 Red Hat(CentOS,Fedora):	
-	rpm -qa
+```shell
+rpm -qa
+```
 判断软件包是否安装：
 Debain:
-	dpck --status packageName
+```shell
+dpck --status packageName
+```
 Red Hat(CentOS,Fedora):	
-	rpm -q packageName
+```shell
+rpm -q packageName
+```
 显示已安装软件包的相关信息：
 Debain:
-	apt-cache show packageName
+```shell
+apt-cache show packageName
+```
 Red Hat(CentOS,Fedora):	
-	yum info packageName
+```shell
+yum info packageName
+```
 查看某个文件具体由哪个软件包安装得到：
 Debain:
-	dpck --search fileName
+```shell
+dpck --search fileName
+```
 Red Hat(CentOS,Fedora):	
-	rpm -qf fileName
+```shell
+rpm -qf fileName
+```
 
 ## 存储介质：
 
