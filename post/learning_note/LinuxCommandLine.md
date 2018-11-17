@@ -356,11 +356,16 @@ rpm -qf fileName
 
 		gzip:压缩文件，默认压缩文件取代原来的文件 man gzip 
 		gunzip:解压文件
+		gzip file
+		gunzip file.gz
+		----------------------------------------------------------
+		gzip 只压缩单个文件，要压缩和归档多个文件和目录，要使用 tar 命令
 		tar:归档文件
 		tar -xf xx.tar xx 解压一般文件
 		tar -zxvf xx.tar.gz xx 解压使用gz 压缩方式压缩的文件
-		tar -cf xx xx.tar 压缩一般文件 ，c 指创建新文件夹
+		tar -cf xx xx.tar 压缩一般文件 ，c 指创建新文件
 		tar -zcvf xx xx.tar.gz 使用gz 压缩文件
+		tar -tf xx.tar.gz 不解压文件的查看归档文件的内容  
 
 ## shell 脚本编写
 
