@@ -36,6 +36,7 @@ command -options arguments
 - command --help
 
 `file`:查看文件类型，使用空格分隔多个文件
+
 {
 
 ​	$ file test.txt 
@@ -122,7 +123,7 @@ command -options arguments
 
 - `2>` ：将标准错误流重定向。2是shell在内部用文件描述符的索引，同时，0表示标准输入流、1表示标准输出流
 - `&>`:将标准输出和标准错误流同时重定向
-- `|`:管道，通过管道符，将前一个命令的标准输出链接到后一个命令的标准输入{ls -l /usr/bin | less}
+- `|`:管道，通过管道符，将前一个命令的标准输出链接到后一个命令的标准输入`{ls -l /usr/bin | less}`
 
 ## 扩展：路径名扩展
 
@@ -146,7 +147,7 @@ command -options arguments
 
 #### chown使用方法：
 
-- chown [owner|group] file ...
+- `chown [owner|group] file ...`
 - {chown bob:users file}将file文件的所有者改为用户bob，并将其所属用户组改为users
 - {chown :users}将file文件的所属用户组改为users,所有者不变
 - {chown bob}将file文件的所有者改为用户bob，所属用户组不变
