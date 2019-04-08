@@ -1,5 +1,5 @@
 # jianxin liu's blog
-#### [github home](https://github.com/jianxinliu)
+#### [github home](https://github.com/jianxinliu)、 [CSDN Blog](https://blog.csdn.net/csdn_shmily)
 ## 学习笔记
 - [learn git](post/learning_note/learn_git.md)
 - [jquery](post/learning_note/Jquery.md)
