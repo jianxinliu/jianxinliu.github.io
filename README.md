@@ -1,5 +1,13 @@
 # jianxin liu's blog
 #### [github home](https://github.com/jianxinliu)、 [CSDN Blog](https://blog.csdn.net/csdn_shmily)
+
+## CheatSheet
+
+- [Linux Commands](post/cheatsheet/linux.md)
+- [Git Commands](post/cheatsheet/git.md)
+- [SQL Statments](post/cheatsheet/sql.md)
+- [JavaScript in Common use](post/cheatsheet/js.md)
+
 ## 学习笔记
 - [learn git](post/learning_note/learn_git.md)
 - [jquery](post/learning_note/Jquery.md)
