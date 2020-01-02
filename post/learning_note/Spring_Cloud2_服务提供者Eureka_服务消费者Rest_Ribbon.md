@@ -15,11 +15,11 @@ ribbon属于后者，也叫客户端负载均衡，做一个理性的消费者�
 
 集中式LB：
 
-![集中式LB](./集中式LB.png)
+![集中式LB](../assets/集中式LB.png)
 
 进程内LB：
 
-![进程内LB](./进程内LB.png)
+![进程内LB](../assets/进程内LB.png)
 
 
 
