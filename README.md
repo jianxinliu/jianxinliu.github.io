@@ -8,6 +8,7 @@
 - [Git Commands](post/cheatsheet/git.md)
 - [SQL Statments](post/cheatsheet/sql.md)
 - [JavaScript in Common use](post/cheatsheet/js.md)
+- [IDEA 常用快捷键](post/cheatsheet/idea常用快捷键.md) post on 2020-01-02
 
 ## 学习笔记
 - [learn git](post/learning_note/learn_git.md)
@@ -16,6 +17,7 @@
 - [linux command](post/learning_note/LinuxCommandLine.md)
 - [Hibernate 关系映射辨析](post/learning_note/hibernate_mapping.md)-post on 2018-01-02
 - [数据库优化](post/learning_note/db_optimiztion.md)-post on 2018-11-10
+- [Docker初探](post/learning_note/docker.md)
 - SpringCloud 系列 post on 2020-01-02
   - [1.服务的注册与发现](post/learning_note/Spring_Cloud1_服务的注册与发现.md)
   - [2.服务提供者Eureka_服务消费者Rest_Ribbon](post/learning_note/Spring_Cloud2_服务提供者Eureka_服务消费者Rest_Ribbon.md)
