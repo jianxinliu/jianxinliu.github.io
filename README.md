@@ -17,12 +17,12 @@
 - [Hibernate 关系映射辨析](post/learning_note/hibernate_mapping.md)-post on 2018-01-02
 - [数据库优化](post/learning_note/db_optimiztion.md)-post on 2018-11-10
 - SpringCloud 系列 post on 2020-01-02
-  - [1_服务的注册与发现](post/learning_note/Spring_Cloud1_服务的注册与发现.md)
-  - [2_服务提供者Eureka_服务消费者Rest_Ribbon](post/learning_note/Spring_Cloud2_服务提供者Eureka_服务消费者Rest_Ribbon.md)
-  - [3_服务消费者Feign](post/learning_note/Spring_Cloud3_服务消费者Feign.md)
-  - [4_断路器监控Hystrix](post/learning_note/Spring_Cloud4_断路器监控Hystrix.md)
-  - [5_服务网关Zuul](post/learning_note/Spring_Cloud5_服务网关Zuul.md)
-  - [6_HA配置中心_Config](post/learning_note/Spring_Cloud6_HA配置中心_Config.md)
+  - [1.服务的注册与发现](post/learning_note/Spring_Cloud1_服务的注册与发现.md)
+  - [2.服务提供者Eureka_服务消费者Rest_Ribbon](post/learning_note/Spring_Cloud2_服务提供者Eureka_服务消费者Rest_Ribbon.md)
+  - [3.服务消费者Feign](post/learning_note/Spring_Cloud3_服务消费者Feign.md)
+  - [4.断路器监控Hystrix](post/learning_note/Spring_Cloud4_断路器监控Hystrix.md)
+  - [5.服务网关Zuul](post/learning_note/Spring_Cloud5_服务网关Zuul.md)
+  - [6.HA配置中心_Config](post/learning_note/Spring_Cloud6_HA配置中心_Config.md)
   - [RPC](post/learning_note/RPC.md)
 - 设计模式系列 post on 2020-01-02
   - [介绍](Introducting.md)
