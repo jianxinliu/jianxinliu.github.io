@@ -39,7 +39,6 @@
   - [多线程](post/learning_note/多线程.md)
   - [BIO](post/learning_note/bio.md)
   - [Semaphore_CountDownLatch_CyclicBarrier](post/learning_note/Semaphore_CountDownLatch_CyclicBarrier.md)
-  - [信号量、倒计时、循环栅栏](post/learning_note/信号量、倒计时、循环栅栏.md)
   - [线程间通信](post/learning_note/线程间通信.md)
 
 ## 纠错历程
