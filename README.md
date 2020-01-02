@@ -1,4 +1,5 @@
 # jianxin liu's blog
+此处为记录式的笔记，仅给自己参考，雁过留痕。
 #### [CSDN Blog](https://blog.csdn.net/csdn_shmily)(更新中)、[github home](https://github.com/jianxinliu)
 
 ## CheatSheet
