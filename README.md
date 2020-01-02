@@ -1,5 +1,5 @@
 # jianxin liu's blog
-#### [github home](https://github.com/jianxinliu)、 [CSDN Blog](https://blog.csdn.net/csdn_shmily)
+#### [CSDN Blog](https://blog.csdn.net/csdn_shmily)(更新中)、[github home](https://github.com/jianxinliu)
 
 ## CheatSheet
 
