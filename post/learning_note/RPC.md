@@ -30,7 +30,7 @@ RPC(Reomte Procedure Call，远程过程调用)——**分布式系统的通信�
 
 doc http://dubbo.apache.org/zh-cn/
 
-[分布式 | Dubbo 架构设计详解](https://mp.weixin.qq.com/s/q8S3Ihas0KXVMfbdNjau0w)
+[分布式-Dubbo 架构设计详解](https://mp.weixin.qq.com/s/q8S3Ihas0KXVMfbdNjau0w)
 
 [Dubbo入门---搭建一个最简单的Demo框架](https://blog.csdn.net/noaman_wgs/article/details/70214612)
 
