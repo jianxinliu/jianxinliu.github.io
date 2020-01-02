@@ -28,7 +28,7 @@
   - [6.HA配置中心_Config](post/learning_note/Spring_Cloud6_HA配置中心_Config.md)
   - [RPC](post/learning_note/RPC.md)
 - 设计模式系列 post on 2020-01-02
-  - [介绍](Introducting.md)
+  - [介绍](post/learning_note/Introducting.md)
   - [创建型设计模式](post/learning_note/创建型设计模式.md)
   - [行为型设计模式](post/learning_note/行为型设计模式.md)
   - [结构性设计模式](post/learning_note/结构性设计模式.md)
