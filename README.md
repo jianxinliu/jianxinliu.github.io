@@ -32,6 +32,15 @@
   - [创建型设计模式](post/learning_note/创建型设计模式.md)
   - [行为型设计模式](post/learning_note/行为型设计模式.md)
   - [结构性设计模式](post/learning_note/结构性设计模式.md)
+- 并发系列 post on 2020-01-02
+  - [introduction](post/learning_note/introduction.md)
+  - [并发](post/learning_note/并发.md)
+  - [Synchornized](post/learning_note/Synchornized.md)
+  - [多线程](post/learning_note/多线程.md)
+  - [BIO](post/learning_note/bio.md)
+  - [Semaphore_CountDownLatch_CyclicBarrier](post/learning_note/Semaphore_CountDownLatch_CyclicBarrier.md)
+  - [信号量、倒计时、循环栅栏](post/learning_note/信号量、倒计时、循环栅栏.md)
+  - [线程间通信](post/learning_note/线程间通信.md)
 
 ## 纠错历程
 - [oracle issue:ORA-30043](post/issue/oracle_issue_fix.md)
