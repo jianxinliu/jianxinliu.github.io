@@ -1,19 +1,52 @@
 # SQL
 
 ## DDL(Data Definition Language)
+`create`,`drop`,`alter`.
 
-CREATE
+
+|操作对象|创建|删除|修改|
+|:---:|:---:|:---:|:---:|
+|模式|create schema|drop schema|-|
+|表|create table|drop table|alter table|
+|视图|create view|drop view|-|
+|索引|create index|drop index|alter index|
+
+
+###CREATE
+
+```sql
+-- 模式定义
+create schema <schemaName> authorizzation <userName>
+-- 表定义
+create table <tableName> (<columnName> <dataType> [cloumn_level_constraint] [,<columnName> <dataType>] [,<table_level_constraint>]);
+-- 索引定义
+create [unqiue] [cluster] index <indexName> on <tableName>(<columnName> [,<rank>][,<columnName> [,<rank>]]...);
+```
+
+### DROP
+
+```sql
+-- 删除模式
+drop schema <schemaName> <casade|restrict>;
+-- 删除表
+drop table <tableName> [restrict|casade];
+-- 删除索引
+drop index <indexName>
+```
+
 ### ALTER
+
 ```sql
 -- add cloumn
-alter table table_name add column_name data_type;
-
+alter table <tableName> add <columnName> <dataType>;
 -- drop column
-alter table table_name drop column column_name;
-
+alter table <tableName> drop <columnName> <dataType>;
 -- modify column
-alter table modify column column_name datatype
+alter table modify column <columnName> <dataType>;
+-- 修改索引
+alter index <oldIndexName> rename to <newIndexName>;
 ```
+
 DROP
 TRUNCATE
 COMMENT
@@ -29,6 +62,12 @@ MERGE
 CALL
 EXPLAIN PLAN
 LOCK TABLE
+
+outer join,inner join,join
+
+### 聚合函数
+ 
+min,max,count,avg,sum
 
 ## DCL(Data Control Language)
 
