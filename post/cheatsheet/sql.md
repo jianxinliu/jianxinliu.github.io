@@ -47,20 +47,20 @@ alter table modify column <columnName> <dataType>;
 alter index <oldIndexName> rename to <newIndexName>;
 ```
 
-DROP
-TRUNCATE
-COMMENT
+DROP，
+TRUNCATE，
+COMMENT，
 RENAME
 
 ## DML(Data Manipulation Language)
 
-SELECT
-INSERT
-UPDATE
-DELETE
-MERGE
-CALL
-EXPLAIN PLAN
+SELECT，
+INSERT，
+UPDATE，
+DELETE，
+MERGE，
+CALL，
+EXPLAIN， PLAN，
 LOCK TABLE
 
 outer join,inner join,join
@@ -71,13 +71,13 @@ min,max,count,avg,sum
 
 ## DCL(Data Control Language)
 
-GRANT 授权
+GRANT 授权，
 REVOKE 取消授权
 
 ## TCL(Transaction Control Language)
 
-SAVEPOINT 设置保存点
-ROLLBACK  回滚
+SAVEPOINT 设置保存点，
+ROLLBACK  回滚，
 SET TRANSACTION
 
 # MySQL Commands
