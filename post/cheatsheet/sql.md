@@ -12,7 +12,7 @@
 |索引|create index|drop index|alter index|
 
 
-###CREATE
+### CREATE
 
 ```sql
 -- 模式定义
