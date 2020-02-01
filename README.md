@@ -12,14 +12,17 @@
 
 ## 学习笔记
 - [learn git](post/learning_note/learn_git.md)
-- [jquery](post/learning_note/Jquery.md)
-- [jquery ajax](post/learning_note/Jquery_Ajax.md)
 - [linux command](post/learning_note/LinuxCommandLine.md)
-- [Hibernate 关系映射辨析](post/learning_note/hibernate_mapping.md)-post on 2018-01-02
-- [数据库优化](post/learning_note/db_optimiztion.md)-post on 2018-11-10
-- [数据库原理](post/learning_note/DB.md) - post on 2020-01-31
 - [Docker初探](post/learning_note/docker.md) post on 2020-01-02
 - [Jenkins初探](post/learning_note/Jenkins.md) post on 2020-01-02
+- 前端系列
+  - [jquery](post/learning_note/Jquery.md)
+  - [jquery ajax](post/learning_note/Jquery_Ajax.md)
+- 数据库系列
+  - [Hibernate 关系映射辨析](post/learning_note/hibernate_mapping.md)-post on 2018-01-02
+  - [数据库优化](post/learning_note/db_optimiztion.md)-post on 2018-11-10
+  - [数据库原理](post/learning_note/DB.md) - post on 2020-01-31
+  - [MySQL](post/learning_note/mysql.md)
 - SpringCloud 系列 post on 2020-01-02
   - [1.服务的注册与发现](post/learning_note/Spring_Cloud1_服务的注册与发现.md)
   - [2.服务提供者Eureka_服务消费者Rest_Ribbon](post/learning_note/Spring_Cloud2_服务提供者Eureka_服务消费者Rest_Ribbon.md)
