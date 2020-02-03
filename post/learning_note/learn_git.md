@@ -49,7 +49,7 @@
 	stage(index) 暂存区,git add 命令就是将提交的修改放到stage，commit 命令一次性将stage中的内容提交到分支
 	master Git自动创建的分支
 	HEAD 指针，指向master
-![git 原理图](DontMove.jpg)
+![git 原理图](./assets/git_stage.jpg)
 
 ### 管理修改
 
@@ -143,7 +143,7 @@ Git鼓励大量使用分支完成任务
 
 团队合作的分支情况：
 
-![团队合作的分支情况](git_branch.png)
+![团队合作的分支情况](./assets/git_branch.png)
 
 ### Bug分支
 
