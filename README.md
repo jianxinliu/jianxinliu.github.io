@@ -1,7 +1,5 @@
 #### [CSDN Blog](https://blog.csdn.net/csdn_shmily)(更新中)、[github home](https://github.com/jianxinliu)
 
-<h1>{page.date}</h1>
-
 ## CheatSheet
 
 - [Linux Commands](post/cheatsheet/linux.md)
