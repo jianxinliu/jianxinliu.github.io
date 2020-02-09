@@ -1,3 +1,17 @@
 
 
 theme: jekyll-theme-cayman
+
+name: "jianxinliu's blog"
+
+description: "此处为记录式的笔记，仅给自己参考，雁过留痕。"
+
+footer-links: 
+    email:jianxin2016@foxmail.com
+    github:https://github.com/jianxinliu
+    
+gitalk:
+    clientID:9096e684184f3fb8f08b
+    clientSecret:ff1f7eee6a1885a35b153f42ba848eae2948198f
+    repo:https://github.com/jianxinliu/jianxinliu.github.io
+    owner:jianxinliu
