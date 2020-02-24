@@ -21,7 +21,7 @@
 - 数据库系列
   - [Hibernate 关系映射辨析](post/learning_note/db/hibernate_mapping.md) - 2018-01-02
   - [数据库优化](post/learning_note/db/db_optimiztion.md) - 2018-11-10
-  - [数据库原理](post/learning_notedb/db/DB.md) - 2020-01-31
+  - [数据库原理](post/learning_note/db/DB.md) - 2020-01-31
   - [MySQL](post/learning_note/db/mysql.md) - 2020-02-02
 - SpringCloud 系列 - 2020-01-02
   - [1.服务的注册与发现](post/learning_note/springcloud/Spring_Cloud1_服务的注册与发现.md)
