@@ -157,7 +157,7 @@ eureka.server.enable-self-preservation = false
 
  
 
- ## `@SpringBootApplication` 与 `@SpringCloudApplication`
+## `@SpringBootApplication` 与 `@SpringCloudApplication`
 
 `@SpringCloudApplication` 注解在 `@SpringBootApplication`的基础上，增加了服务发现`@EnableDiscoveryClient`和熔断器
 `@EnableCircuitBreaker`的支持。

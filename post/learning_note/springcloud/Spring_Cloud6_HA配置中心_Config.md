@@ -131,8 +131,6 @@ public class ZuulGatewayApplication {
 
 启动时是这样的：
 
-![1547457213689](C:\Users\admin\AppData\Local\Temp\1547457213689.png)
-
 >**Fetching config from server at : http://127.0.0.1:8082**
 >Located environment: name=service-zuul, profiles=[dev], label=service-zuul, version=null, state=null
 >Located property source: CompositePropertySource {name='configService', propertySources=[MapPropertySource {**name='classpath:/config/service-zuul-dev.yml'**}]}
