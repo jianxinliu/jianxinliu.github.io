@@ -63,7 +63,7 @@ while(chnl.read(buf) != -1){
 
 #### Buffer 内部状态控制
 
-Buffer 实际上就是一块内存，这块内存被 NIO Buffer 管理，并提供一系列方法用于更简单的操作这块内存，其底层数据结构是数组。初始状态，position = 0，limit = capacity = 数组容量，且三个指针具有如下关系：$position \le  limit \le capacity$
+Buffer 实际上就是一块内存，这块内存被 NIO Buffer 管理，并提供一系列方法用于更简单的操作这块内存，其底层数据结构是数组。初始状态，position = 0，limit = capacity = 数组容量，且三个指针具有如下关系：`position <= limit <= capacity​`
 
 **position:**
 
