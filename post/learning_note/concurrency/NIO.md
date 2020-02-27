@@ -2,8 +2,6 @@
 
 传统的 IO 也叫 BIO，是阻塞式的 IO，读取线程需要等待 IO 完成才返回。还有两种分别是 AIO（异步 IO ） 和 NIO（非阻塞 IO）
 
-
-
 ## NIO
 
 参考：
@@ -65,26 +63,22 @@ while(chnl.read(buf) != -1){
 
 #### Buffer 内部状态控制
 
-Buffer 实际上就是一块内存，这块内存被 NIO Buffer 管理，并提供一系列方法用于更简单的操作这块内存，其底层数据结构是数组。初始状态，position = 0，limit = capacity = 数组容量，且三个指针具有如下关系：
-
-```matlab
-position <= limit <= capacity
-```
+Buffer 实际上就是一块内存，这块内存被 NIO Buffer 管理，并提供一系列方法用于更简单的操作这块内存，其底层数据结构是数组。初始状态，position = 0，limit = capacity = 数组容量，且三个指针具有如下关系：$position \le  limit \le capacity$
 
 **position:**
 
-- 当往缓冲区写数据时，position记录写了多少数据，准确的说应该是position指向下一个写入的数据在数组中应该存放的位置
+- 当往缓冲区写数据时，position 记录写了多少数据，准确的说应该是 position 指向下一个写入的数据在数组中应该存放的位置
 
-- 在从缓冲区中读取数据时，position 指向下一个读取的数据是来自数组中的那个位置,也就是说position能够记录从已经从缓冲区中获取了多少数据。
+- 在从缓冲区中读取数据时，position 指向下一个读取的数据是来自数组中的那个位置,也就是说 position 能够记录从已经从缓冲区中获取了多少数据。
 
-    总的来说：**position的作用就是指向下一个被操作的数据的位置**。
+    总的来说：**position 的作用就是指向下一个被操作的数据的位置**。
 
 **limit:**
 
 - 在写入数据时，limit 记录还有多少空间可供写入（默认limit = capcity）
 - 在读取数据时，limit 记录有多少数据需要取出。
 
-在读取之前需要调用 `flip()` 方法z转换读写模式，源码如下：
+在读取之前需要调用 `flip()` 方法转换读写模式，源码如下：
 
 ```java
  public final Buffer flip() {
@@ -141,51 +135,51 @@ Buffer 的读写操作都会操作 position 指针。
 
 ### Channel
 
-NIO中所有的IO都是从Channel开始的
+NIO中所有的IO都是从 Channel 开始的
 
 #### Channel的种类
 
 - FileChannel：用于文件的读写
-- SocketChannel & ServerSocketChannel：前者用于TCP 数据的读写，一般是客户端实现；后者可以监听 TCP 请求，一般是服务器实现
+- SocketChannel & ServerSocketChannel：前者用于 TCP 数据的读写，一般是客户端实现；后者可以监听 TCP 请求，一般是服务器实现
 - DatagramChannel：用于 UDP 的数据读写
 - Scatter & Gather
-    - Scatter：将从一个 Channel 读取的信息分散到多个 Buffer 中去，Buffer数组，如：`ScatteringByteChannel`
+    - Scatter：将从一个 Channel 读取的信息分散到多个 Buffer 中去，Buffer 数组，如：`ScatteringByteChannel`
     - Gather：将多个 Buffer 的内容按照顺序发送到一个 Channel,如：`GatheringByteChannel`
 
 Channel 是双向的，可读也可写，可以异步读写，一般都是基于Buffer进行读写
 
 ### Selector
 
-选择器（多路复用器）。用于检查一个或多个NIO Channel（通道）的状态是否处于可读、可写。
+选择器（多路复用器）。用于检查一个或多个 NIO Channel（通道）的状态是否处于可读、可写。
 
-使用Selector的好处在于： 使用更少的线程来就可以来处理通道了， 相比使用多个线程，避免了线程上下文切换带来的开销。
+使用 Selector 的好处在于： 使用更少的线程来就可以来处理通道了， 相比使用多个线程，避免了线程上下文切换带来的开销。
 
 #### Selector的使用方法
 
-- Selector的创建
+- Selector 的创建
 
 ```
 Selector selector = Selector.open();
 ```
 
-- 注册Channel到Selector(Channel必须是非阻塞的)
+- 注册 Channel 到 Selector(Channel必须是非阻塞的)
 
 ```
 channel.configureBlocking(false);
 SelectionKey key = channel.register(selector, Selectionkey.OP_READ);
 ```
 
-- SelectionKey介绍
+- SelectionKey 介绍
 
-    一个SelectionKey键表示了一个特定的通道对象和一个特定的选择器对象之间的注册关系。
+    一个 SelectionKey 键表示了一个特定的通道对象和一个特定的选择器对象之间的注册关系。
 
-- 从Selector中选择channel(Selecting Channels via a Selector)
+- 从 Selector 中选择 channel(Selecting Channels via a Selector)
 
-    选择器维护注册过的通道的集合，并且这种注册关系都被封装在SelectionKey当中.
+    选择器维护注册过的通道的集合，并且这种注册关系都被封装在 SelectionKey 当中.
 
 - 停止选择的方法
 
-    wakeup()方法 和close()方法。
+    wakeup() 方法和 close() 方法。
 
 
 

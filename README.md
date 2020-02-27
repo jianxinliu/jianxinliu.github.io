@@ -37,7 +37,7 @@
   - [行为型设计模式](post/learning_note/designpattern/行为型设计模式.md)
   - [结构性设计模式](post/learning_note/designpattern/结构性设计模式.md)
 - 并发系列 - 2020-01-02
-  - [introduction](post/learning_note/concurrency/introduction.md)
+  - [NIO](post/learning_note/concurrency/NIO.md)
   - [并发](post/learning_note/concurrency/并发.md)
   - [Synchornized](post/learning_note/concurrency/Synchornized.md)
   - [多线程](post/learning_note/concurrency/多线程.md)
