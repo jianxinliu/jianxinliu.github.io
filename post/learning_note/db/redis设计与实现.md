@@ -107,11 +107,11 @@ OK
 - redis 不同数据库不适宜存储不同应用的数据，但可以存储不同环境的数据。如：0 号存储生产数据，1 号存储测试数据。但不适宜 0 号存储 A 应用数据，1 号存储 B 应用数据。因为 **redis 并没有在不同的数据库上进行权限控制，而是使用同一个权限**。不同应用的数据应该使用不同的 redis 实例进行存储。
 - 单体情况下才支持数据库切换，集群模式下，只有一个数据库 db0 ，故不支持切换
 
-### 数据库建空间
+### 数据库键空间
 
 redis 数据库中使用 dict 保存所有的键值对，故称这个 dictionary 为键空间。对数据库的 CRUD 和其余一些针对 redis 本身的操作实际上都是对这个字典的操作。
 
-**键空间的键就是数据库的键**，每个键都是一个字符串对象；**键空间的值就是数据库的值**，可以是字符串对象、列表对象、哈希表对象、集合对象和有序集合对象中的任意一种Redis对象。
+**键空间的键就是数据库的键**，每个键都是一个字符串对象；**键空间的值就是数据库的值**，可以是字符串对象、列表对象、哈希表对象、集合对象和有序集合对象中的任意一种 Redis 对象。
 
 ### 键过期及删除策略
 
@@ -160,27 +160,31 @@ RDB 文件的读入是在 redis 服务器启动时，检测到 RDB 文件的存�
 
 Append Only File 方式，通过保存 redis 服务器执行的命令来记录数据库的状态。AOF 持久化的效率和安全性解释：
 
-> \# The fsync() call tells the Operating System to actually write data on disk
-> \# instead of waiting for more data in the output buffer. Some OS will really flush
-> \# data on disk, some other OS will just try to do it ASAP.
->
-> \# Redis supports three different modes:
->
-> \# no: don't fsync, just let the OS flush the data when it wants. Faster.
-> \# always: fsync after every write to the append only log. Slow, Safest.
-> \# everysec: fsync only one time every second. Compromise.
->
-> \# The default is "everysec", as that's usually the right compromise between
-> \# speed and data safety. It's up to you to understand if you can relax this to
-> \# "no" that will let the operating system flush the output buffer when
-> \# it wants, for better performances (but if you can live with the idea of
-> \# some data loss consider the default persistence mode that's snapshotting),
-> \# or on the contrary, use "always" that's very slow but a bit safer than
-> \# everysec.
->
-> appendfsync everysec
->
-> ——来自 redis.conf
+```
+# The fsync() call tells the Operating System to actually write data on disk
+# instead of waiting for more data in the output buffer. Some OS will really flush
+# data on disk, some other OS will just try to do it ASAP.
+
+# Redis supports three different modes:
+
+# no: don't fsync, just let the OS flush the data when it wants. Faster.
+# always: fsync after every write to the append only log. Slow, Safest.
+# everysec: fsync only one time every second. Compromise.
+
+# The default is "everysec", as that's usually the right compromise between
+# speed and data safety. It's up to you to understand if you can relax this to
+# "no" that will let the operating system flush the output buffer when
+# it wants, for better performances (but if you can live with the idea of
+# some data loss consider the default persistence mode that's snapshotting),
+# or on the contrary, use "always" that's very slow but a bit safer than
+# everysec.
+
+appendfsync everysec
+
+——来自 redis.conf
+```
+
+
 
 ### RDB 和 AOF 效率与安全性辩证
 
@@ -213,6 +217,16 @@ Redis 服务器是一个事件驱动程序，服务器需要处理以下两类�
 ## 服务器
 
 [Redis 单线程]( https://zhuanlan.zhihu.com/p/34438275 )
+
+Redis 为什么这么快：
+
+1. 完全基于内存。
+2. 采用单线程，避免了不必要的上下文切换，也不用考虑锁的问题，及其加锁放锁死锁产生的问题。
+3. 多路 I/O  复用模型，非阻塞 IO。
+
+**多路 I/O 复用模型**：多路指的是多个网络连接，复用指的是复用同一个线程。
+
+**单线程**：指的是**在处理网络请求时只有一个线程**。
 
 ……
 
@@ -302,18 +316,20 @@ keys *
 
 即为关键的是复制积压缓冲区的大小设置，太小则不能发挥出部分重同步的作用。配置说明(redis.conf)：
 
-> \# Set the replication backlog size. The backlog is a buffer that accumulates
-> \# slave data when slaves are disconnected for some time, so that when a slave
-> \# wants to reconnect again, often a full resync is not needed, but a partial
-> \# resync is enough, just passing the portion of data the slave missed while
-> \# disconnected.
->
-> \# The bigger the replication backlog, the longer the time the slave can be
-> \# disconnected and later be able to perform a partial resynchronization.
->
-> \# The backlog is only allocated once there is at least a slave connected.
->
-> \# repl-backlog-size 1mb
+```
+# Set the replication backlog size. The backlog is a buffer that accumulates
+# slave data when slaves are disconnected for some time, so that when a slave
+# wants to reconnect again, often a full resync is not needed, but a partial
+# resync is enough, just passing the portion of data the slave missed while
+# disconnected.
+
+# The bigger the replication backlog, the longer the time the slave can be
+# disconnected and later be able to perform a partial resynchronization.
+
+# The backlog is only allocated once there is at least a slave connected.
+
+# repl-backlog-size 1mb
+```
 
 除了 offset 和 repl-backlog 之外，实现部分重同步还需要**服务器 ID（run ID）**。是用来在同步时判别 slave 是第一次连上这个 master ，还是断线重连，**如果是第一次连，那直接执行完整重同步，若是断线重连，则可以尝试部分重同步**。**实现原理**是：master 会在 slave 第一次复制时发送自己的 run ID 给 slave 保存，当 slave 断线重连某一个 master 时会带上 run ID，master 进行检查，若和自己相同，则说明该 slave 是断线重连，若不相同，则说明该 slave 是第一次连。
 
@@ -337,22 +353,24 @@ master 会记录 slave 上次发送 `replconf ack` 到当前的时间，用 `lag
 
 #### 2. 辅助实现 min-slaves 选项。
 
-> \# It is possible for a master to stop accepting writes if there are less than
-> \# N slaves connected, having a lag less or equal than M seconds.
->
-> \# The N slaves need to be in "online" state.
->
-> \# The **lag** in seconds, that must be <= the specified value, is calculated from
-> \# the last ping received from the slave, that is usually sent every second.
->
-> \# This option does not GUARANTEE that N replicas will accept the write, but
-> \# will limit the window of exposure for lost writes in case not enough slaves
-> \# are available, to the specified number of seconds.
->
-> \# For example to require at least 3 slaves with a lag <= 10 seconds use:
->
-> min-slaves-to-write 3
-> min-slaves-max-lag 10
+```
+# It is possible for a master to stop accepting writes if there are less than
+# N slaves connected, having a lag less or equal than M seconds.
+
+# The N slaves need to be in "online" state.
+
+# The lag in seconds, that must be <= the specified value, is calculated from
+# the last ping received from the slave, that is usually sent every second.
+
+# This option does not GUARANTEE that N replicas will accept the write, but
+# will limit the window of exposure for lost writes in case not enough slaves
+# are available, to the specified number of seconds.
+
+# For example to require at least 3 slaves with a lag <= 10 seconds use:
+
+min-slaves-to-write 3
+min-slaves-max-lag 10
+```
 
 #### 3. 检测命令丢失。
 
