@@ -7,6 +7,7 @@
 - [SQL Statments](post/cheatsheet/sql.md)
 - [JavaScript in Common use](post/cheatsheet/js.md)
 - [IDEA 常用快捷键](post/cheatsheet/idea常用快捷键.md) - 2020-01-02
+- [正则表达式](post/cheatsheet/正则表达式笔记.md) - 2020-03-06
 
 ## 学习笔记
 - [learn git](post/learning_note/learn_git.md)
@@ -18,11 +19,12 @@
   - [jquery](post/learning_note/f2e/Jquery.md)
   - [jquery ajax](post/learning_note/f2e/Jquery_Ajax.md)
   - [ES6 Promise](post/learning_note/f2e/ES6_Promise.md)
-- 数据库系列
+- 存储
   - [Hibernate 关系映射辨析](post/learning_note/db/hibernate_mapping.md) - 2018-01-02
   - [数据库优化](post/learning_note/db/db_optimiztion.md) - 2018-11-10
   - [数据库原理](post/learning_note/db/DB.md) - 2020-01-31
   - [MySQL](post/learning_note/db/mysql.md) - 2020-02-02
+  - [Redis 设计与实现](post/learning_note/db/redis设计与实现.md) - 2020-03-06
 - SpringCloud 系列 - 2020-01-02
   - [1.服务的注册与发现](post/learning_note/springcloud/Spring_Cloud1_服务的注册与发现.md)
   - [2.服务提供者Eureka_服务消费者Rest_Ribbon](post/learning_note/springcloud/Spring_Cloud2_服务提供者Eureka_服务消费者Rest_Ribbon.md)
@@ -44,6 +46,8 @@
   - [BIO](post/learning_note/concurrency/bio.md)
   - [Semaphore_CountDownLatch_CyclicBarrier](post/learning_note/concurrency/Semaphore_CountDownLatch_CyclicBarrier.md)
   - [线程间通信](post/learning_note/concurrency/线程间通信.md)
+- CS Core 
+    - [计算机网络](post/learning_note/cs/计算机网络.md) - 2020-03-06
 
 ## 纠错历程
 
