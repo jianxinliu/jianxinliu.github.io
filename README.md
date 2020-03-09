@@ -8,6 +8,7 @@
 - [JavaScript in Common use](post/cheatsheet/js.md)
 - [IDEA 常用快捷键](post/cheatsheet/idea常用快捷键.md) - 2020-01-02
 - [正则表达式](post/cheatsheet/正则表达式笔记.md) - 2020-03-06
+- [Latex](post/cheatsheet/latex.md) - 2020-03-09
 
 ## 学习笔记
 - [learn git](post/learning_note/learn_git.md)
