@@ -14,7 +14,7 @@ log: ![](http://latex.codecogs.com/gif.latex?log_{22}) `log_{22}`
 
 省略号：![](http://latex.codecogs.com/gif.latex?1+2+3+\cdots +n) `1+2+3+ \cdots +n`
 
-省略号下标: ![](http://latex.codecogs.com/gif.latex?a_i\_n) `a_i\ldots_n`
+省略号下标: ![](http://latex.codecogs.com/gif.latex?a_i\dots _n) `a_i\ldots _n`
 
 求和：![](http://latex.codecogs.com/gif.latex?\sum_{n=0}^{100}a_n)  `\sum_{n=0}^{100}a_n`
 
@@ -30,13 +30,13 @@ log: ![](http://latex.codecogs.com/gif.latex?log_{22}) `log_{22}`
 
 向量：![](http://latex.codecogs.com/gif.latex?\vec{a})  `\vec{a}`,![](http://latex.codecogs.com/gif.latex?\overrightarrow{b}) `\overrightarrow{b}`
 
-不等号：![](http://latex.codecogs.com/gif.latex?\gt,\ge,\lt,\le,\neq) `\gt , \ge , \lt , \le , \ne(\neq)`
+不等号：![](http://latex.codecogs.com/gif.latex?>,\ge,<,\le,\neq) `\gt or > , \ge , \lt or < , \le , \ne(\neq)`
 
 集合：![](http://latex.codecogs.com/gif.latex?\subset) `\subset`，![](http://latex.codecogs.com/gif.latex?\supset) `\supset`
 
 四则运算：![](http://latex.codecogs.com/gif.latex?a\times b\div c+d-e) `a \times b \div c + d - e`,![](http://latex.codecogs.com/gif.latex?a\pm b)  `a \pm b`, ![](http://latex.codecogs.com/gif.latex?a\mp b) `a \mp b`
 
- 绝对值：![](http://latex.codecogs.com/gif.latex?a\times\left|b-c\right|) `a \times \left | b - c \right |`；或 ![](http://latex.codecogs.com/gif.latex?|b-c|) `|b-c|`或  ![](http://latex.codecogs.com/gif.latex?\vert) `\vert`
+绝对值：![](http://latex.codecogs.com/gif.latex?a\times\left|b-c\right|) `a \times \left | b - c \right |`；或 ![](http://latex.codecogs.com/gif.latex?|b-c|) `|b-c|`或  ![](http://latex.codecogs.com/gif.latex?\vert) `\vert`
 
 均值：![](http://latex.codecogs.com/gif.latex?\bar{a}) `\bar{a}`
 
