@@ -36,7 +36,7 @@ log: ![](http://latex.codecogs.com/gif.latex?log_{22}) `log_{22}`
 
 四则运算：![](http://latex.codecogs.com/gif.latex?a\times b\div c+d-e) `a \times b \div c + d - e`,![](http://latex.codecogs.com/gif.latex?a\pm b)  `a \pm b`, ![](http://latex.codecogs.com/gif.latex?a\mp b) `a \mp b`
 
-绝对值：![](http://latex.codecogs.com/gif.latex?a\times\left|b-c\right|) `a \times \left | b - c \right |`；或 ![](http://latex.codecogs.com/gif.latex?|b-c|) `|b-c|`或  ![](http://latex.codecogs.com/gif.latex?\vert) `\vert`
+绝对值：  ![](http://latex.codecogs.com/gif.latex?\vert) `\vert`
 
 均值：![](http://latex.codecogs.com/gif.latex?\bar{a}) `\bar{a}`
 
