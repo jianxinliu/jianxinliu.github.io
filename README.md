@@ -48,7 +48,10 @@
   - [Semaphore_CountDownLatch_CyclicBarrier](post/learning_note/concurrency/Semaphore_CountDownLatch_CyclicBarrier.md)
   - [线程间通信](post/learning_note/concurrency/线程间通信.md)
 - CS Core 
-    - [计算机网络](post/learning_note/cs/计算机网络.md) - 2020-03-06
+  - [计算机网络](post/learning_note/cs/计算机网络.md) - 2020-03-06
+- 语言
+  - [go](post/learning_note/lang/go.md) - 2020-03-15
+  - [go pkg](post/learning_note/lang/gopkg.md) - 2020-03-15
 
 ## 纠错历程
 
