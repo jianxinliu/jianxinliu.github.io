@@ -50,8 +50,8 @@
 - CS Core 
   - [计算机网络](post/learning_note/cs/计算机网络.md) - 2020-03-06
 - 语言
-  - [go](post/learning_note/lang/go.md) - 2020-03-15
-  - [go pkg](post/learning_note/lang/gopkg.md) - 2020-03-15
+  - [go](post/learning_note/lang/go/go.md) - 2020-03-15
+  - [go pkg](post/learning_note/lang/go/gopkg.md) - 2020-03-15
 
 ## 纠错历程
 
