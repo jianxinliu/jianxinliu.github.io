@@ -16,10 +16,10 @@
 - [Docker初探](post/learning_note/docker.md) - 2020-01-02
 - [Jenkins初探](post/learning_note/Jenkins.md) - 2020-01-02
 - [java static](post/learning_note/Java_static.md)
-- 前端系列
-  - [jquery](post/learning_note/f2e/Jquery.md)
-  - [jquery ajax](post/learning_note/f2e/Jquery_Ajax.md)
-  - [ES6 Promise](post/learning_note/f2e/ES6_Promise.md)
+- CS Core 
+  - [计算机网络](post/learning_note/cs/计算机网络.md) - 2020-03-06
+  - [操作系统](post/learning_note/cs/操作系统.md) （TODO）
+  - [数据结构与算法](post/learning_note/cs/数据结构与算法.md) （TODO）
 - 存储
   - [Hibernate 关系映射辨析](post/learning_note/db/hibernate_mapping.md) - 2018-01-02
   - [数据库优化](post/learning_note/db/db_optimiztion.md) - 2018-11-10
@@ -47,11 +47,13 @@
   - [BIO](post/learning_note/concurrency/bio.md)
   - [Semaphore_CountDownLatch_CyclicBarrier](post/learning_note/concurrency/Semaphore_CountDownLatch_CyclicBarrier.md)
   - [线程间通信](post/learning_note/concurrency/线程间通信.md)
-- CS Core 
-  - [计算机网络](post/learning_note/cs/计算机网络.md) - 2020-03-06
 - 语言
   - [go](post/learning_note/lang/go/go.md) - 2020-03-15
   - [go pkg](post/learning_note/lang/go/gopkg.md) - 2020-03-15
+- 前端系列
+  - [jquery](post/learning_note/f2e/Jquery.md)
+  - [jquery ajax](post/learning_note/f2e/Jquery_Ajax.md)
+  - [ES6 Promise](post/learning_note/f2e/ES6_Promise.md)
 
 ## 纠错历程
 
@@ -63,4 +65,3 @@
 - [oracle之数据库一致性读原理](http://www.cnblogs.com/Ronger/archive/2012/05/09/2492160.html)
 - [learning SQL](post/learning_note/learn_sql.md)/2018-01-02
 - [Lock、ReentrantLock、ReentrantReadWriteLock原理及应用深入解析](https://blog.csdn.net/u011479540/article/details/52013187)
-  
