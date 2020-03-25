@@ -1,8 +1,12 @@
 #/bin/sh
-echo 'add changes'
+echo '1. add all changes'
 git add .
-echo 'commit and add comments'
-git commit -m 'post blog and update README.md(commit by script)'
-echo 'push to master'
+
+echo '2. commit and add comments'
+read -p 'enter commit message(no -):'
+git commit -m "$REPLY"
+
+echo '3. push to master'
 git push origin master
-echo 'Done'
+
+echo '4. Done'
