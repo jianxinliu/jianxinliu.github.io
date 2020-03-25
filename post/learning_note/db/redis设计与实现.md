@@ -411,9 +411,92 @@ PUBLISH __sentinel__:hello "<s_ip>,<s_port>,<s_runid>,<s_epoch>,<m_name>,<m_ip>,
 
 该命令向服务器的`__sentinel__:hello` 频道发送一条消息。其中 s 开头的是 sentinel 自身的信息，m 开头的是 master 的信息。若 sentinel 正在监视的是 slave ，则 m 开头的信息是指 slave 正在复制的 master 的信息。
 
+### 接收来自主从服务器的频道信息
+
+当 Sentinal 与主从服务器建立订阅连接后，Sentinel 会通过订阅连接，向服务器发送
+
+```shell
+SUBSCRIBE __sentinel__:hello
+```
+
+即订阅 `__sentinal__:hello` 这个频道，订阅关系会一直持续到与服务器断开连接为止。
+
+#### 多个 Sentinel
+
+若多个 sentinel 监视同一个服务器时，其中任何一个 sentinel 向服务器的 `__sential:hello__` 频道发送一条信息，所有订阅了该频道的 sentinel 都会收到这条信息（包括发送信息的 sentinel 自己，但自己会通过对比 sentinel 运行 ID 来对比是否是自己，若是则丢弃）。
+
+**监视同一个服务器的多个 Sentinel 之间会通过发送和分析频道信息来自动感知其他 sentinel 的存在**，所以可以创建命令连接，组成 sentinel 网络。
+
+### 检测主观下线状态
+
+检测对象包括 master、slave和其他 sentinel。主观下线是指被检测对象的主动下线。标志是被检测对象在 `down-after-milliseconds` 时间内，持续向 sentinel 返回无效回复，则 sentinel 认为该实例进入主观下线状态。用户设置的 `down-after-milliseconds` 的值，不仅会被 sentinel 用来判断 master 的主观下线状态，而且也会用来判断 master 下属的 slave 和监视 master 的所有 sentinel 的主观下线状态。
+
+默认情况下，sentinel 会以每秒一次的频率向所有与它创建了命令连接的实例（即被观测对象）发送 PING 命令，根据实例返回的 回复判断实例是否在线。
+
+1. 有效回复：`+PONG`,`-LOADING`,`-MASTERDOWN`
+2. 无效回复：除**有效回复之外的回复**或在**指定时间内没有回复**。
+
+### 检测客观下线状态
+
+若主服务器客观下线，则 sentinel 可以将其进行故障移除，但是过程是民主的。
+
+因为不同的 sentinel 可能载入不同的配置（如：`down-after-milliseconds` 投票下线 master 的 sentinel 数量……），所以决定下线 master 的操作需要根据多个 sentinel 的意见来决定。
+
+当一个 sentinel 检测到 master 主观下线之后，会判断其是否真的下线了，通过向同样监视该 master 的其他 sentinel 发送：
+
+```shell
+SENTINEL is-master-down-by-addr <ip> <port> <current_epoch> <runid>
+```
+
+进行询问，当从其他 sentinel **接收到足量的已下线判断**后，才会对 master 进行故障转移操作。
+
+### 选举领头 sentinel
+
+当一个 master 被判断为客观下线之后，监视该 master 的各个 sentinel 会进行商议，选举出一个领头 sentinel ，对下线 master 进行故障转移操作。（Sentinel 系统选举领头 Sentinel 的方法是对 Raft 算法的领头选举方法的实现。）
+
+选举领头 sentinel 的规则和方法：
+
+1. 所有的 sentinel 都有被选为领头的资格。
+2. 每次选举之后，不论是否成功，所有 sentinel 的配置纪元（configuration epoch）都会自增一次。
+3. 在一个配置纪元内，所有 sentinel 都有一次将某个 sentinel设置为局部领头的机会，并且局部领头一旦设置，在该纪元内则不能再更改。
+4. 每个发现 master 进入客观下线的 sentinel 都会要求其他 sentinel 将自己设置为局部领头。
+5. 当一个 sentinelA 向其他 sentinel 发送 `sentinel is-master-down-by-addr` ，其中的 runid 参数是自己的 runid 时，则表示 sentinelA 要求其他 sentinel 将自己设置为局部领头。
+6. 先到先得原则。最先向选民 sentinel 发送设置要求（拉票）的 sentinel 将成为该选民 sentinel 的**意向局部领头**（投票），后来的其他 sentinel 的设置要求都会被拒绝。
+7. 局部领头当选的要求是有半数以上的选票。
+8. 每个配置纪元只会产生一个局部领头。
+9. 若在给定的时限内没有一个 sentinel 当选，则会在一定时间内再次进行选举，直到选出为止。
+
+### 故障转移
+
+该操作包含三个动作：
+
+1. 在已下线  master 的所有 salve 中选择一个作为新的 master
+2. 让其他 salve 改为复制新的 master 
+3. 将已下线的 master 作为新的 master 的 salve，当旧的 master再次上线时，它将作为新 master 的 salve。
+
+#### 选新的 master 
+
+选新的 master 的标准是该 salve **状态良好、数据完整**。然后向其发送 `salveof no one` ，将其转换为 master。
+
+**挑选规则：**
+
+1. 去除已经下线或断线的 slave，保证剩余 salve 都是正常在线的
+2. 去除最近五秒都没有回复领头 sentinel 的 `INFO` 命令的 salve，保证剩余 salve 都是最近成功通信过的
+3. 去除所有与已下线 master 断开连接超过一定时间（`down-after-milliseconds * 10`）的 salve，保证剩下的 salve 保存的数据都是比较新的。
+
+**选取方法**：之后，领头 sentinel 根据 slave 的优先级进行排序，选取优先级最高者。若有多个优先级同的 salve，按照其复制偏移量进行排序，选取复制偏移量最大的 salve ，以保证其数据是最新的。若复制偏移量仍然相同，则根据其 ID 进行排序，选取 ID 最小的 salve（**此时选谁都一样了**）。
+
+#### 修改 salve 的复制目标
+
+新的 master 选举出来之后，就需要让其余 salve 都改为复制新的 master，这一步通过向其发送 `SLAVEOF` 命令完成。
+
+#### 将旧 master 变为新 master 的 salve
+
+此时的 `SLAVEOF` 命令会等旧 master 上线时再发送。
+
 ## 集群
 
-
+Redis 集群是 Redis 提供的分布式数据库方案，集群通过分片（sharding）来进行数据共享，并提供复制和故障转移功能。本节将对集群的节点、槽指派、命令执行、重新分片、转向、故障转移、消息等各个方面进行介绍。
 
 # 四、独立功能的实现
 

@@ -1,18 +1,40 @@
 # Go pkg
 
-## default
+## builtin
 
 默认导入的包，包含原生类型、数据结构、内建函数。
 
-- close 用于channel 通讯。使用它来关闭 channel
-- delete 用于在 map 中删除实例。
-- len 和 cap 可用于不同的类型， len 用于返回字符串、slice 和数组的长度.
-- new 用于各种类型的内存分配。
-- make 用于内建类型（map、slice 和channel）的内存分配。
-- copy 用于复制 slice
-- append 用于追加 slice。
-- panic 和recover 用于异常处理机制
-- print 和 println 是底层打印函数，可以在不引入 fmt 包的情况下使用。
+- `func close(c chan<- Type)` 用于关闭 channel， 该 channel 必须为双向的或只发送的。 应当只由发送者执行，而不应由接收者执行 
+
+- `func delete(m map[Type]Type1, key Type)` 用于在 map 中删除实例。
+
+- `func len(v Type) int`用于返回 v 的长度。取决于不同的类型：
+
+    - 数组：v 中元素的数量。
+    - 数组指针：*v 中元素的数量（即使 v 为 nil）。
+    - 切片或映射：v 中元素的数量；若 v 为 nil，len(v) 即为零。
+    - 字符串：v 中字节的数量。
+    - 信道：信道缓存中队列（未读取）元素的数量；若 v 为 nil，len(v) 即为零。
+
+- `func cap(v Type) int` 返回 v 的容量。取决于不同的类型：
+
+    - 数组：v 中元素的数量（与 len(v) 相同）。
+    - 数组指针：*v 中元素的数量（与 len(v) 相同）。
+    - slice：在重新切片时，切片能够达到的最大长度；若 v 为 nil，len(v) 即为零。
+    - channel：按照元素的单元，相应信道缓存的容量；若 v 为 nil，len(v) 即为零。
+
+- `func new(Type) *Type` 用于各种类型的内存分配。
+
+- `func make(Type, size IntegerType) Type` 用于内建类型（map、slice 和channel）的内存分配。
+
+- `func copy(dst, src []Type) int` 用于复制 slice
+
+- `func append(slice []Type, elems ...Type) []Type` 用于追加 slice。
+
+- panic 和 recover 用于异常处理机制
+
+- print 和 println 是底层打印函数，可以在不引入 fmt 包的情况下使用， is useful for bootstrapping and debugging 。但并不保证会一直存在于 go 语言中。
+
 - complex、real 和 imag 全部用于处理复数
 
 ## bufio
@@ -126,9 +148,23 @@ type ReadWriter struct {
 
 ## bytes
 
+和 `strings` 包类似，用于协助处理 byte 切片。
 
+ http://docscn.studygolang.com/pkg/bytes/ 
 
 ## container
+
+提供三种容器的实现：堆，双向链表和循环链表。
+
+### heap
+
+为实现了 heap 接口的类型提供操作，默认是一个小顶堆。堆可以用于实现优先级队列（不过要逆转排序）。
+
+### list
+
+实现了一个双向链表。
+
+### ring
 
 
 
