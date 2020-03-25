@@ -56,6 +56,7 @@
 - [IDEA 常用快捷键](post/cheatsheet/idea常用快捷键.md) - 2020-01-02
 - [正则表达式](post/cheatsheet/正则表达式笔记.md) - 2020-03-06
 - [Latex](post/cheatsheet/latex.md) - 2020-03-09
+- [emoji](post/cheatsheet/emoji.md) - 2020-03-25
 
 ## 纠错历程
 
