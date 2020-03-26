@@ -496,33 +496,96 @@ SENTINEL is-master-down-by-addr <ip> <port> <current_epoch> <runid>
 
 ## 集群
 
-Redis 集群是 Redis 提供的分布式数据库方案，集群通过分片（sharding）来进行数据共享，并提供复制和故障转移功能。本节将对集群的节点、槽指派、命令执行、重新分片、转向、故障转移、消息等各个方面进行介绍。
+Redis 集群是 Redis 提供的分布式数据库方案，**集群通过分片（sharding）来进行数据共享**，并提供复制和故障转移功能。
+
+### 节点
+
+刚开始时，每个节点相互独立，都属于只包含自己的集群中，要组建可用的集群，需要将各节点连接起来。
+
+```shell
+# 连接节点
+cluster meet <ip> <port>
+# 列出集群中的节点。最开始时，只会列出自己
+cluster nodes
+```
+
+启用集群，需要开启节点的集群模式。在配置文件中设置 `cluster-enabled yes` 的节点才能作为集群节点。在本机启用集群时，要注意多个节点的端口等差异化的数据、文件需要不同。
+
+### 槽指派
+
+集群通过分片方式保存数据库，将数据库分为 16384 (2^14) 个槽（slot），每个键都属于这其中的一个，被集群中的多个节点分别处理。一个节点可处理 [0,16384] 个槽，**若所有槽都有节点在处理，则集群处于上线状态；相反，若有任何一个槽没有得到处理，则集群处于下线状态。**所以，就算使用 `cluster meet` 构建好集群，集群依然处于下线状态。需要进行**槽指派**，使所有槽都有节点处理。通过 `cluster addsolts <slot> [...slots]` 可以为节点指派一个或多个槽。
+
+[为什么是 16384 个槽? Redis 作者的回答]( https://github.com/antirez/redis/issues/2576 )
+
+### 在集群中执行命令
+
+因为多个节点分管不同的槽，当命令落到其他节点的槽上时，当前节点不会执行命令，而是会通过返回 `MOVED` 命令重定向到指定节点进行执行。重定向的过程在集群模式下会自动进行。另外，通过 `cluster keyslot "<key>"` 可以查看键所属的槽。
+
+### 重新分片
+
+重新分片可以**将已经指派给某节点的任意数量的槽改派给其他节点**，并且槽所属的键值对也会被迁移到新节点。
+
+重新分片过程，集群不需要下线。
+
+重新分片操作使用 redis-trib 完成。
+
+### ASK 错误
+
+这个错误是指，**在重新分片的过程中，属于一个槽的一部分键值对在旧节点，另一部分在新节点**，当客户端请求执行与键有关的命令时，若对应键存在当前节点，则直接执行；若**不存在，则返回 ASK 错误**，指引客户端到正在导入槽的目标节点。
+
+### 复制与故障转移
+
+集群的故障转移和 sentinel 机制类似。区别在于，sentinel 是内部选举，选民和候选都是 sentinel，选出新的 sentinel 执行故障转移操作；cluster 是外部选举，候选是下线节点 master 的 slaves ，而选民则是cluster 中的其他节点，选出新的 master 继续服务。
+
+```shell
+# 向一个节点发送命令,可以让接收命令的节点成为 node_id 所指定节点的 slave，并开始对 master 进行复制
+cluster replicate <node_id>
+```
+
+#### 故障检测
+
+集群中的节点会定期的向集群中的其他节点发送消息，以确认对方是否在线，若在规定时间内对方没有回复，则主观的认为对方下线，也称为疑似下线（probable fail）。同样的，若超过半数以上的主节点认为某个主节点疑似下线，则该主节点被标记为下线，将该主节点标记为下线的节点会发送广播，收到广播的节点会立刻将该节点也标记为下线。
+
+#### 故障转移
+
+上文提及过，集群的故障转移和 sentinel 机制类似，也是主从结构中的 master 下线，则选出一个 slave 充当新的 master 继续服务。大致流程为：
+
+1. 复制下线主节点的所有从节点里面，会有一个从节点被选中。
+2. 被选中的从节点会执行`SLAVEOF no one`命令，成为新的主节点。
+3. 新的主节点会撤销所有对已下线主节点的槽指派，并将这些槽全部指派给自己。
+4. 新的主节点向集群广播一条 PONG 消息，这条 PONG 消息可以让集群中的其他节点立即知道这个节点已经由从节点变成了主节点，并且这个主节点已经接管了原本由已下线节点负责处理的槽。
+5. 新的主节点开始接收和自己负责处理的槽有关的命令请求，故障转移完成。
 
 # 四、独立功能的实现
 
 ## 发布与订阅
 
-
+发布订阅模式的实现参看 [pm-mq]( https://github.com/jianxinliu/pm/tree/master/src/main/java/com/minister/pm/mq)
 
 ## 事务
 
+Redis 通过``MULTI`、`EXEC`、`WATCH`等命令来实现事务（transaction）功能。事务提供了一种将**多个命令请求打包**（命令入队），然后**一次性、按顺序地执行多个命令**的机制，并且在事务执行期间，服务器不会中断事务而改去执行其他客户端的命令请求，它会将事务中的所有命令都执行完毕，然后才去处理其他客户端的命令请求（**因为 redis 是单线程的，以此来保证事务的隔离性**）。
 
+同时，通过 `watch` 命令实现乐观锁，监听键的修改，若键被修改，则拒绝执行事务，以此保证原子性。
+
+redis 的事务同样具有 ACID 特性。但 redis 事务不支持回滚。
+
+> - Redis commands can fail only if called with a wrong syntax (and the problem is not detectable during the command queueing), or against keys holding the wrong data type: this means that in practical terms a failing command is the result of a programming errors, and a kind of error that is very likely to be detected during development, and not in production.
+>
+> - Redis is internally simplified and faster because it does not need the ability to roll back.
+>
+>     ​																																											 https://redis.io/topics/transactions 
 
 ## Lua脚本
 
 
 
-## 排序
-
-
-
-## 二进制位数组
-
-
-
 ## 慢查询日志
 
+执行时间超过 `slowlog-log-slower-than` 设定的值的命令会被记录到慢查询日志中，慢查询日志需要是一个可指定长度（`slowlog-max-len`）的队列，若队满，最先入队的日志会被新入队的日志挤出。
 
+`slowlog get` 获取日志，`slowlog len` 查询日志数量，`slowlog reset` 清楚日志。
 
 ## 监视器
 
+客户端执行 `monitor` 命令可将自身变为监视器，实时接收并打印出服务器当前处理的命令请求的相关信息。
