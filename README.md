@@ -57,6 +57,7 @@
 - [正则表达式](post/cheatsheet/正则表达式笔记.md) - 2020-03-06
 - [Latex](post/cheatsheet/latex.md) - 2020-03-09
 - [emoji](post/cheatsheet/emoji.md) - 2020-03-25
+- [环境配置](post/cheatsheet/环境配置.md) - 2020-03-27
 
 ## 纠错历程
 
