@@ -13,8 +13,6 @@
 - 可扩展
 - 可堆叠
 
-
-
 ## 镜像和容器（Images and Containers）
 
 **镜像**：是一个包含一切运行应用时所需要的资源的可运行的包，包括：代码、运行时环境、库、环境变量和配置文件。
@@ -23,15 +21,34 @@
 
 **镜像和容器的关系：**未运行时叫镜像，运行在内存中并由docker管理的叫容器，是程序运行的容器。
 
-
-
 ## 容器和虚拟机
 
 容器在Linux上以原生的方式运行，和其他容器共享宿主机的内核。容器运行在一个独立的进程中。
 
 虚拟机则完全是一个寄生操作系统，通过虚拟层和宿主OS交互。虚拟机也需要更多的资源。
 
+![1585406076843](./assets/docker.png)
 
+## 安装 & 启动
+
+Ubuntu 下安装：
+
+```shell
+# 推荐官方脚本安装最新版本
+curl -sSL https://get.docker.com/ | sh
+
+# apt 安装
+sudo apt-get install docker.io
+
+# 启动 daemon 进程
+sudo service docker start
+
+# 测试 docker 是否安装成功
+sudo docker run hello-world
+
+# 将当前用户加入 docker 组，不需要每次都加 sudo 
+sudo usermod -aG docker <username>
+```
 
 
 
