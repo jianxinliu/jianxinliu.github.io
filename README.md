@@ -58,6 +58,7 @@
 - [Latex](post/cheatsheet/latex.md) - 2020-03-09
 - [emoji](post/cheatsheet/emoji.md) - 2020-03-25
 - [环境配置](post/cheatsheet/环境配置.md) - 2020-03-27
+- [命令和DSL](post/cheatsheet/命令和DSL.md) - 2020-03-29
 
 ## 纠错历程
 
