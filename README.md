@@ -1,6 +1,19 @@
 #### [CSDN Blog](https://blog.csdn.net/csdn_shmily)、[github home](https://github.com/jianxinliu)
 
-## 学习笔记
+## CheatSheet
+
+- [Linux Commands](post/cheatsheet/linux.md)
+- [Git Commands](post/cheatsheet/git.md)
+- [SQL Statments](post/cheatsheet/sql.md)
+- [JavaScript in Common use](post/cheatsheet/js.md)
+- [IDEA 常用快捷键](post/cheatsheet/idea常用快捷键.md) - 2020-01-02
+- [正则表达式](post/cheatsheet/正则表达式笔记.md) - 2020-03-06
+- [Latex](post/cheatsheet/latex.md) - 2020-03-09
+- [emoji](post/cheatsheet/emoji.md) - 2020-03-25
+- [环境配置](post/cheatsheet/环境配置.md) - 2020-03-27
+- [命令和DSL](post/cheatsheet/命令和DSL.md) - 2020-03-29
+
+## 学习笔记(持续更新)
 
 - CS Core 
   - [计算机网络](post/learning_note/cs/计算机网络.md) - 2020-03-06
@@ -46,19 +59,6 @@
     - [linux command](post/learning_note/LinuxCommandLine.md)
     - [Docker初探](post/learning_note/docker.md) - 2020-03-29
     - [Jenkins初探](post/learning_note/Jenkins.md) - 2020-01-02
-
-## CheatSheet
-
-- [Linux Commands](post/cheatsheet/linux.md)
-- [Git Commands](post/cheatsheet/git.md)
-- [SQL Statments](post/cheatsheet/sql.md)
-- [JavaScript in Common use](post/cheatsheet/js.md)
-- [IDEA 常用快捷键](post/cheatsheet/idea常用快捷键.md) - 2020-01-02
-- [正则表达式](post/cheatsheet/正则表达式笔记.md) - 2020-03-06
-- [Latex](post/cheatsheet/latex.md) - 2020-03-09
-- [emoji](post/cheatsheet/emoji.md) - 2020-03-25
-- [环境配置](post/cheatsheet/环境配置.md) - 2020-03-27
-- [命令和DSL](post/cheatsheet/命令和DSL.md) - 2020-03-29
 
 ## 纠错历程
 
