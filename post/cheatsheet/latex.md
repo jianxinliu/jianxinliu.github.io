@@ -48,13 +48,21 @@ log: ![](http://latex.codecogs.com/gif.latex?log_{22}) `log_{22}`
 
 箭头：![](http://latex.codecogs.com/gif.latex?\leftarrow)  `\leftarrow or \gets`,![](http://latex.codecogs.com/gif.latex?\longleftarrow) `\longleftarrow`,![](http://latex.codecogs.com/gif.latex?\leftrightarrow) `\leftrightarrow`
 
+# 其他
+
+换行：![](http://latex.codecogs.com/gif.latex?r(X,Y)=\frac{Cov(X,Y)}{\sqrt{D[X]\times D[Y]}}\\Cov(X,Y)=E(XY)-EX\times EY)
+$$
+相关系数 r(X,Y) = \frac{Cov(X,Y)}{\sqrt{D[X] \times D[Y]}} \\ Cov(X,Y)=E(XY)-EX \times EY \\ 其中，|r(X,Y)| \le 1
+$$
+
+
 # 希腊字母
 
-|    α     |    β    |    γ     |    δ     |     ε      |    η     |    θ     |     λ     |   μ   |
-| :------: | :-----: | :------: | :------: | :--------: | :------: | :------: | :-------: | :---: |
-| `\alpha` | `\beta` | `\gamma` | `\delta` | `\epsilon` |  `\eta`  | `\theta` | `\lambda` | `\mu` |
-|    σ     |    φ    |    Γ     |    Σ     |     Ω      |    Θ     |    Π     |     Φ     |       |
-| `\sigma` | `\phi`  | `\Gamma` | `\Sigma` |  `\Omega`  | `\Theta` |  `\Pi`   |  `\Phi`   |       |
+|    α     |    β    |    γ     |    δ     |     ε      |    η     |    θ     |     λ     |   μ    |
+| :------: | :-----: | :------: | :------: | :--------: | :------: | :------: | :-------: | :----: |
+| `\alpha` | `\beta` | `\gamma` | `\delta` | `\epsilon` |  `\eta`  | `\theta` | `\lambda` | `\mu`  |
+|    σ     |    φ    |    Γ     |    Σ     |     Ω      |    Θ     |    Π     |     Φ     |   ρ    |
+| `\sigma` | `\phi`  | `\Gamma` | `\Sigma` |  `\Omega`  | `\Theta` |  `\Pi`   |  `\Phi`   | `\rho` |
 
 Github 不支持 Latex，替代方法为线上 app 将 latex 替换为图片 
 
