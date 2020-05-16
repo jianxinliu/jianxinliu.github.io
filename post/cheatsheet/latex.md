@@ -48,6 +48,28 @@ log: ![](http://latex.codecogs.com/gif.latex?log_{22}) `log_{22}`
 
 箭头：![](http://latex.codecogs.com/gif.latex?\leftarrow)  `\leftarrow or \gets`,![](http://latex.codecogs.com/gif.latex?\longleftarrow) `\longleftarrow`,![](http://latex.codecogs.com/gif.latex?\leftrightarrow) `\leftrightarrow`
 
+大括号：
+
+![](http://latex.codecogs.com/gif.latex?\sigma=\left\{ 
+\begin{aligned}
+\frac{\bar{R}}{d_2} \\
+\frac{\bar{S}}{c_4}
+\end{aligned}
+\right.  \\)
+
+
+
+```latex
+\sigma=\left\{ 
+\begin{aligned}
+\frac{\bar{R}}{d_2} \\
+\frac{\bar{S}}{c_4}
+\end{aligned}
+\right.  \\
+```
+
+
+
 # 其他
 
 换行：![](http://latex.codecogs.com/gif.latex?r(X,Y)=\frac{Cov(X,Y)}{\sqrt{D[X]\times D[Y]}}\\Cov(X,Y)=E(XY)-EX\times EY)
