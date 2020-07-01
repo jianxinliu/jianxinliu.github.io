@@ -467,6 +467,29 @@ function allPermutations(martix, res, level) {
 }
 ```
 
+全排列，也称笛卡尔积问题，简便方案：[两行代码](https://stackoverflow.com/questions/12303989/cartesian-product-of-multiple-arrays-in-javascript),[电商 SKU](https://juejin.im/post/5ee838cc6fb9a047ea45ef48)
+
+```js
+const f = (a, b) => [].concat(...a.map(d => b.map(e => [].concat(d, e))));
+const cartesian = (a, b, ...c) => (b ? cartesian(f(a, b), ...c) : a);
+let output = cartesian([1,2],[10,20],[100,200,300]);
+output:
+[ [ 1, 10, 100 ],
+  [ 1, 10, 200 ],
+  [ 1, 10, 300 ],
+  [ 1, 20, 100 ],
+  [ 1, 20, 200 ],
+  [ 1, 20, 300 ],
+  [ 2, 10, 100 ],
+  [ 2, 10, 200 ],
+  [ 2, 10, 300 ],
+  [ 2, 20, 100 ],
+  [ 2, 20, 200 ],
+  [ 2, 20, 300 ] ]
+```
+
+
+
 ## 多级表头 HTML 的生成
 
 基于 elementUI 的多级表头，需要嵌套 `<el-table-column>` 元素，这对于动态生成的多级表头极不友好。最开始想到的是使用 jsx 来生成嵌套的元素，但在 vue 里动态添加元素的打开方式似乎不对，故没有成功，后参看此[博客](https://blog.csdn.net/liub37/article/details/82906141)，才明白不用写代码也可以实现嵌套组件的生成。
@@ -556,3 +579,7 @@ Array.prototype.last = function(){
 - 不能使用箭头函数定义。因为箭头函数中没有 `this` ，而扩展函数还需要 `this` 来指向调用者
 - 使用 `this` 指向调用者，如 `[1,2,3].last()`,函数中的 `this` 便可以指向 `[1,2,3]` 这个数据
 - 这样扩展之后，相当于数组多了一个函数，全局可用。
+
+# JavaScript 数据操作
+
+遍历，过滤，查找，分组，排序，映射，归约……
