@@ -582,4 +582,38 @@ Array.prototype.last = function(){
 
 # JavaScript 数据操作
 
-遍历，过滤，查找，分组，排序，映射，归约……
+遍历，过滤，查找，分组，排序，映射，归约…… 
+
+```js
+let classNo = [1,2,3,4]
+let students = [{name:'jack',age:12,addr:'beijing'},
+              {name:'rose',age:12,addr:'beijing'},
+              {name:'mary',age:25,addr:'sahnghai'},
+              {name:'pony',age:24,addr:'sahnghai'},
+              {name:'robin',age:24,addr:'gaungzhou'}]
+
+classNo.forEach(v => console.log(v)) // => 1 2 3 4
+classNo.map(v => console.log(v))     // => 1 2 3 4
+students.map(v => console.log(v.name))  // => ['jack','rose','mary','pony','robin']
+
+// 实际上 map 的主要作用不是遍历，而是遍历的过程中，对所遍历值的操作
+let student_age = students.map(v => v.age) // => [12,12,25,24,24]
+let student_age_formatted = students.map(v => v.age + '岁') => ['12岁','12岁','25岁','24岁','24岁']
+
+let student_from_beijing = students.filter(v => v.addr === 'beijing') // => find jack & rose
+
+let rose = students.find(v => v.name === 'rose') // find rose
+
+let range_by_age_asc = students.sort((a,b) => a.age - b.age)
+let range_by_age_desc = students.sort((a,b) => b.age - a.age)
+
+let avg_age = students.reduce((a,b) => a + b.age,0) / students.length // => 19.4
+
+
+// array deep copy
+let studentCopy1 = Object.assign([],student)
+let studentCopy2 = JSON.parse(JSON.stringify(student))
+let studentCopy3 = student.map(stu => Object.assign({},stu))
+let studentCopy4 = student.map(stu => ({...stu}))
+```
+
