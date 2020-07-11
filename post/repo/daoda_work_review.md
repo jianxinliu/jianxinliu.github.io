@@ -617,3 +617,79 @@ let studentCopy3 = student.map(stu => Object.assign({},stu))
 let studentCopy4 = student.map(stu => ({...stu}))
 ```
 
+# Java 8 Stream api 数据操作
+
+```java
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+import java.util.Arrays;
+import java.util.DoubleSummaryStatistics;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+/**
+ * @author jianxinliu
+ * @date 2020/07/11 11:43
+ * @description
+ */
+public class StreamTest {
+    static Student defaultStu = new Student("default", 0, "xxx", 100000, "");
+    static Student[] students = new Student[]{
+            new Student("jack", 13, "shanghai", 123, ""),
+            new Student("rose", 24, "shanghai", 124, ""),
+            new Student("pony", 34, "guangzhou", 135, ""),
+            new Student("robin", 35, "beijing", 143, "")
+    };
+
+    public static void main(String[] args) {
+        List<Student> stuList = Arrays.asList(students);
+        // just for each
+        stuList.forEach(System.out::println);
+        // change list properties
+        List<String> stus = stuList.stream().map(stu -> stu.note = "hello").collect(Collectors.toList());
+        stus.forEach(System.out::println);
+
+        // get cities
+        stuList.stream().map(Student::getAddr).distinct().collect(Collectors.toList()).forEach(System.out::println);
+
+        double totalAge = stuList.stream().map(Student::getAge).reduce((a, b) -> a + b).orElse(0).doubleValue();
+        System.out.println(totalAge);
+
+        double avgIQ = stuList.stream().filter(v -> v.getAge() > 13).mapToDouble(Student::getIq).average().orElse(0);
+        System.out.println(avgIQ);
+
+        boolean allAdult = stuList.stream().allMatch(v -> v.getAge() > 18);
+        System.out.println(allAdult);
+
+        DoubleSummaryStatistics iqStatistics = stuList.stream().filter(v -> v.getAge() > 18).mapToDouble(Student::getIq).summaryStatistics();
+        System.out.println(iqStatistics.getAverage());
+
+        System.out.println(getStudentByName("edsion").orElse(defaultStu));
+        System.out.println(getStudentByName("edsion").orElseThrow(IllegalArgumentException::new));
+    }
+
+    static Optional<Student> getStudentByName(String name) {
+        List<Student> stuList = Arrays.asList(students);
+        Stream<Student> limit = stuList.stream().filter(v -> v.getName() == name).limit(1);
+        if (limit.findAny().isPresent()) {
+            return Optional.of(limit.findAny().get());
+        } else {
+            return Optional.empty();
+        }
+    }
+}
+
+@Data
+@AllArgsConstructor
+class Student {
+    String name;
+    Integer age;
+    String addr;
+    Integer iq;
+    String note;
+}
+```
+
