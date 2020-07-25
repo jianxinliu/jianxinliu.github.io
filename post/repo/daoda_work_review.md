@@ -582,6 +582,10 @@ Array.prototype.last = function(){
 
 # JavaScript 数据操作
 
+函数式编程和命令式编程的不同。
+
+[函数式编程简介](https://mp.weixin.qq.com/s?__biz=MjM5ODQ2MDIyMA==&mid=402307374&idx=1&sn=2ff35dc5bcadab0bbeae626f48f4e18e#rd) [抽象的能力](https://zhuanlan.zhihu.com/p/20617201) 
+
 遍历，过滤，查找，分组，排序，映射，归约…… 
 
 ```js
@@ -693,3 +697,47 @@ class Student {
 }
 ```
 
+# js 文件读入写出
+
+HTML 5 的 File API 和 Blob 对象给 Web 页面提供了读写本地文件的能力。
+
+读取本地文件内容
+
+```js
+export function readFile(callback) {
+  let inputEle = document.createElement('input')
+  inputEle.setAttribute('id', 'tempInput')
+  inputEle.setAttribute('type', 'file')
+  inputEle.setAttribute('accept', 'text/txt')
+  inputEle.setAttribute("style", "display: none")
+  const handleValue = () => {
+    let file = inputEle.files[0]
+    let blob = new Blob([file], {type: "text/plain;charset=utf-8"})
+    blob.text().then(text => {
+	  // text 即文件内容的文本格式
+      callback(text)
+      document.body.removeChild(inputEle)
+    })
+  }
+  inputEle.addEventListener('change', handleValue, true)
+  document.body.appendChild(inputEle)
+  inputEle.click()
+}
+```
+
+写入文件使用 File-saver 依赖，更方便全面的操作，实际上也是使用 File API  和 Blob 对象。
+
+```js
+export function buildAndSave(fileName) {
+  let content = {}
+  let settingJson = JSON.stringify(content)
+  const blob = new Blob([NOTE, settingJson], {type: "text/plain;charset=utf-8"})
+  FileSaver.saveAs(blob, fileName + '.txt')
+}
+```
+
+# 计算
+
+数据可以被计算，程序也可以被计算。
+
+ 使用 `eval` 计算出表达式，代入程序执行。 
