@@ -312,7 +312,7 @@ if(error){
 
 ```javascript
 function foo(fields){
-    if(filds.length < 1){
+    if(fields.length < 1){
         return {
             ret:null,
             error:'fields empty!'
@@ -366,7 +366,7 @@ function groupBy(dataSource, fields, i) {
   if (i < fields.length - 1) {
     i += 1
     for (let p in ret) {
-      ret[p] = groupByMutil(ret[p], fields, i)
+      ret[p] = groupBy(ret[p], fields, i)
     }
   }
   return ret
@@ -580,6 +580,8 @@ Array.prototype.last = function(){
 - 使用 `this` 指向调用者，如 `[1,2,3].last()`,函数中的 `this` 便可以指向 `[1,2,3]` 这个数据
 - 这样扩展之后，相当于数组多了一个函数，全局可用。
 
+**重要：** 不要随意污染全局空间，危害参见<a href='#prototype'>JS Clean Code</a>
+
 # JavaScript 数据操作
 
 函数式编程和命令式编程的不同。
@@ -607,6 +609,7 @@ let student_age_formatted = students.map(v => v.age + '岁') => ['12岁','12岁'
 let student_from_beijing = students.filter(v => v.addr === 'beijing') // => find jack & rose
 
 let rose = students.find(v => v.name === 'rose') // find rose
+let roseIndex = students.findIndex(v => v.name === 'rose') // 1
 
 let range_by_age_asc = students.sort((a,b) => a.age - b.age)
 let range_by_age_desc = students.sort((a,b) => b.age - a.age)
@@ -738,11 +741,41 @@ export function buildAndSave(fileName) {
 
 # 计算
 
+## 程序计算
+
 数据可以被计算，程序也可以被计算。
 
  使用 `eval` 计算出表达式，代入程序执行。 
 
+例如，图表上有五根线 `y = C`，C 的取值及其大小关系为：`USL > UCL > Target > LCL > lSL`，五根线中可能有不存在的线。设一系列点 P 中满足 `P > USL || P < LSL` 的点数称为 `OOS(out of standard)`，满足 `P > UCL || P < LCL`的点数称为 `OOC(out of control)`。求一系列点 arrP 的 OOS，OOC。
 
+本题麻烦的点在于五根线的存在性不确定，判断起来很繁琐。以求 OOS 为例
+
+1. 若 USL 不存在，则过滤的表达式为 `P < LSL`
+2. 若 LSL 不存在，则过滤的表达式为 `P > USL`
+3. 若 USL、LSL 同时不存在，则不需计算 OOS
+4. 若 USL、LSL 同时存在，则过滤的表达式为`P > USL || P < LSL`
+
+若是基于 `if else` ，那肯定写出一大堆，还不好理解。若是转换下思路，将表达式看做是字符串，则基于以上逻辑，拼接字符串还是会稍微简单一些的。
+
+```js
+const conditionExpression = (up,low) => {
+    let cond = [];
+    // 设 d 为 filter 函数中的迭代变量名，直接写死会简便一些，也可通过参数传入
+    up && cond.push(`d > ${up}`); 
+    low && cond.push(`d < ${low}`);
+    (!up && !low) && cond.push('false')
+    return cond.join(' || ')
+}
+
+// call
+let oos = arrP.filter(d => eval(conditionExpression(usl,lsl))).length
+let ooc = arrP.filter(d => eval(conditionExpression(ucl,lcl))).length
+```
+
+## 属性计算
+
+统一即简洁，统一即可计算。 
 
 # js clean code
 
@@ -961,7 +994,7 @@ console.log(newName); // ['Ryan', 'McDermott'];
 
 ### Don't write to global functions
 
-不要给已有内置对象添加属性（方法），这样会影响到全局，造成污染。
+<span name='prototype'>不要给已有内置对象添加属性（方法），这样会影响到全局，造成污染。</span>
 
 正是因为 JavaScript 的便利，才不可能预防他人（库）定义和你自定义函数同名的函数，一旦这种情况发生，前者的自定义函数将失效，整个系统将发生不可预估的问题。
 
@@ -1207,3 +1240,10 @@ function hashIt(data) {
   }
 }
 ```
+
+# SQL
+
+`row_number() over([partion by xx] order by xx) as rowNum` 该列是 SQL 执行后对结果集的每一行进行排序后生成的编号，可以用来做分页的依据。若加 `partion by xx` 则会依据指定字段分组，每组单独生成行号。
+
+`case when a=1 and b=2 then avg(age) when a=2 and b=3 then ... end as avg_age`
+
