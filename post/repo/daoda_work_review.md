@@ -141,6 +141,77 @@ vue.$on('eventA',payload => {})
 
 父子组件通信自不必说，其他关系的组件通信需要考虑传输数据的大小，因为通信实质上是数据的复制传输，若数据量很大，复制是一件很重量级的工作，倒不如共享同一份数据（Vuex）来的轻巧。
 
+## Vue 动态组件
+
+Vue 通过给组件添加 `is` 属性来动态的渲染不同的组件，一般用法是：
+
+```html
+<keep-alive>
+	<component :is='dynamicComponentName' ref='child'></component>
+</keep-alive>
+```
+
+`<keep-alive>` 可以是组件在切换后还保留状态，而不会重新渲染。`is` 会让 `<component>` 元素随着 `dynamicComponentName` 的变化而动态渲染，该变量指明的是动态组件的 `name` 属性。`ref` 常常出现在动态组件上，一般用于父组件对不同子组件的统一操作；如不同子组件都需要处理同一份数据，但是处理方式不同，变可以使用该方法（if 判断不优雅）。
+
+**is** 属性还可以用来避免 DOM 内模板的限制：如 
+
+```html
+<table>
+  <blog-post-row></blog-post-row>
+</table>
+```
+
+这个自定义组件 `<blog-post-row>` 会被作为无效的内容提升到外部，并导致最终渲染结果出错。幸好这个特殊的 `is` attribute 给了我们一个变通的办法：
+
+```html
+<table>
+    <tr is="blog-post-row"></tr> 
+</table>
+```
+
+需要注意的是**如果我们从以下来源使用模板的话，这条限制是\*不存在\*的**：
+
+- 字符串 (例如：`template: '...'`)
+- [单文件组件 (`.vue`)](https://cn.vuejs.org/v2/guide/single-file-components.html)
+- [`<script type="text/x-template">`](https://cn.vuejs.org/v2/guide/components-edge-cases.html#X-Templates)
+
+## 例子
+
+以一个简单的日志记录为例，主界面有 tab 页，选择不同级别的日志进行记录，底部展示当前所有日志记录。
+
+```text
+<button @click='changeLog(logBtn.type)' v-for='logBtn in logList'>{{logBtn.text}}</button>
+<keep-alive>
+	<component :is='currentLogger' ref='log'></component>
+</keep-alive>
+
+logList:[{
+	type: 0,
+	text:'Error',
+	componentName: 'ErrorLogger'
+},……]
+
+changeLog(type){
+	this.currentLogger = this.logList[type].componentName
+}
+
+addLog(){
+	this.logTable.push(this.$refs.log.add())
+}
+```
+
+Error logger
+
+```text
+name: ErrorLogger
+
+add(){
+	return `<span style='color: red'>${logMsg}</span>`
+}
+```
+
+Warning logger、Success logger……
+
 # CSS
 
 css 选择器上的`/deep/` 修饰：https://stackoverflow.com/questions/25609678/what-do-deep-and-shadow-mean-in-a-css-selector
@@ -229,7 +300,7 @@ echartInstance.on('click', function(e) {
 });
 ```
 
-
+箭头函数中的 `this` ：箭头函数没有自己的 `this`，但会引用父级的 `this`。所以在箭头函数中还是可以使用 `this` 的，只要是访问的调用者确是当前父级即可。
 
 # java8 stream api
 
@@ -296,6 +367,26 @@ async function getAll(){
     ......
 }
 ```
+
+## `async` & `await`
+
+async/await 是以更舒适的方式使用 promise 的一种特殊语法，同时它也非常易于理解和使用。
+
+async 用于修饰函数，保证该函数一定返回一个 `Promise`，即使最终函数没有返回 `Promise`，处理结果也会被封装进一个 resolved 的`Promise` 中返回。所以：
+
+```js
+async function foo(){
+    return 1
+}
+async function bar(){
+    return Promise().resolve(1)
+}
+
+foo().then(log) // 1
+bar().then(log) // 1
+```
+
+
 
 # 函数错误处理
 
@@ -747,7 +838,7 @@ export function buildAndSave(fileName) {
 
  使用 `eval` 计算出表达式，代入程序执行。 
 
-例如，图表上有五根线 `y = C`，C 的取值及其大小关系为：`USL > UCL > Target > LCL > lSL`，五根线中可能有不存在的线。设一系列点 P 中满足 `P > USL || P < LSL` 的点数称为 `OOS(out of standard)`，满足 `P > UCL || P < LCL`的点数称为 `OOC(out of control)`。求一系列点 arrP 的 OOS，OOC。
+例如，图表上有五根线 `y = C`，C 的取值及其大小关系为：`USL > UCL > Target > LCL > lSL`，五根线中可能有不存在的线。设一系列点 P 中满足 `P > USL || P < LSL` 的点数称为 `OOS(out of specfication)`，满足 `P > UCL || P < LCL`的点数称为 `OOC(out of control)`。求一系列点 arrP 的 OOS，OOC。
 
 本题麻烦的点在于五根线的存在性不确定，判断起来很繁琐。以求 OOS 为例
 
