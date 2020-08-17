@@ -343,7 +343,7 @@ https://github.com/phachon/mm-wiki
 
 
 
-# JS Promise
+# Js Promise
 
 参考之前的一篇[博文](https://jianxinliu.github.io/post/learning_note/f2e/ES6_Promise.html)。
 
@@ -367,6 +367,25 @@ async function getAll(){
     ......
 }
 ```
+
+## 微任务队列
+
+```javascript
+let promise = Promise.resolve()
+promise.then(res => console.log('promise done!'))
+consoloe.log('code finished!')
+```
+
+上面这段代码的输出是这样的：
+
+```
+code finished!
+promise done!
+```
+
+为什么立即 resolve 的代码执行依然会排在直接输出语句之后呢？因为 `Promise` 中，不论是 `then`,`catch`或 `finally` 语句块中的内容，都不会立即执行，而是会加入微任务队列中，直到 js 引擎没有其它任务在运行时，才会从队列中取出任务执行。在上面的例子中执行到第 2 句时， `console.log('promise done!')`被放入微任务队列中，js 引擎接着执行第 2 句，之后 js 引擎没有任务执行了，才从微任务队列中取出 `console.log('promise done!')` 执行。若要保证执行的顺序符合“直觉”，可将需要被顺序执行的代码依次使用 `then` 去调用，这样所有任务都会被加入队列，依次执行。
+
+[ref](https://zh.javascript.info/microtask-queue)
 
 ## `async` & `await`
 
@@ -431,6 +450,16 @@ console.log(ret || error)
 ```
 
 go 语言函数的返回值支持自定义变量名，即`let {ret,error} = foo(['a'])`中的 `ret` 可以自定义，即函数返回两个值，第一个是返回值，第二个是错误信息，但 js 不行，必须获取函数返回的那个变量，尤其是使用解构。
+
+```js
+// js 内置的错误对象
+throw new Error('ErrMsg')
+
+// 自定义错误对象
+throw 'custom error'
+```
+
+
 
 # Web 端透视表生成的关键点
 
@@ -1338,3 +1367,14 @@ function hashIt(data) {
 
 `case when a=1 and b=2 then avg(age) when a=2 and b=3 then ... end as avg_age`
 
+# js 并发模型与事件循环
+
+[ref](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/EventLoop)
+
+JavaScript有一个基于**事件循环**的并发模型，事件循环负责执行代码、收集和处理事件以及执行队列中的子任务。这个模型与其它语言中的模型截然不同，比如 C 和 Java。
+
+js 引擎是单线程模型，故一个函数在执行时，不会被抢占，只有在运行完之后才会运行其他任务（**执行至完成**）。该模型的缺点就是当一个任务运行时间过长，则会影响到其他程序的执行，如 Web 应用程序就无法响应用户的交互，会出现页面卡死的现象。
+
+在浏览器中，每当有一个事件发生，且有一个事件监听器绑定在该事件上，该事件就会被加入消息队列。函数 `setTimeout` 可以将一个函数推迟一段时间执行，原理是当调用 `setTimeout` 时，传入的第一个参数（函数）将被加入消息队列等待执行，理想情况下，队列为空，则到了指定时间后，加入队列的消息会在指定的时间间隔后执行。非理想情况下，可能在消息入队之前，消息队列已经排有耗时远超指定的时间间隔，则该消息不会在指定的之间后执行，而是会在队列执行到该消息时执行。也就是：**`setTimeout` 的第二个参数仅仅表示消息延迟执行的最小时间间隔。** 同样的，`setTimeout(fn, 0)` 并不能立即执行`fn`。
+
+也正是因为 js 引擎采用事件循环模型和消息队列，故可以实现“**永不阻塞**”。如一个 Web 应用在等待 XHR 的返回时，依然可以处理其他如用户输入的事情，因为这类 I/O 事务通常通过事件和回调来处理。
