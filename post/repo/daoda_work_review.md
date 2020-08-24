@@ -418,9 +418,9 @@ code finished!
 promise done!
 ```
 
-为什么立即 resolve 的代码执行依然会排在直接输出语句之后呢？因为 `Promise` 中，不论是 `then`,`catch`或 `finally` 语句块中的内容，都不会立即执行，而是会加入微任务队列中，直到 js 引擎没有其它任务在运行时，才会从队列中取出任务执行。在上面的例子中执行到第 2 句时， `console.log('promise done!')`被放入微任务队列中，js 引擎接着执行第 2 句，之后 js 引擎没有任务执行了，才从微任务队列中取出 `console.log('promise done!')` 执行。若要保证执行的顺序符合“直觉”，可将需要被顺序执行的代码依次使用 `then` 去调用，这样所有任务都会被加入队列，依次执行。
+为什么立即 resolve 的代码执行依然会排在直接输出语句之后呢？因为 `Promise` 中，不论是 `then`,`catch`或 `finally` 语句块中的内容，都不会立即执行，而是会加入微任务队列中，直到 js 引擎没有其它任务在运行时（**宏任务队列**），才会从队列中取出任务执行。在上面的例子中执行到第 2 句时， `console.log('promise done!')`被放入微任务队列中，js 引擎接着执行第 2 句，之后 js 引擎没有任务执行了，才从微任务队列中取出 `console.log('promise done!')` 执行。若要保证执行的顺序符合“直觉”，可将需要被顺序执行的代码依次使用 `then` 去调用，这样所有任务都会被加入队列，依次执行。
 
-[ref](https://zh.javascript.info/microtask-queue)
+[ref-微任务队列](https://zh.javascript.info/microtask-queue)、[事件循环与宏任务队列](https://zh.javascript.info/event-loop)
 
 ## `async` & `await`
 
@@ -1147,6 +1147,8 @@ console.log(name); // 'Ryan McDermott';
 console.log(newName); // ['Ryan', 'McDermott'];
 ```
 
+**Except:**基于 Vuex 的类责任链模式——就是靠副作用才使得代码简洁、流程清晰。
+
 ### Don't write to global functions
 
 <span name='prototype'>不要给已有内置对象添加属性（方法），这样会影响到全局，造成污染。</span>
@@ -1180,16 +1182,13 @@ class SuperArray extends Array {
 **Bad:**
 
 ```js
-const programmerOutput = [
-  {
+const programmerOutput = [{
     name: "Uncle Bobby",
     linesOfCode: 500
-  },
-  {
+  },{
     name: "Suzie Q",
     linesOfCode: 1500
-  }
-];
+  }];
 
 let totalOutput = 0;
 
@@ -1201,21 +1200,15 @@ for (let i = 0; i < programmerOutput.length; i++) {
 **Good:**
 
 ```js
-const programmerOutput = [
-  {
+const programmerOutput = [{
     name: "Uncle Bobby",
     linesOfCode: 500
-  },
-  {
+  },{
     name: "Suzie Q",
     linesOfCode: 1500
-  }
-];
+  }];
 
-const totalOutput = programmerOutput.reduce(
-  (totalLines, output) => totalLines + output.linesOfCode,
-  0
-);
+const totalOutput = programmerOutput.reduce((totalLines, output) => totalLines + output.linesOfCode, 0);
 ```
 
 ### 具名条件表达式
