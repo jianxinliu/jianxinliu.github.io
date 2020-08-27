@@ -1506,60 +1506,55 @@ class CountFail extends UserDefinedAggregateFunction {
 }
 ```
 
-复杂的例子:
+复杂的例子（spark 3.0.0 版本更简便的写法）:
 
 ```scala
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.expressions.{MutableAggregationBuffer, UserDefinedAggregateFunction}
-import org.apache.spark.sql.types.{DataType, DoubleType, StructField, StructType}
-import Array.range
+import org.apache.spark.sql.{Encoder, Encoders}
+import org.apache.spark.sql.expressions.Aggregator
 
 /**
   * 给定一组点回归线的斜率
+  * @author jianxinliu
+  * @date 2020/8/27
   */
-class Slope extends UserDefinedAggregateFunction {
-  override def inputSchema: StructType = StructType(StructField("colY", DoubleType) :: StructField("colX", DoubleType) :: Nil)
-  override def bufferSchema: StructType = {
-    StructType(
-      StructField("countX", DoubleType)
-        :: StructField("sumX", DoubleType)
-        :: StructField("sumY", DoubleType)
-        :: StructField("sumXX", DoubleType)
-        :: StructField("sumXY", DoubleType)
-        :: Nil)
-  }
-  override def dataType: DataType = DoubleType
-  override def deterministic: Boolean = true
-  override def initialize(buffer: MutableAggregationBuffer): Unit = {
-    for (x <- range(0, 5)) {
-      buffer(x) = 0.0
+case class Params(colY: Double, colX: Double)
+case class Buffer(var countX: Int, var sumX: Double, var sumY: Double, var sumXX: Double, var sumXY: Double)
+
+object Slope extends Aggregator[Params, Buffer, Double] {
+  override def zero: Buffer = Buffer(0, 0.0, 0.0, 0.0, 0.0)
+
+  override def reduce(buffer: Buffer, params: Params): Buffer = {
+    if (params != null) {
+      buffer.countX += 1
+      buffer.sumX += params.colX
+      buffer.sumY += params.colY
+      buffer.sumXX += params.colX * params.colX
+      buffer.sumXY += params.colX * params.colY
     }
+    buffer
   }
-  override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
-    if (!input.isNullAt(0) && !input.isNullAt(1)) {
-      buffer(0) = buffer.getDouble(0) + 1 // countX
-      buffer(1) = buffer.getDouble(1) + input.getDouble(1) // sumX
-      buffer(2) = buffer.getDouble(2) + input.getDouble(0) // sumY
-      buffer(3) = buffer.getDouble(3) + input.getDouble(1) * input.getDouble(1) // sumXX
-      buffer(4) = buffer.getDouble(4) + input.getDouble(1) * input.getDouble(0) // sumXY
-    }
+
+  override def merge(buffer: Buffer, b2: Buffer): Buffer = {
+    buffer.countX += b2.countX
+    buffer.sumX += b2.sumX
+    buffer.sumY += b2.sumY
+    buffer.sumXX += b2.sumXX
+    buffer.sumXY += b2.sumXY
+    buffer
   }
-  override def merge(buffer1: MutableAggregationBuffer, buffer2: Row): Unit = {
-    buffer1(0) = buffer1.getDouble(0) + buffer2.getDouble(0)
-    buffer1(1) = buffer1.getDouble(1) + buffer2.getDouble(1)
-    buffer1(2) = buffer1.getDouble(2) + buffer2.getDouble(2)
-    buffer1(3) = buffer1.getDouble(3) + buffer2.getDouble(3)
-    buffer1(4) = buffer1.getDouble(4) + buffer2.getDouble(4)
+
+  override def finish(b: Buffer): Double = {
+    (b.countX * b.sumXY - b.sumX * b.sumY) / (b.countX * b.sumXX - b.sumX * b.sumX)
   }
-  override def evaluate(buffer: Row): Double = {
-    val countX = buffer.getDouble(0)
-    val sumX = buffer.getDouble(1)
-    val sumY = buffer.getDouble(2)
-    val sumXX = buffer.getDouble(3)
-    val sumXY = buffer.getDouble(4)
-    (countX * sumXY - sumX * sumY) / (countX * sumXX - sumX * sumX)
-  }
+
+  // An encoder for Scala's product type (tuples, case classes, etc).
+  override def bufferEncoder: Encoder[Buffer] = Encoders.product
+
+  override def outputEncoder: Encoder[Double] = Encoders.scalaDouble
 }
+
+// 注册方法
+sparkSession.udf.register("slope", functions.udaf(Slope))
 ```
 
 
