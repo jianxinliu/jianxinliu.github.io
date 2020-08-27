@@ -1406,3 +1406,251 @@ js 引擎是单线程模型，故一个函数在执行时，不会被抢占，�
 在浏览器中，每当有一个事件发生，且有一个事件监听器绑定在该事件上，该事件就会被加入消息队列。函数 `setTimeout` 可以将一个函数推迟一段时间执行，原理是当调用 `setTimeout` 时，传入的第一个参数（函数）将被加入消息队列等待执行，理想情况下，队列为空，则到了指定时间后，加入队列的消息会在指定的时间间隔后执行。非理想情况下，可能在消息入队之前，消息队列已经排有耗时远超指定的时间间隔，则该消息不会在指定的之间后执行，而是会在队列执行到该消息时执行。也就是：**`setTimeout` 的第二个参数仅仅表示消息延迟执行的最小时间间隔。** 同样的，`setTimeout(fn, 0)` 并不能立即执行`fn`。
 
 也正是因为 js 引擎采用事件循环模型和消息队列，故可以实现“**永不阻塞**”。如一个 Web 应用在等待 XHR 的返回时，依然可以处理其他如用户输入的事情，因为这类 I/O 事务通常通过事件和回调来处理。
+
+# Spark SQL 自定义函数
+
+## 普通函数
+
+[doc-Scalar User Defined Functions (UDFs)](https://spark.apache.org/docs/latest/sql-ref-functions-udf-scalar.html),非聚合的函数，若放置在 SQL 语句中，且将列作为参数传入，则该函数会被列的每个值调用，即该函数会产生多行的结果。
+
+```scala
+val random = udf(() => Math.random()) // 使用 udf 函数包装普通函数（返回值为 UserDefinedFunction）即可注册成为 UDF
+spark.udf.register("random", random) // 注册
+spark.sql("SELECT random()").show() // SparkSession
+
+def normSDist(): UserDefinedFunction = {
+    val fn = (x: Double) => normalSDist(x, 0, 1) // 函数包装，适合写很多函数，可对函数加文档注释说明
+    udf(fn)
+}
+
+spark.udf.register("norms_dist", normSDist())
+// SELECT norms_dist(height) FROM student;
+```
+
+
+
+## 聚合函数
+
+[doc-User Defined Aggregate Functions (UDAFs)](https://spark.apache.org/docs/latest/sql-ref-functions-udf-aggregate.html),聚合函数，会将多行汇集成一行输出。内部通过类似 `reduce` 的方法迭代生成。
+
+```scala
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.expressions.{MutableAggregationBuffer, UserDefinedAggregateFunction}
+import org.apache.spark.sql.types.{DataType, IntegerType, LongType, StructField, StructType}
+
+class CountFail extends UserDefinedAggregateFunction {
+  /**
+    * 设置输入数据的类型，指定输入数据的字段与类型，它与在生成表时创建字段时的方法相同
+    * @return
+    */
+  override def inputSchema: StructType = StructType(StructField("inputColumn", IntegerType) :: Nil)
+
+  /**
+    * 指定缓冲数据的字段与类型，相当于中间变量
+    * @return
+    */
+  override def bufferSchema: StructType = {
+    StructType(StructField("count", LongType) :: Nil)
+  }
+
+  // 返回值的数据类型
+  override def dataType: DataType = LongType
+
+  /**
+    * 设置该函数是否为幂等函数
+    * 幂等函数:即只要输入的数据相同，结果一定相同
+    * true表示是幂等函数，false表示不是
+    * @return
+    */
+  override def deterministic: Boolean = true
+
+  /**
+    * initialize用于初始化缓存变量的值，也就是初始化 bufferSchema 函数中定义的变量值
+    * 其中buffer(i)就表示第 i 个参数 （i = 0， i++）
+    * @param buffer
+    */
+  override def initialize(buffer: MutableAggregationBuffer): Unit = {
+    buffer(0) = 0L
+  }
+
+  /**
+    * 当有一行数据进来时就会调用 update 一次，有多少行就会调用多少次，input 就表示在调用自定义函数中有多少个参数，最终会将
+    * 这些参数生成一个Row对象，在使用时可以通过input.getString或input.getLong等方式获得对应的值
+    * 缓冲中的变量sum,count使用buffer(0)或buffer.getDouble(0)的方式获取到
+    * @param buffer 已有 buffer
+    * @param input  新加入的行
+    */
+  override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
+    if (!input.isNullAt(0) && input.getInt(0) == 0) {
+      buffer(1) = buffer.getLong(0) + 1
+    }
+  }
+
+  /**
+    * 将更新的缓存变量进行合并，有可能每个缓存变量的值都不在一个节点上，最终是要将所有节点的值进行合并才行
+    * 其中 buffer1 是本节点上的缓存变量，而 buffer2 是从其他节点上过来的缓存变量然后转换为一个 Row 对象,然后将 buffer2
+    * 中的数据合并到 buffer1 中去即可
+    * @param buffer1 本节点上的缓存变量
+    * @param buffer2 其他节点上过来的缓存变量
+    */
+  override def merge(buffer1: MutableAggregationBuffer, buffer2: Row): Unit = {
+    buffer1(0) = buffer1.getLong(0) + buffer2.getLong(0)
+  }
+
+  /**
+    * 一个计算方法，用于计算最终结果,也就相当于返回值
+    * @param buffer
+    * @return
+    */
+  override def evaluate(buffer: Row): Long = buffer.getLong(0)
+}
+```
+
+复杂的例子:
+
+```scala
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.expressions.{MutableAggregationBuffer, UserDefinedAggregateFunction}
+import org.apache.spark.sql.types.{DataType, DoubleType, StructField, StructType}
+import Array.range
+
+/**
+  * 给定一组点回归线的斜率
+  */
+class Slope extends UserDefinedAggregateFunction {
+  override def inputSchema: StructType = StructType(StructField("colY", DoubleType) :: StructField("colX", DoubleType) :: Nil)
+  override def bufferSchema: StructType = {
+    StructType(
+      StructField("countX", DoubleType)
+        :: StructField("sumX", DoubleType)
+        :: StructField("sumY", DoubleType)
+        :: StructField("sumXX", DoubleType)
+        :: StructField("sumXY", DoubleType)
+        :: Nil)
+  }
+  override def dataType: DataType = DoubleType
+  override def deterministic: Boolean = true
+  override def initialize(buffer: MutableAggregationBuffer): Unit = {
+    for (x <- range(0, 5)) {
+      buffer(x) = 0.0
+    }
+  }
+  override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
+    if (!input.isNullAt(0) && !input.isNullAt(1)) {
+      buffer(0) = buffer.getDouble(0) + 1 // countX
+      buffer(1) = buffer.getDouble(1) + input.getDouble(1) // sumX
+      buffer(2) = buffer.getDouble(2) + input.getDouble(0) // sumY
+      buffer(3) = buffer.getDouble(3) + input.getDouble(1) * input.getDouble(1) // sumXX
+      buffer(4) = buffer.getDouble(4) + input.getDouble(1) * input.getDouble(0) // sumXY
+    }
+  }
+  override def merge(buffer1: MutableAggregationBuffer, buffer2: Row): Unit = {
+    buffer1(0) = buffer1.getDouble(0) + buffer2.getDouble(0)
+    buffer1(1) = buffer1.getDouble(1) + buffer2.getDouble(1)
+    buffer1(2) = buffer1.getDouble(2) + buffer2.getDouble(2)
+    buffer1(3) = buffer1.getDouble(3) + buffer2.getDouble(3)
+    buffer1(4) = buffer1.getDouble(4) + buffer2.getDouble(4)
+  }
+  override def evaluate(buffer: Row): Double = {
+    val countX = buffer.getDouble(0)
+    val sumX = buffer.getDouble(1)
+    val sumY = buffer.getDouble(2)
+    val sumXX = buffer.getDouble(3)
+    val sumXY = buffer.getDouble(4)
+    (countX * sumXY - sumX * sumY) / (countX * sumXX - sumX * sumX)
+  }
+}
+```
+
+
+
+# HTML 表格任意选中
+
+HTML 元素（主要是文本）能否被选中，是由 `user-select` css 属性控制的，若设置为 `none` 则不可选中，更多属性值参考 [MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/user-select).
+
+HTML 页面的默认选中方式是行选择模式，即鼠标从按下到释放中间经过的所有行都会被选中。若要实现列选中模式或是任意选中模式，基本思路是：**将表格所有单元格设置为不可选中，在鼠标经过时，将对应的单元格设置可选中，即可实现任意选择的模式。** 以上思路有几点需要注意的：
+
+1. 浏览器适配：完整的设置不可选中的样式为: `-webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;`
+2. 不可选中的元素：不一定是给单元格 `td` 设置不可选中，而应该给直接包裹文字的元素设置（如下例中是 `td` 中 class 为 `cell`的 `div`）。
+3. 框选模式：该思路只能直线涂抹选中，即鼠标经过的 cell 会被选中。若想实现画对角线进行框选，还需要添加逻辑。
+4. 事件：会涉及的事件：`mousedown`,`mousemove`,`mouseup`。若使用 jquery 则可以很方便的进行事件注册和 DOM操作，若使用 vue 则可以通过自定义指令 `directives` 得到需要操作的 DOM元素。
+
+示例代码(Vue + elementUI)：
+
+```js
+directives: {
+    areaSelect: { // 在需要自定义选择的元素上添加 v-areaSelect
+        inserted: (el, binding, vnode) => {
+            let randIds = new Map()
+            let mouseDownFlag = false
+            let mouseUpFlag = false
+            let cells = []
+            el.addEventListener('mousedown', function (event) {
+                mouseDownFlag = true
+                mouseUpFlag = false
+                cells = []
+                el.querySelectorAll('tr').forEach(tr => {
+                    let row = tr.querySelectorAll('td div.cell')
+                    row.length > 0 && cells.push(row)
+                })
+                cells.forEach((tdRow, idy) => {
+                    tdRow.forEach((tdCol, idx) => {
+                        const style = tdCol.getAttribute('style')
+                        if (style.indexOf(selectDisableStyle) < 0) {
+                            tdCol.setAttribute('style', style + selectDisableStyle)
+                        }
+                        // 若表格有 rowIndex ,cellIndex 则可不设 id
+                        tdCol.setAttribute('id', `${idy + 1}_${idx + 1}`)
+                    })
+                })
+                // 选中点击的 cell
+                removeStyle(event)
+            })
+
+            function mouseMove(evt) {
+                if (mouseUpFlag || !mouseDownFlag) {
+                    return
+                }
+                // 缓存经过的 cell id
+                randIds.set(evt.target.id, evt.target.id)
+                // 选中
+                removeStyle(evt)
+            }
+
+            el.addEventListener('mousemove', mouseMove)
+            el.addEventListener('mouseup', function (evt) {
+                mouseUpFlag = true
+                mouseDownFlag = false
+                // 框选逻辑
+                let posList = Array.from(randIds).filter(v => v[0]).map(v => v[0]).map(v => v.split('_'))
+                let posYList = posList.map(v => v[0])
+                let posXList = posList.map(v => v[1])
+                let minX = Math.min(...posXList), minY = Math.min(...posYList)
+                let maxX = Math.max(...posXList), maxY = Math.max(...posYList)
+                cells.forEach(cellRow => {
+                    cellRow.forEach(cell => {
+                        let [idy, idx] = cell.id.split('_').map(v => Number(v))
+                        if (idx >= minX && idx <= maxX && idy >= minY && idy <= maxY) {
+                            removeStyle(cell)
+                        }
+                    })
+                })
+                // 重置
+                randIds = new Map()
+                cells = []
+            })
+        }
+    }
+}
+
+// 清除禁止选中的样式，同时选中
+function removeStyle(evt) {
+    let target = evt.target || evt
+    let style = target.getAttribute('style') || selectDisableStyle
+    let reg = new RegExp(selectDisableStyle, 'g')
+    target.setAttribute('style', style.replace(reg, ''))
+}
+```
+
+
+
