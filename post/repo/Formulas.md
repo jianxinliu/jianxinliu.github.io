@@ -14,7 +14,7 @@
 
 一组点一元回归线方程：$y = \hat{\beta_0} + \hat{\beta_1} x$
 
-正态分布累计分布函数： $F(x_i,\mu,\sigma) = \frac{1}{\sigma\sqrt{2\pi}}\int_{-\infty}^x \exp^{-\frac{(x-\mu)^2}{2\sigma^2}}dx$。在程序中求积分使用的是近似的方法，具体参考 `Udf.normalSDist`
+正态分布累计分布函数： $F(x_i,\mu,\sigma) = \frac{1}{\sigma\sqrt{2\pi}}\int_{-\infty}^x e^{-\frac{(x-\mu)^2}{2\sigma^2}}dx = 1- \frac{1}{2}erfc(\frac{x-\mu}{\sqrt{2\sigma^2}})$。在程序中求积分使用的是近似的方法，具体参考 `Udf.normalSDist`
 
 相关性系数：$r = \frac{\Sigma_{i=0}^n (x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\Sigma_{i=0}^n(x_i-\bar{x})^2 \Sigma_{i=0}^n (y_i - \bar{y})^2}}$
 
@@ -22,9 +22,11 @@
 
 两列的对应值平方和的和 `sumx2py2`: $\Sigma_0^i{(arrX_i^2+arrY_i^2)}$ `sumx2py2` => $sum \space x^2 \space plus \space y^2$
 
-[$\Gamma$ 函数]([https://zh.wikipedia.org/wiki/%CE%93%E5%87%BD%E6%95%B0](https://zh.wikipedia.org/wiki/Γ函数))： $\Gamma(n) = (n-1)!$
+[$\Gamma$ 函数]([https://zh.wikipedia.org/wiki/%CE%93%E5%87%BD%E6%95%B0](https://zh.wikipedia.org/wiki/Γ函数))： $\Gamma(n) = \int_0^\infty t^{x-1}e^{-t} dt = (n-1)!$
 
 [$\Beta$ 函数]([https://zh.wikipedia.org/wiki/%CE%92%E5%87%BD%E6%95%B0](https://zh.wikipedia.org/wiki/Β函数))：$\Beta(x,y)=\frac{\Gamma(x)\Gamma(y)}{\Gamma(x+y)}=\frac{(x-1)!(y-1)!}{(x+y-1)!}$
+
+误差函数：erf : $erf(x) = \frac{2}{\sqrt{\pi}}\int_0^x e^{-t^2} dt$，$erfc(x) = 1-erf(x)$
 
 概率密度函数： `pdf`
 
@@ -78,4 +80,10 @@ $$
 
 
 具体实现可参考 [jStat](https://github.com/jstat/jstat)，[smile-Statistical Machine Intelligence and Learning Engine](https://github.com/haifengl/smile/tree/master/math/src/main/java/smile/stat/distribution)，原理可参考[wikipedia](https://zh.wikipedia.org/) 相关词条
+
+[OpenOffice](https://github.com/apache/openoffice)，同 Excel WPS 的实现
+
+[OpenOffice-interpreter1-base,math,baseStat](https://github.com/apache/openoffice/blob/trunk/main/sc/source/core/tool/interpr1.cxx)，interpr2.cxx-date，interpr3.cxx-distribution，interpr4.cxx，interpr5.cxx，interpr6.cxx-stat-base gamma-fn
+
+ ScInterpreter
 
