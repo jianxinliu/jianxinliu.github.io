@@ -2,7 +2,7 @@
 
 ## lifecycle
 
-![](./vue-lifecycle.png)
+![vue-lifecycle](./vue-lifecycle.png)
 
 ## Vuex
 
@@ -365,6 +365,8 @@ String getGroupbyKey(User u){
     return String.format("%s_%s_%s",u.getAddr(),u.getCountry(),u.getName());
 }
 ```
+
+[Oracle Java Tutorial](https://docs.oracle.com/javase/tutorial/index.html)
 
 
 
@@ -1395,6 +1397,8 @@ function hashIt(data) {
 
 `case when a=1 and b=2 then avg(age) when a=2 and b=3 then ... end as avg_age`
 
+`group by` 按字段分组，相同的在一组，并对各组执行聚合操作。透视表就是基于分组实现的，在分组的基础上，选择聚合操作。统计中的分组也是一样的原理。
+
 # js 并发模型与事件循环
 
 [ref](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/EventLoop)
@@ -1557,6 +1561,60 @@ object Slope extends Aggregator[Params, Buffer, Double] {
 sparkSession.udf.register("slope", functions.udaf(Slope))
 ```
 
+聚合中有聚合（求一列数的标准差$\sigma = \sqrt{\frac{\Sigma_{i=1}^n(x_i - \bar{x})^2}{n-1}}$,每一次聚合中都有 $\bar{x}$ 这个固定且需要预先求取的值，按以往的聚合方式，肯定无法实现。则可以转换为聚合时不做任何 reduce 操作，只是把所有元素收集起来，最终再做运算）
+
+```scala
+import org.apache.spark.sql.{Encoder, Encoders}
+import org.apache.spark.sql.expressions.Aggregator
+import scala.collection.mutable.ListBuffer
+
+case class KurtParam(col: Double)
+case class KurtBuffer(list: ListBuffer[Double])
+
+/**
+  * 峰度 Kurtosis 计算，使用 Excel 公式
+  * https://baike.baidu.com/item/%E5%B3%B0%E5%BA%A6
+  *
+  * kurtosis = { [n(n+1) / (n -1)(n - 2)(n-3)] sum[(x_i - mean)^4] / std^4 } - [3(n-1)^2 / (n-2)(n-3)]
+  */
+object Kurt extends Aggregator[KurtParam, KurtBuffer, Double] {
+  override def zero: KurtBuffer = KurtBuffer(ListBuffer[Double]())
+
+  override def reduce(b: KurtBuffer, a: KurtParam): KurtBuffer = {
+    b.list.append(a.col)
+    b
+  }
+
+  override def merge(b1: KurtBuffer, b2: KurtBuffer): KurtBuffer = {
+    b1.list.appendAll(b2.list)
+    b1
+  }
+
+  override def finish(r: KurtBuffer): Double = {
+    val n = r.list.size.toFloat
+    if (n < 4) {
+      return Double.NaN
+    }
+    val v1 = (n * (n + 1)) / ((n - 1) * (n - 2) * (n - 3))
+    val v3 = 3 * math.pow(n - 1, 2) / ((n - 2) * (n - 3))
+    val mean = r.list.sum / n
+    // 可使用 reduce 简化
+    var stdDiffSum = 0.0
+    r.list.foreach(li => {
+      stdDiffSum += math.pow(li - mean, 2)
+    })
+    val std = math.sqrt(stdDiffSum / (n - 1))
+    var tmpPow = 0.0
+    r.list.foreach(li => {
+      tmpPow += math.pow((li - mean) / std, 4)
+    })
+    v1 * tmpPow - v3
+  }
+  override def bufferEncoder: Encoder[KurtBuffer] = Encoders.product
+  override def outputEncoder: Encoder[Double] = Encoders.scalaDouble
+}
+```
+
 
 
 # HTML 表格任意选中
@@ -1649,3 +1707,14 @@ function removeStyle(evt) {
 
 
 
+# 统计学
+
+基本概率分布及其实现：Excel方式 -> [openoffice](https://github.com/apache/openoffice),实现代码主要在 [interpr](https://github.com/apache/openoffice/blob/trunk/main/sc/source/core/tool/interpr3.cxx)
+
+js 中有 [jStat](https://github.com/jstat/jstat),[doc](https://jstat.github.io/all.html)
+
+java 中有 [apache commons math3](https://commons.apache.org/proper/commons-math/)
+
+c# 中有 [NMath]()
+
+工程统计[概念、原理、公式](https://www.itl.nist.gov/div898/handbook/index.htm)
