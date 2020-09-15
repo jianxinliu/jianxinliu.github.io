@@ -627,8 +627,8 @@ function allPermutations(martix, res, level) {
 全排列，也称笛卡尔积问题，简便方案：[两行代码](https://stackoverflow.com/questions/12303989/cartesian-product-of-multiple-arrays-in-javascript),[电商 SKU](https://juejin.im/post/5ee838cc6fb9a047ea45ef48)
 
 ```js
-const f = (a, b) => [].concat(...a.map(d => b.map(e => [].concat(d, e))));
-const cartesian = (a, b, ...c) => (b ? cartesian(f(a, b), ...c) : a);
+const f = (a, b) => [].concat(...a.map(d => b.map(e => [].concat(d, e)))); // 将问题简化为两个元素
+const cartesian = (a, b, ...c) => (b ? cartesian(f(a, b), ...c) : a); // 递归处理复杂的情况
 let output = cartesian([1,2],[10,20],[100,200,300]);
 output:
 [ [ 1, 10, 100 ],
@@ -772,10 +772,12 @@ let range_by_age_asc = students.sort((a,b) => a.age - b.age)
 let range_by_age_desc = students.sort((a,b) => b.age - a.age)
 
 let avg_age = students.reduce((a,b) => a + b.age,0) / students.length // => 19.4
-
+let min = (...args) => 
+	Math.min(...args.map(v => Array.isArray(v) ? v.map(f => Number(f)) : Number(v)).flat(Infinity))
+min([1,2,3],6,[4,67,78],9)
 
 // array deep copy
-let studentCopy1 = Object.assign([],student)
+let studentCopy1 = Object.assign([],student) // 若 copy 的对象的属性都是原生类型，则可深拷贝。若有引用，则 copy 的是引用。
 let studentCopy2 = JSON.parse(JSON.stringify(student))
 let studentCopy3 = student.map(stu => Object.assign({},stu))
 let studentCopy4 = student.map(stu => ({...stu}))
@@ -1561,7 +1563,7 @@ object Slope extends Aggregator[Params, Buffer, Double] {
 sparkSession.udf.register("slope", functions.udaf(Slope))
 ```
 
-聚合中有聚合（求一列数的标准差$\sigma = \sqrt{\frac{\Sigma_{i=1}^n(x_i - \bar{x})^2}{n-1}}$,每一次聚合中都有 $\bar{x}$ 这个固定且需要预先求取的值，按以往的聚合方式，肯定无法实现。则可以转换为聚合时不做任何 reduce 操作，只是把所有元素收集起来，最终再做运算）
+聚合中有聚合（求一列数的标准差$\sigma = \sqrt{\frac{\Sigma_{i=1}^n(x_i - \bar{x})^2}{n-1}}$,每一次聚合中都有 $\bar{x}$ 这个固定且需要预先求取的值，按以往的聚合方式，肯定无法实现。则可以转换为聚合时不做任何 reduce 操作，只是把所有元素收集起来，最终再做运算）**稍微转变思路即可将原先不可能实现的事情做成**
 
 ```scala
 import org.apache.spark.sql.{Encoder, Encoders}
@@ -1718,3 +1720,262 @@ java 中有 [apache commons math3](https://commons.apache.org/proper/commons-mat
 c# 中有 [NMath]()
 
 工程统计[概念、原理、公式](https://www.itl.nist.gov/div898/handbook/index.htm)
+
+
+
+# 一个登录并保持的例子
+
+前后端分离的登录例子。登录之后，使用 Session 保持一段时间有效，若这这件有请求，则每次请求更新过期时间。实际过期是因为一段时间没和服务端交互。
+
+**后端做法**   在登录之后，后端返回 sessionId 和 token，前端每次请求都带上。后端再拦截每个请求，进行 sessionId 和 token 校验，并校验时间有无超出设定。
+
+```java
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+
+@Slf4j
+@Component
+// 配合 ResponseBody 使用时会出现不能设置响应头的情况
+public class LoginInterceptor extends HandlerInterceptorAdapter {
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        boolean passed = true;
+        // 登录相关请求不校验
+        boolean withHeader = !request.getRequestURI().startsWith("/user");
+        if (withHeader) {
+            try {
+                HttpSession session = request.getSession();
+                String sessionId = request.getHeader("sessionId");
+                String reqToken = request.getHeader("access_token");
+                boolean legalToken = StringUtils.isNotEmpty(reqToken) && session.getAttribute("access_token").equals(reqToken);
+                // 和上次交互时间比较
+                Instant lastTime = new Date(session.getLastAccessedTime()).toInstant();
+                boolean notExpired = LocalDateTime.ofInstant(lastTime, ZoneId.systemDefault()).plusMinutes(30).isAfter(LocalDateTime.now());
+                if (!notExpired) {
+                    session.invalidate();
+                }
+                passed = legalToken && StringUtils.isNotEmpty(sessionId) && notExpired;
+            } catch (Exception e) {
+                log.info("Auth failure: 登录超时！");
+                passed = false;
+            }
+        }
+        if (!passed) {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+        }
+        return passed;
+    }
+}
+```
+
+给每个请求返回 `refresh_token` 刷新。注意：使用 `@ResponseBody` 时，后置拦截器`postHandler` 中不能添加响应头，[原因](https://stackoverflow.com/questions/48823794/spring-interceptor-doesnt-add-header-to-restcontroller-services)
+
+```java
+import org.springframework.core.MethodParameter;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.server.ServerHttpRequest;
+import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
+@ControllerAdvice
+public class ResponseBodyAdvisor implements ResponseBodyAdvice<Object> {
+    @Override
+    public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
+        return true;
+    }
+
+    @Override
+    public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType, Class<? extends HttpMessageConverter<?>> selectedConverterType, ServerHttpRequest request, ServerHttpResponse response) {
+        List<String> allowedHeaders = Arrays.asList("refresh_time", "refresh_token");
+        // 需要添加前端允许接收的响应头，否则前端取不到
+        response.getHeaders().setAccessControlAllowHeaders(allowedHeaders);
+        response.getHeaders().setAccessControlExposeHeaders(allowedHeaders);
+        response.getHeaders().add("refresh_time", String.valueOf(System.currentTimeMillis()));
+        response.getHeaders().add("refresh_token", UUID.randomUUID().toString());
+        return body;
+    }
+}
+```
+
+注册拦截器：
+
+```java
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+@Component
+public class WebConfig implements WebMvcConfigurer {
+
+    private LoginInterceptor loginInterceptor;
+
+    @Autowired
+    public WebConfig(LoginInterceptor loginInterceptor){
+        this.loginInterceptor = loginInterceptor;
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(loginInterceptor);
+    }
+}
+```
+
+控制器中需要做的事：登录成功之后记录本次会话的 sessionId
+
+```java
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.Errors;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.validation.Valid;
+import java.util.*;
+
+@Slf4j
+@RestController
+@RequestMapping("/user")
+public class UserController {
+    
+    private UserService userService;
+    
+    @Autowired
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+    
+    @PostMapping("/login")
+    public BaseResp login(@RequestBody @Valid LoginParams params, HttpServletRequest req, Errors errors) {
+        if (errors.hasErrors()) {
+            StringJoiner sj = new StringJoiner(",");
+            errors.getAllErrors().forEach(err -> sj.add(err.getDefaultMessage()));
+            return new BaseResp(VALIDATED_PARAMETER_EX, sj.toString(), "");
+        }
+        log.info("login prams:{}", params.getUserId());
+        Boolean passed = this.userService.login(params.getUserId(), Utils.pwdEncoder(params.getPwd()));
+        String accessToken = "";
+        String message = "failure";
+        String code = VALIDATED_PARAMETER_EX;
+        HttpSession session = req.getSession(true);
+        if (passed) {
+            accessToken = UUID.randomUUID().toString();
+            message = "success";
+            code = RETURN_CODE_OK;
+            session.setAttribute("access_token", accessToken);
+            // 将 session 设为永不过期，拦截器中手动判断是否过期，手动过期
+            session.setMaxInactiveInterval(-1);
+        }
+        String ret = passed ? accessToken + "@@" + session.getId() : "";
+        return new BaseResp(code, message, ret);
+    }
+}
+```
+
+**前端做法**   登录成功之后，保存 sessionId 和 token，以后每次请求都带上
+
+```js
+let ret = await userService.login(params)
+if (ret.data.result) {
+    let [token, sessionId] = res.data.result.split("@@")
+    window.localStorage.setItem('sessionId', sessionId);
+    window.localStorage.setItem('access_token', token);
+    let success_time = new Date().toString();
+    window.localStorage.setItem('token_time', success_time);
+}
+```
+
+axios 拦截器：设置每次请求携带相关请求头，自我检查是否登录超时，超时取消所发请求，并做相关清理工作。
+
+```js
+axios.defaults.withCredentials = true
+
+const service = axios.create({
+  baseURL: ''
+});
+
+service.interceptors.request.use(request => {
+  // 登录相关请求忽略
+  if (request.url.indexOf('/user') !== -1) {
+    return request
+  }
+  //所有请求加入 token
+  let access_token = window.localStorage.getItem('access_token');
+  request.headers['access_token'] = access_token;
+  request.headers['sessionId'] = window.localStorage.getItem('sessionId');
+
+  // 校验 token_time 是否超时
+  let token_time = window.localStorage.getItem('token_time');
+  let date = new Date()
+  let second = date.getTime() - new Date(token_time).getTime();   //时间差的毫秒数
+  if (second > 1800000) {
+    console.log('超时，请重新登录！')
+    window.location.href = '/';
+    throw new axios.Cancel("cancel: 超时，请重新登录！")
+  }
+  return request;
+}, error => {
+  return Promise.reject(error);
+});
+
+service.interceptors.response.use(response => {
+    // 每次请求后，更新 token 和最后操作时间
+    window.localStorage.setItem('token_time', response.headers['refresh_time']);
+    window.localStorage.setItem('refresh_token', response.headers['refresh_token']);
+    return response;
+  },
+  err => {
+    // request canceled
+    if (err.message && err.message.startsWith('cancel:')) {
+      NProgress.done()
+      Message.warning('超时，请重新登录！')
+      console.log('request canceled')
+      removeLocalStorageItem();
+      throw new axios.Cancel(err.message)
+    }
+    if (err.response.status === 403 || err.response.status === 401) { // 没有权限
+      let html = '<div><p> 即将跳转到登录页！</p></div>';
+      MessageBox.alert(html, '登录超时！', {dangerouslyUseHTMLString: true})
+      removeLocalStorageItem()
+      window.location.href = '/';
+    } else {
+      let html = '<div>' + '<p> 错误提示: ' + JSON.stringify(err) + '</p>' + '</div>';
+      MessageBox.alert(html, '服务器出错了', {dangerouslyUseHTMLString: true})
+    }
+  }
+);
+
+function removeLocalStorageItem(){
+  window.localStorage.removeItem('access_token');
+  window.localStorage.removeItem('sessionId');
+  window.localStorage.removeItem('refresh_token');
+  window.localStorage.removeItem('token_time');
+}
+```
+
+
+
+**改进**   
+
+1. 无需 refresh_token ，refresh_time.
+2. 前端无需知道，无需维护超时时间，全由后端把控，超时返回 401 或 403 即可。
