@@ -3,6 +3,29 @@
 
 # spring in action
 
+## what is spring
+
+核心是一个**容器**，也被称为上下文（context），用于**创建和管理组件**（bean，component），spring 负责将组件**装配**起来，形成一个完成的应用。
+
+装配使用依赖注入（DI或控制反转（IoC））实现。程序员不用过多干预组件如何耦合，只需要设定耦合关系， spring 便会在合适的时机以合适的方式将需要的组件进行装配。
+
+```java
+@RestController
+public class UserController {
+	// 声明一个依赖，而不需要手动创建和管理该依赖的生命周期
+	// 通过属性设置方法注入
+	// 需要将 UserService 的实现类声明为组件（@Component\@Service）
+	@Autowired
+	private UserService userService;
+	
+	// 或者通过构造器注入，二者选其一即可。通常建议使用构造器注入
+	@Autowired
+	public UserController(UserService userService){
+		this.userService = userService;
+	}
+}
+```
+
 ## View Controller
 
 视图控制器，更简单的声明仅仅做视图转发的控制器
@@ -32,6 +55,7 @@ class Dto{
 (@Valid Dto dto,Errors errs){
 	if(errs.hasErrors()){
 		// valid failed
+		// errors.getAllErrors().forEach(err -> sj.add(err.getDefaultMessage()))
 	}
 }
 ```

@@ -465,3 +465,4 @@ function hashIt(data) {
 
 使用 Vues mapState 函数，给 store 中的变量添加 namespace，对一堆变量进行分类、分层。
 
+把逻辑交给 Vue（or ElementUI）。制定特殊的数据格式，以此来代替 `if else` 或循环。

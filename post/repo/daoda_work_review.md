@@ -1729,6 +1729,8 @@ c# 中有 [NMath]()
 
 **后端做法**   在登录之后，后端返回 sessionId 和 token，前端每次请求都带上。后端再拦截每个请求，进行 sessionId 和 token 校验，并校验时间有无超出设定。
 
+**注意**  在前端资源集成在后端发布时，会访问 `/` ,`/index.html` ,`/static/*` ，`/error` 等路径，需要排除。否则拦截后，基本页面都打不开。**惊魂一小时！！！**
+
 ```java
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -1742,7 +1744,9 @@ import javax.servlet.http.HttpSession;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -1751,26 +1755,26 @@ public class LoginInterceptor extends HandlerInterceptorAdapter {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        boolean passed = true;
-        // 登录相关请求不校验
-        boolean withHeader = !request.getRequestURI().startsWith("/user");
-        if (withHeader) {
-            try {
-                HttpSession session = request.getSession();
-                String sessionId = request.getHeader("sessionId");
-                String reqToken = request.getHeader("access_token");
-                boolean legalToken = StringUtils.isNotEmpty(reqToken) && session.getAttribute("access_token").equals(reqToken);
-                // 和上次交互时间比较
-                Instant lastTime = new Date(session.getLastAccessedTime()).toInstant();
-                boolean notExpired = LocalDateTime.ofInstant(lastTime, ZoneId.systemDefault()).plusMinutes(30).isAfter(LocalDateTime.now());
-                if (!notExpired) {
-                    session.invalidate();
-                }
-                passed = legalToken && StringUtils.isNotEmpty(sessionId) && notExpired;
-            } catch (Exception e) {
-                log.info("Auth failure: 登录超时！");
-                passed = false;
+        // 排除前端资源，不拦截
+        List<String> excludePath = Arrays.asList("/static", "/error", "/user");
+        if (excludePath.stream().anyMatch(v -> request.getRequestURI().startsWith(v))) {
+            return true;
+        }
+        boolean passed;
+        try {
+            HttpSession session = request.getSession();
+            String sessionId = request.getHeader("sessionId");
+            String reqToken = request.getHeader("access_token");
+            boolean legalToken = StringUtils.isNotEmpty(reqToken) && session.getAttribute("access_token").equals(reqToken);
+            Instant lastTime = new Date(session.getLastAccessedTime()).toInstant();
+            boolean notExpired = LocalDateTime.ofInstant(lastTime, ZoneId.systemDefault()).plusMinutes(30).isAfter(LocalDateTime.now());
+            if (!notExpired) {
+                session.invalidate();
             }
+            passed = legalToken && StringUtils.isNotEmpty(sessionId) && notExpired;
+        } catch (Exception e) {
+            log.info("Auth failure: 登录超时！");
+            passed = false;
         }
         if (!passed) {
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
@@ -1835,7 +1839,8 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(loginInterceptor);
+        // 前端资源挂载在后端的 static 中，第一次访问会先访问 / 和 /index.html ,需要排除掉
+        registry.addInterceptor(loginInterceptor).excludePathPatterns("/", "/index.html");
     }
 }
 ```
