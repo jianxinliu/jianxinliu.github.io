@@ -1986,3 +1986,110 @@ function removeLocalStorageItem(){
 
 1. 无需 refresh_token ，refresh_time.
 2. 前端无需知道，无需维护超时时间，全由后端把控，超时返回 401 或 403 即可。
+
+
+
+# Java 序列化
+
+**什么是序列化**  将内存中的 Java 对象持久化成某种格式保存至磁盘或用于网络传输，可以简单的理解为 JavaScript 的 `JSON.stringify` 函数的功能。与之对应的还有**反序列化**，将保存成某种格式的对象恢复到内存中可运行的对象，可以简单的理解为 JavaScript 的 `JSON.parse` 函数。但与 JavaScript 相关函数不同的是，`stringify` 和 `parse` 函数会将对象原原本本的序列化、反序列化（js 的对象本身几乎和其字面量等价，也是简单的对象，甚至可以理解为是弱类型限制的 Map）,而 Java 的序列化则考虑更多如：访问性、是否静态、构造器，反序列化的对象比较……
+
+**SerialVersionUID**  （也叫流标识符（Stream UniqueIdentifier），即类的版本定义的）在序列化反序列化时用于唯一标识一个对象。在反序列化时，JVM 通过该 ID 确认对象是否一致，是否被修改过，不同则序列化失败，`InvalidClassException`。
+
+**反序列化时不执行构造函数，也不执行 getter,setter**  若在构造函数中修改 final  变量，则反序列化时赋值不会被应用。
+
+**序列化的结果构成**  序列化后的文件构成：
+
+1. 类描述信息。包括包路径、继承关系、访问权限、变量描述、变量访问权限、方法签名、返回值，以及变量的关联类信息。要注意的一点是，它**并不是class文件的翻版，它不记录方法、构造函数、static变量等的具体实现**。之所以类描述会被保存，很简单，是因为能去也能回嘛，这保证反序列化的健壮运行。
+2. 非瞬态（transient关键字）和非静态（static关键字）的实例变量值。注意，这里的值如果是一个基本类型，好说，就是一个简单值保存下来；如果是复杂对象，也简单，连该对象和关联类信息一起保存，并且持续递归下去（关联类也必须实现Serializable接口，否则会出现序列化异常），也就是说递归到最后，其实还是基本数据类型的保存。
+
+正是因为这两点原因，一个持久化后的对象文件会比一个class类文件大很多
+
+**重写序列化反序列化方法控制序列化逻辑**  一个类能被序列化的前提是实现 Serializable接口，因为可以实现两个私有方法 `writeObject` 和 `readObject`，用来影响和控制序列化过程。如：控制部分属性不参与序列化（也可使用 `transient` 关键字）
+
+```java
+@Data
+@AllArgsConstructor
+class Student implements Serializable {
+    private String name;
+    private Integer age;
+    private transient Double salary;
+}
+
+public class Test {
+     public static void main(String[] args) {
+        Student stu = new Student("jianxin", 23, 100.0);
+        writeObject(stu);
+        Student student = (Student) readObject(); // 不执行构造函数，不执行 getter\setter
+        System.out.println(student.getName());
+        System.out.println(student.getAge());
+        System.out.println(student.getSalary());
+    }
+
+    private static String FIEL_PATH = "./out.bin";
+
+    private static void writeObject(Serializable serializable) {
+        try (ObjectOutputStream oot = new ObjectOutputStream(new FileOutputStream(FIEL_PATH))) {
+            oot.writeObject(serializable);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static Object readObject() {
+        Object ret = null;
+        try (ObjectInputStream objectInputStream = new ObjectInputStream(new FileInputStream(FIEL_PATH))){
+            ret = objectInputStream.readObject();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return ret;
+    }
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
