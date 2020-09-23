@@ -1765,9 +1765,9 @@ public class LoginInterceptor extends HandlerInterceptorAdapter {
         boolean passed;
         try {
             HttpSession session = request.getSession();
-            String sessionId = request.getHeader("sessionId");
-            String reqToken = request.getHeader("access_token");
-            boolean legalToken = StringUtils.isNotEmpty(reqToken) && session.getAttribute("access_token").equals(reqToken);
+            String sessionId = Stream.of(request.getCookies()).filter(v -> "JSESSIONID".equals(v.getName())).limit(1).collect(Collectors.toList()).get(0).getValue();
+            String reqToken = Optional.ofNullable(request.getHeader("access_token")).orElse("");
+            boolean legalToken = StringUtils.isNotEmpty(reqToken) && reqToken.equals(session.getAttribute("access_token"));
             Instant lastTime = new Date(session.getLastAccessedTime()).toInstant();
             boolean notExpired = LocalDateTime.ofInstant(lastTime, ZoneId.systemDefault()).plusMinutes(30).isAfter(LocalDateTime.now());
             if (!notExpired) {
@@ -1775,11 +1775,12 @@ public class LoginInterceptor extends HandlerInterceptorAdapter {
             }
             passed = legalToken && StringUtils.isNotEmpty(sessionId) && notExpired;
         } catch (Exception e) {
-            log.info("Auth failure: 登录超时！");
+            log.info("[Exception {}] Auth failure: 登录超时！", e.getClass());
             passed = false;
         }
         if (!passed) {
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            log.info("Auth failure !");
         }
         return passed;
     }
@@ -1890,10 +1891,10 @@ public class UserController {
             message = "success";
             code = RETURN_CODE_OK;
             session.setAttribute("access_token", accessToken);
-            // 将 session 设为永不过期，拦截器中手动判断是否过期，手动过期
+            // 将 session 设为永不过期，拦截器中判断是否过期，手动过期
             session.setMaxInactiveInterval(-1);
         }
-        String ret = passed ? accessToken + "@@" + session.getId() : "";
+        String ret = passed ? accessToken : "";
         return new BaseResp(code, message, ret);
     }
 }
@@ -1904,8 +1905,7 @@ public class UserController {
 ```js
 let ret = await userService.login(params)
 if (ret.data.result) {
-    let [token, sessionId] = res.data.result.split("@@")
-    window.localStorage.setItem('sessionId', sessionId);
+    let token = res.data.result
     window.localStorage.setItem('access_token', token);
     let success_time = new Date().toString();
     window.localStorage.setItem('token_time', success_time);
@@ -1929,7 +1929,6 @@ service.interceptors.request.use(request => {
   //所有请求加入 token
   let access_token = window.localStorage.getItem('access_token');
   request.headers['access_token'] = access_token;
-  request.headers['sessionId'] = window.localStorage.getItem('sessionId');
 
   // 校验 token_time 是否超时
   let token_time = window.localStorage.getItem('token_time');
@@ -1974,13 +1973,12 @@ service.interceptors.response.use(response => {
 
 function removeLocalStorageItem(){
   window.localStorage.removeItem('access_token');
-  window.localStorage.removeItem('sessionId');
   window.localStorage.removeItem('refresh_token');
   window.localStorage.removeItem('token_time');
 }
 ```
 
-
+Session 工作原理：浏览器第一次请求服务时，服务器不识别该客户端，便生成新的 Session，并且在这次请求的响应头里添加类似 `Set-Cookies:JSESSIONID=XXXXX;HttpOnly` 的信息，告诉浏览器把本次的 SessionId 缓存起来，以后每次请求都在 Cookies 里带上，这样服务器就能识别是哪个客户端发的请求了。也就是不需要手动将 SessionId 返回给前端，也不需要前端每次请求在请求头携带 SessionId，不需要这样暴露。
 
 **改进**   
 
