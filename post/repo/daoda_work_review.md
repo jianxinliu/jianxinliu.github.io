@@ -1633,6 +1633,8 @@ HTML 页面的默认选中方式是行选择模式，即鼠标从按下到释放
 示例代码(Vue + elementUI)：
 
 ```js
+const selectDisableStyle = `-webkit-user-select:none; -moz-user-select: none; -ms-user-select: none; user-select: none;`
+...
 directives: {
     areaSelect: { // 在需要自定义选择的元素上添加 v-areaSelect
         inserted: (el, binding, vnode) => {
@@ -1706,6 +1708,164 @@ function removeStyle(evt) {
     target.setAttribute('style', style.replace(reg, ''))
 }
 ```
+
+该方法虽然可实现任意区域框选，但复制的操作仍然不理想，复制到 Excel 中仍然会复制整行（可能是 ElementUI 的行为），复制到文本编辑器，多行多列的内容也会被合并为一列（单元格内容被换行或制表符分割）。
+
+**第二种思路** 不去依赖浏览器的默认复制操作，而是自动将被复制内容写入剪切板。依然可以借鉴上一方法中对各种事件的监听，以及区域框选算法。只是对鼠标经过的单元格，不是设置 `user-select：none` 之类的样式，而是将单元格添加边框，以示选中。执行区域选中之后，程序是可以知道哪些单元格被选中的，此时可以将这些单元格的内容以想要的格式写入剪切板。
+
+写入剪切板的思路：利用一个不可见 input 元素（若需要多行内容可以使用 textarea），将要复制的文本写入，再执行 setSelectionRange 选中，然后执行 `document.execCommand('copy')`，将 value 写入系统剪切板。
+
+操作方式：按住 <kbd>Ctrl</kbd> 再使用鼠标选择，鼠标释放时自动框选，并将内容复制到剪切板。若不按 <kbd>Ctrl</kbd> 则仍旧可以使用浏览器自身的行选择模式。
+
+```js
+const selectStyle = 'border: 1px solid rgb(51,144,255); box-shadow: 0px 0px 5px 1px rgb(51,144,255);'
+...
+mounted() {
+    // 按下 control 键
+    // isCtrlPressed => this.ctrlPress > 0
+    document.onkeydown = (e) => {
+        if (e.keyCode === 17) {
+            this.ctrlPress += 1
+        }
+    }
+    document.onkeyup = (e) => {
+        if (e.keyCode === 17) {
+            this.ctrlPress = 0
+        }
+    }
+}，
+directives: {
+    areaSelect: {
+        inserted: (el, binding, vnode) => {
+            let randIds = new Map()
+            let mouseDownFlag = false
+            let mouseUpFlag = false
+            const vm = vnode.context // 获取当前组件的 Vue 实例
+            let cells = []    // 表格中所有 cell
+            let selectedCells = [] // 最终选中的 cell
+
+            // 复制之后清除选中样式，单击会与现有事件冲突，改为双击
+            document.addEventListener('dblclick', function () {
+                if (!el) { // 该事件不好注销，故加此判断
+                    return
+                }
+                el.querySelectorAll('tr').forEach(tr => {
+                    let row = tr.querySelectorAll('td div.cell')
+                    row.forEach(tdCol => {
+                        tdCol.setAttribute('style', "")
+                    })
+                })
+            })
+
+            el.addEventListener('mousedown', function (event) {
+                if (!vm.isCtrlPressed) {
+                    return
+                }
+                mouseDownFlag = true
+                mouseUpFlag = false
+                cells = []
+                el.querySelectorAll('tr').forEach(tr => {
+                    let row = tr.querySelectorAll('td div.cell')
+                    row.length > 0 && cells.push(row)
+                })
+                cells.forEach((tdRow, idy) => {
+                    tdRow.forEach((tdCol, idx) => {
+                        const style = tdCol.getAttribute('style')
+                        // 为了界面简洁明了，选择过程中仍然禁止浏览器自身选中行为
+                        if (style.indexOf(selectDisableStyle) < 0) {
+                            tdCol.setAttribute('style', style + selectDisableStyle)
+                        }
+                        tdCol.setAttribute('id', `${idy + 1}_${idx + 1}`)
+                    })
+                })
+                // 选中点击的 cell
+                selectCell(event)
+            })
+
+            el.addEventListener('mousemove', function mouseMove(evt) {
+                if (!vm.isCtrlPressed) {
+                    return
+                }
+                if (mouseUpFlag || !mouseDownFlag) {
+                    return
+                }
+                // 缓存经过的 cell id
+                randIds.set(evt.target.id, evt.target.id)
+                selectCell(evt)
+            })
+
+            el.addEventListener('mouseup', function (evt) {
+                if (!vm.isCtrlPressed) {
+                    return
+                }
+                mouseUpFlag = true
+                mouseDownFlag = false
+                let posList = Array.from(randIds).filter(v => v[0]).map(v => v[0]).map(v => v.split('_'))
+                let posYList = posList.map(v => v[0])
+                let posXList = posList.map(v => v[1])
+                let minX = Math.min(...posXList), minY = Math.min(...posYList)
+                let maxX = Math.max(...posXList), maxY = Math.max(...posYList)
+                cells.forEach(cellRow => {
+                    let selectedRow = []
+                    cellRow.forEach(cell => {
+                        let [idy, idx] = cell.id.split('_').map(v => Number(v))
+                        if (idx >= minX && idx <= maxX && idy >= minY && idy <= maxY) {
+                            selectCell(cell)
+                            selectedRow.push(cell)
+                        }
+                        // 去除禁止选择的样式，仍然支持浏览器自身的行选择模式
+                        removeStyle(cell)
+                    })
+                    selectedRow.length > 0 && selectedCells.push(selectedRow)
+                })
+                // WPS 默认单元格以 \t 分割，行以 \n 分割
+                copyToClipboard(selectedCells.map(v => v).map(row => row.map(cell => cell.innerText).join("\t")).join("\n"))
+                vm.$message.success("内容已复制到剪切板！")
+                selectedCells = []
+                randIds = new Map()
+                cells = []
+            })
+        }
+    }
+}
+
+function removeStyle(evt) {
+    let target = evt.target || evt
+    let style = target.getAttribute('style') || selectDisableStyle
+    let reg = new RegExp(selectDisableStyle, 'g')
+    target.setAttribute('style', style.replace(reg, ''))
+}
+
+function selectCell(evt) {
+    let target = evt.target || evt
+    // 可能会有其他元素进入，导致样式不美观
+    if (target.getAttribute('class').indexOf('cell') < 0) {
+        return
+    }
+    const style = target.getAttribute('style')
+    if (style.indexOf(selectStyle) < 0) {
+        target.setAttribute('style', style + ';' + selectStyle)
+    }
+}
+
+function copyToClipboard(text) {
+    const input = document.createElement('TEXTAREA');
+    input.style.opacity = 0;
+    input.style.position = 'absolute';
+    input.style.left = '-100000px';
+    document.body.appendChild(input);
+
+    input.value = text;
+    input.select();
+    input.setSelectionRange(0, text.length);
+    document.execCommand('copy');
+    document.body.removeChild(input);
+}
+```
+
+效果：
+
+![tableColumnSelectMode](tableColumnSelectMode.png)
 
 
 
@@ -2050,6 +2210,8 @@ public class Test {
 ```
 
 
+
+# 项目总结
 
 
 
