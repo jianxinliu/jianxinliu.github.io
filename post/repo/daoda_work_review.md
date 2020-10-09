@@ -1819,8 +1819,12 @@ directives: {
                     selectedRow.length > 0 && selectedCells.push(selectedRow)
                 })
                 // WPS 默认单元格以 \t 分割，行以 \n 分割
-                copyToClipboard(selectedCells.map(v => v).map(row => row.map(cell => cell.innerText).join("\t")).join("\n"))
-                vm.$message.success("内容已复制到剪切板！")
+                const done = copyToClipboard(selectedCells.map(v => v).map(row => row.map(cell => cell.innerText).join("\t")).join("\n"))
+                if (done) {
+                    vm.$message.success("内容已复制到剪切板！")
+                } else {
+                    vm.$message.error("该浏览器不支持复制！")
+                }
                 selectedCells = []
                 randIds = new Map()
                 cells = []
@@ -1858,8 +1862,9 @@ function copyToClipboard(text) {
     input.value = text;
     input.select();
     input.setSelectionRange(0, text.length);
-    document.execCommand('copy');
+    const done = document.execCommand('copy');
     document.body.removeChild(input);
+    return done;
 }
 ```
 
