@@ -2152,6 +2152,262 @@ Session 工作原理：浏览器第一次请求服务时，服务器不识别该
 
 
 
+# 一个 CRUD 例子
+
+使用 Jpa & Hibernate 进行数据库操作。
+
+存在 Entity Student & Teacher，表结构 & Entity 如下：
+
+```sql
+create table student(
+	sid varchar(10) primary key,
+    name varchar（10） not null,
+    birth timestamp,
+    age int
+)
+
+create table teacher(
+	tid varchar(10) primary key,
+    name varchar(10),
+    dept varchar(20)
+)
+```
+
+
+
+```java
+import javax.persistence.*;
+import java.sql.Timestamp;
+
+@Entity
+@Table(name = "student", schema = "school", catalog = "")
+public class Student extends UUIDObject {
+    private String sid;
+    private String name;
+    private Timestamp birth;
+    private Integer age;
+
+    @Id
+    @Column(name = "sid")
+    public String getSid() {
+        return colTyp;
+    }
+
+    public void setSid(String colTyp) {
+        this.colTyp = colTyp;
+    }
+
+    @Basic
+    @Column(name = "birth")
+    public Timestamp getBirth() {
+        return birth;
+    }
+
+    public void setBirth(Timestamp birth) {
+        this.birth = birth;
+    }
+    
+    // 其余字段 getter & setter 省略
+    
+    // equals & hashcode 方法省略
+}
+
+// teacher Entity 同理
+```
+
+
+
+## 数据源设定
+
+```java
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+
+import javax.sql.DataSource;
+
+@Configuration
+public class DataSourceConfiguration {
+
+    /**
+     *  第一个数据连接，默认优先级最高
+     * @return
+     */
+    @Bean(name = "dataSourceFirst")
+    @Primary
+    @ConfigurationProperties(prefix = "spring.datasource.first")
+    public DataSource dataSourceFirst() {
+        //这种方式的配置默认只满足spring的配置方式，如果使用其他数据连接（druid）,需要自己独立获取配置
+        return DataSourceBuilder.create().build();
+    }
+
+    /**
+     * 第二个数据源
+     * @return
+     */
+    @Bean(name = "dataSourceSecond")
+    @ConfigurationProperties(prefix = "spring.datasource.second")
+    public DataSource dataSourceSecond() {
+        return DataSourceBuilder.create().build();
+    }
+}
+
+```
+
+
+
+```java
+import com.xx.common.impl.BaseRepositoryImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.sql.DataSource;
+
+@Configuration
+@EnableJpaRepositories(
+        basePackages = "com.xx.repository.first",
+        entityManagerFactoryRef = "firstEntityManagerFactoryBean",
+        transactionManagerRef = "firstTransactionManager",
+        repositoryBaseClass = BaseRepositoryImpl.class)
+@EnableTransactionManagement
+public class JpaFirstConfiguration {
+
+    @Autowired
+    @Qualifier("dataSourceFirst")
+    private DataSource dataSource;
+
+    @Bean(name = "firstEntityManagerFactoryBean")
+    @Primary
+    public LocalContainerEntityManagerFactoryBean entityManagerFactoryBean() {
+        HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+        vendorAdapter.setGenerateDdl(false); // 第一次可开启，使用hibernate生成表，之后需关闭
+        LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
+        factory.setJpaVendorAdapter(vendorAdapter);
+        factory.setPackagesToScan("com.xx.entity.first");
+        factory.setDataSource(dataSource);
+        return factory;
+    }
+
+    @Bean(name = "firstEntityManager")
+    @Primary
+    public EntityManager entityManager() {
+        return entityManagerFactoryBean().getObject().createEntityManager();
+    }
+
+    @Bean(name = "firstTransactionManager")
+    @Primary
+    public PlatformTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
+        JpaTransactionManager txManager = new JpaTransactionManager();
+        txManager.setEntityManagerFactory(entityManagerFactory);
+        return txManager;
+    }
+}
+
+```
+
+
+
+```java
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.repository.NoRepositoryBean;
+
+import java.io.Serializable;
+import java.util.List;
+
+@NoRepositoryBean
+public interface BaseRepository<T extends UUIDObject, ID extends Serializable> extends JpaRepository<T, ID>, JpaSpecificationExecutor<T> {
+}
+
+```
+
+
+
+```java
+import com.navi.spc.common.core.dao.BaseRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.jpa.repository.support.JpaEntityInformation;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
+
+@Slf4j
+public class BaseRepositoryImpl<T extends UUIDObject, ID extends Serializable> extends SimpleJpaRepository<T, ID> implements BaseRepository<T, ID> {
+
+    private final JpaEntityInformation<T, ?> entityInformation;
+
+    private final EntityManager em;
+
+    BaseRepositoryImpl(JpaEntityInformation entityInformation,
+                       EntityManager entityManager) {
+        super(entityInformation, entityManager);
+        // Keep the EntityManager around to used from the newly introduced methods.
+        this.em = entityManager;
+        this.entityInformation = entityInformation;
+    }
+}
+
+```
+
+
+
+```java
+package com.xx.repository.first;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface StudentRepository extends BaseRepository<Student, String> {
+    
+    // jpa 默认提供部分 crud 实现，可直接调用
+    // 另外，jpa 可根据定义的方法名生成 sql,而不需要实现，如：
+    
+    /**
+     * 获取指定条件下最大的 sid
+     *
+     * @param name
+     * @param age
+     * @return
+     */
+    Optional<Student> findFirstByNameAndAgeOrderBySidNoDesc(String name, Integer age);
+
+    /**
+     * 重名检查,也可调用内置的 findById，支持联合主键
+     *
+     * @param sid
+     * @param name
+     * @return
+     */
+    List<Student> findBySidAndName(String sid, String name);
+
+    /**
+     *
+     * @param name
+     * @param age
+     */
+    void deleteByNameAndSid(String Name, String sid);
+
+    // ....
+}
+
+```
+
+
+
+总结： 对每个表建立一个 Entity 对应。通过操作该 Entity 进行数据库操作。
+
 # Java 序列化
 
 **什么是序列化**  将内存中的 Java 对象持久化成某种格式保存至磁盘或用于网络传输，可以简单的理解为 JavaScript 的 `JSON.stringify` 函数的功能。与之对应的还有**反序列化**，将保存成某种格式的对象恢复到内存中可运行的对象，可以简单的理解为 JavaScript 的 `JSON.parse` 函数。但与 JavaScript 相关函数不同的是，`stringify` 和 `parse` 函数会将对象原原本本的序列化、反序列化（js 的对象本身几乎和其字面量等价，也是简单的对象，甚至可以理解为是弱类型限制的 Map）,而 Java 的序列化则考虑更多如：访问性、是否静态、构造器，反序列化的对象比较……
