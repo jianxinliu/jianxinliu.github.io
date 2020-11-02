@@ -1,0 +1,43 @@
+<html>
+
+    <body>
+        <svg id="mainSvg" width='1000' height='1000'></svg>
+    </body>
+
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script>
+        const barData = [3,5,7,9,4,2,6,8]
+        const svg = d3.select('#mainSvg')
+
+        const margin = { top: 20, right: 50, bottom: 20, left: 50 }
+        const innerWidth = svg.attr('width') - margin.right - margin.left
+        const innerHeight = svg.attr('height') - margin.top - margin.bottom
+        const rectWidth = 50, rectHeight = 100, rectCnt = 50
+        const originX = 20, originY = 30, gap = 5
+        const widthCnt = 5, heightCnt = 10;
+
+        svg.attr('transform', `translate(${margin.left}, ${margin.top})`)
+
+        const xScale = d3.scaleBand()
+                        .domain(d3.range(barData.length))
+                        .range([0, innerWidth]),
+                yScale = d3.scaleLinear()
+                    .domain([d3.max(barData), 0])
+                    .range([0, innerHeight / 4]).nice()
+        svg.append('g').attr('transform', `translate(${margin.left}, ${margin.top + innerHeight / 4})`).transition().call(d3.axisBottom().scale(xScale))
+        svg.append('g').attr('transform', `translate(${margin.left}, ${margin.top})`).transition().call(d3.axisLeft().scale(yScale))
+
+        const bar = svg.selectAll('g').data(barData).append('g').attr('transform', (d,i) => `translate(${xScale(i)}, 0)`)
+
+        bar.append('rect').attr("fill", "steelblue")
+                .attr("width", xScale.bandwidth() - 1)
+                .attr("height", yScale);
+
+        bar.append("text")
+                .attr("fill", "white")
+                .attr("x", xScale.bandwidth() / 2)
+                .attr("y", d => yScale(d) - 3)
+                .attr("dy", "0.35em")
+                .text(d => d);
+    </script>
+</html>

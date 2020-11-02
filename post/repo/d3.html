@@ -1,0 +1,207 @@
+<!-- <svg width = "500" height = "500">
+   <rect x = "100" y = "0" width = "300" height = "200" fill='#f00'></rect>
+   <text x='150' y='400'>Hello SVG</text>
+</svg> -->
+
+<html>
+   <head>
+   </head>
+   <body>
+      <div>
+         Line: <input class="Drawtype" name='type' type='radio' value='line' checked/>
+         Point: <input class="Drawtype" name='type' type='radio' value='point'></input> </br>
+         x:<input id="x" value='220' type='number'>
+         y:<input id="y" value='330' type='number'></br>
+         x1:<input id="x1" value='0' type='number'>
+         y1:<input id="y1" value='0' type='number'>
+         size:<input id="size" value='10' type='number'>
+         <button id="btn" onclick='draw()'>Draw</button>
+      </div>
+      <div class="list">
+         <div></div>
+      </div>
+      <svg id="mainSvg" width='1000' height='1000'></svg>
+   </body>
+   <script src="https://d3js.org/d3.v6.min.js"></script>
+   <script>
+      // let txt = d3.select('.main span')
+      // txt.append('span').text('hhah').html("<span>dffgl</span>")
+      // // alert(txt.text())
+
+      // // 添加渐变
+      // d3.select("body").transition().duration(3000).style("background-color", "lightblue");
+
+      // const items = [11,3,45,7,8,9]
+      // let content = d3.select('.content')
+      // // 将数据绑定到元素上，数据和元素对应。对应位置的数据在选择到对应元素时会被传入选择函数
+      // // enter & exis 方法用于进入和退出元素，用于创建和删除
+      // content.append('ul').html('<li></li>').selectAll('li').data(items)
+      // .text(d => `li ${d}`).enter().append('li').text(d => `qw${d}`)
+
+      function drawLine(svg, params, id){
+         svg.append('line').attr('x1', params.x).attr('y1', params.y).attr('id', id)
+            .attr('x2', params.x1).attr('y2', params.y1).attr('stroke', params.color)
+      }
+
+      function drawPoint(svg, params, id) {
+         svg.append('circle').attr('cx', params.x).attr('cy', params.y).attr('id', id)
+            .attr('r', params.size).attr('fill', params.color)
+      }
+
+      function drawRect(svg, params) {
+         svg.append('rect').attr('x', params.x).attr('y', params.y)
+         .attr('width', params.width).attr('height', params.height)
+      }
+
+      const params = {
+         x:0,
+         y:0,
+         x1:0, 
+         y1:0,
+         size:0, 
+         width:0, height:0
+      }
+
+      const svg = d3.select('#mainSvg')
+         // .append('g') // 添加组
+         // .attr('transform', 'translate(100, 100)') // 平移
+
+      const margin = {top: 20, right: 50, bottom: 20, left: 50}
+      const innerWidth = svg.attr('width') - margin.right - margin.left
+      const innerHeight = svg.attr('height') - margin.top - margin.bottom
+      const rectWidth = 50, rectHeight = 100, rectCnt = 50
+      const originX = 20, originY = 30, gap = 5
+      const widthCnt = 5, heightCnt = 10;
+      let layout = [];
+      for(let i = 0; i < heightCnt; i++) {
+         let row = []
+         for(let j = 0; j < widthCnt; j++) {
+            const col = {
+               x: rectWidth * j + originX + j * gap,
+               y: rectHeight * i + originY + i * gap,
+               content: `${i + 1}-${j + 1}`
+            }
+            const rdm = Math.random()
+            if(rdm > 0.5) {
+               let {x,y} = col
+               let points = []
+               for(let i = 0; i <= parseInt((1 - rdm) * 10) ; i++){
+                  let randX = x,randY = y,randR = 3
+                  randX = Math.random() * (x * 0.9) + (rectWidth * 0.9)
+                  randY = Math.random() * (y * 0.9) + (rectHeight * 0.9)
+                  const point = {
+                     x: parseInt(randX),
+                     y: parseInt(randY),
+                     r: randR
+                  }
+                  points.push(point)
+               }
+               col['points'] = points
+            }
+            row.push(col)
+         }
+         layout.push(row)
+      }
+
+      // 添加坐标轴。同时设置比例，domain 是源，range 是展示的，此处二者相同，则表示 1:1
+      // scaleLiner 返回 scaler 函数，是一个映射函数,在给图形添加位置相关属性时，可调用此函数，做坐标的映射
+      const xScale = d3.scaleLinear().domain([0, widthCnt * rectWidth + (widthCnt - 1) * gap]).range([0, innerWidth]).nice(),
+         yScale = d3.scaleLinear().domain([0, heightCnt * rectHeight + (heightCnt - 1) * gap]).range([0, innerHeight]).nice()
+
+      // transform 的值有三种形式： translate(x, y) rotate(deg) scale,表示移动，旋转，缩放
+      svg.append('g').attr('transform', `translate(${margin.left}, ${margin.top})`).transition().call(d3.axisTop().scale(xScale))
+      svg.append('g').attr('transform', `translate(${margin.left}, ${margin.top})`).transition().call(d3.axisLeft().scale(yScale))
+
+      // d3 data join 有三种状态： enter update exit
+      // 常规的 select attr 等操作对应的是 update，是最常用的状态，但实际上完整的状态是从 enter 开始的。
+      // 对于数据多于图元的情况，enter 可以根据数据生成图元。实际上 enter 返回的是对应父节点的指针，进入 update 的状态
+      // 此后调用的 attr 方法，可以访问到 data 绑定的数据
+      // 对于图元多于数据的情况，exit 函数会返回这些图元，可以调用 remove 进行删除
+      // data(d, keyFn) keyFn 用于指定数据中的 key ，用于区分个体
+      layout.forEach(row => {
+         const chips = svg.selectAll('.chip').data(row, d => d.content).enter().append('rect').classed('chip', true)
+         const texts = svg.selectAll('.text').data(row, d => d.content).enter().append('text').classed('text', true)
+         // const points = svg.selectAll('.point').data(row, d => d.content).enter().append('g').append('circle').classed('point', true)
+
+         chips.attr('x', d => xScale(d.x)).attr('y', d => yScale(d.y))
+            .attr('width', xScale(rectWidth)).attr('height', yScale(rectHeight))
+            .style('fill', '#DEEBF7').style('stroke', '#000').style('stroke-width', 1)
+
+         texts.text(d => d.content).attr('x', d => xScale(d.x + rectWidth / 8)).attr('y', d => yScale(d.y + rectHeight / 2))
+            .attr('font-family', 'sans-serif').attr('font-size', '10px')
+
+         row.forEach(col => {
+            if(col.points && col.points.length > 0) {
+               const points = svg.selectAll('.point').data(col.points, d => d.x).enter().append('circle').classed('point', true)
+               points.attr('cx', d => xScale(d.x)).attr('cy', d => yScale(d.y)).attr('r', d => d.r).attr('fill', '#00f')
+            }
+         })
+         // points.attr('cx', d => xScale(d.x)).attr('cy', d => yScale(d.y)).attr('r', d => d.r).attr('fill', '#00f')
+            // .on('mouseenter', (d, i) => {
+            //    d3.select(this).transition().attr('r', 5)
+            // })
+            // .on('mouseleave', (d, i) => {
+            //    d3.select(this).transition().attr('r', 3)
+            // })
+      })
+      // layout.forEach(row => {
+      //    row.forEach(col => {
+      //       svg.append('g').append('rect').attr('x', col.x).attr('y', col.y)
+      //          .attr('width', rectWidth).attr('height', rectHeight)
+      //          .style('fill', '#DEEBF7').style('stroke', '#000').style('stroke-width',1)
+      //          .append('text').text(col.content).attr('x', col.x + rectWidth / 4).attr('y', col.y + rectHeight / 2)
+      //          .attr('font-family', 'sans-serif').attr('font-size', '10px')
+
+      //       if(col.points && col.points.length > 0) {
+      //          col.points.forEach(p => {
+      //             svg.append('circle').attr('cx', p.x).attr('cy', p.y).attr('r',p.r).attr('fill', '#00f')
+      //             .on('mouseenter', (d,i) => {
+      //                d3.select(this).transition().attr('r', 5)
+      //             })
+      //             .on('mouseleave', (d,i) => {
+      //                d3.select(this).transition().attr('r', 3)
+      //             })
+      //          })
+      //       }
+      //    })
+      // })
+
+      let appended = []
+
+      const width = 500,height = 500
+      function draw(){
+         params.x = document.getElementById('x').value
+         params.y = document.getElementById('y').value
+         params.x1 = document.getElementById('x1').value
+         params.y1 = document.getElementById('y1').value
+         params.size = document.getElementById('size').value
+
+         const rdmId = parseInt(Math.random() * 100 + 1)
+
+         const isLine = Array.from(document.getElementsByClassName('Drawtype')).find(v => v.checked).value
+         let svg = d3.select('svg')
+         params.color = '#f00'
+         if(isLine === 'line'){
+            drawLine(svg, params, rdmId)
+         } else {
+            drawPoint(svg, params, rdmId)
+         }
+
+         // for list & Delete
+         params.rdmId = 'id' + rdmId
+         appended.push(params)
+
+         d3.select('.list div').data(appended).append('span').text(d => d.rdmId)
+         .append('button').on('click', deleteFn(svg, params)).text('Del')
+         .enter().append('span').text(d => d.rdmId).exit().remove()
+      }
+
+      function deleteFn(svg, params) {
+         console.log(params);
+         // let i = appended.findIndex(v => v.rdmId = event.rdmId)
+         // appended.splice(i, 1)
+         svg.select(`#${params.rdmId}`).remove()
+      }
+
+   </script>
+</html>
