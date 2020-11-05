@@ -1401,6 +1401,14 @@ function hashIt(data) {
 
 `group by` 按字段分组，相同的在一组，并对各组执行聚合操作。透视表就是基于分组实现的，在分组的基础上，选择聚合操作。统计中的分组也是一样的原理。
 
+## 聚合函数 & 标量函数
+
+聚合函数是将多行通过函数聚合成一行，如 `avg`,`sum`,`count`,`max` ……
+
+标量函数是对一行进行转换，结果是另一行，如`abs`。
+
+如果查询同时含有聚合函数和标量函数，因为各自的作用，结果集的行数不对等，故需添加group by子句来聚合。
+
 # js 并发模型与事件循环
 
 [ref](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/EventLoop)
@@ -1412,6 +1420,49 @@ js 引擎是单线程模型，故一个函数在执行时，不会被抢占，�
 在浏览器中，每当有一个事件发生，且有一个事件监听器绑定在该事件上，该事件就会被加入消息队列。函数 `setTimeout` 可以将一个函数推迟一段时间执行，原理是当调用 `setTimeout` 时，传入的第一个参数（函数）将被加入消息队列等待执行，理想情况下，队列为空，则到了指定时间后，加入队列的消息会在指定的时间间隔后执行。非理想情况下，可能在消息入队之前，消息队列已经排有耗时远超指定的时间间隔，则该消息不会在指定的之间后执行，而是会在队列执行到该消息时执行。也就是：**`setTimeout` 的第二个参数仅仅表示消息延迟执行的最小时间间隔。** 同样的，`setTimeout(fn, 0)` 并不能立即执行`fn`。
 
 也正是因为 js 引擎采用事件循环模型和消息队列，故可以实现“**永不阻塞**”。如一个 Web 应用在等待 XHR 的返回时，依然可以处理其他如用户输入的事情，因为这类 I/O 事务通常通过事件和回调来处理。
+
+## 事件
+
+ref https://zh.javascript.info/introduction-browser-events
+
+**鼠标事件：**
+
+- `click` —— 当鼠标点击一个元素时（触摸屏设备会在点击时生成）。
+- `contextmenu` —— 当鼠标右键点击一个元素时。
+- `mouseover` / `mouseout` —— 当鼠标指针移入/离开一个元素时。
+- `mousedown` / `mouseup` —— 当在元素上按下/释放鼠标按钮时。
+- `mousemove` —— 当鼠标移动时。
+
+**键盘事件**：
+
+- `keydown` 和 `keyup` —— 当按下和松开一个按键时。
+
+**表单（form）元素事件**：
+
+- `submit` —— 当访问者提交了一个 `<form>` 时。
+- `focus` —— 当访问者聚焦于一个元素时，例如聚焦于一个 `<input>`。
+
+### 事件处理器
+
+在一个事件发生时，分配一个程序处理。三种指定方式
+
+1. HTML `<input onclick="clickHandler()" />`。注意，函数必须带括号，因为最终编译为`input.onclick=function(){clickHandler()}`
+2. DOM 属性 `inputELe.onclick = function(){}` 或 `inputEle.onclick = clickHandler`
+3. addEventListener() `element.addEventListener(event, handler[, options]);` 支持移除处理函数，但需要传入相同的函数（不是指函数功能相同，而是同一个函数实例）。进阶：[对象处理程序](https://zh.javascript.info/introduction-browser-events#dui-xiang-chu-li-cheng-xu-handleevent)
+
+注意： 1,2 中方式只能为一个事件添加一个处理函数，再次添加只会覆盖，而 3 可以添加多个。在方式 1,2 中的事件处理函数，可以访问  this 变量，指向的是当前元素，如 `this.innerHTML`
+
+### 事件冒泡和捕获
+
+**当一个事件发生在一个元素上，首先会运行该元素上的处理函数，然后运行其父元素上的处理函数，然后一直向上到其他祖先的处理函数**
+
+几乎所有的事件都会冒泡。
+
+父元素上的处理函数总是可以获取事件发生的实际位置，通过 `event.target` ，它在冒泡过程中不会发生变化，`this` 指向当前元素。
+
+进阶：[事件委托](https://zh.javascript.info/event-delegation)，
+
+[浏览器默认行为](https://zh.javascript.info/default-browser-action)
 
 # Spark SQL 自定义函数
 

@@ -1,4 +1,6 @@
 
+文档来源： https://zh.javascript.info/regexp-introduction
+
 正则表达式
 
 模式：
