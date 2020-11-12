@@ -2523,6 +2523,40 @@ public class Test {
 
 
 
+# 前端导入导出 Excel
+
+使用 SheetJs 实现
+
+```js
+// file 是个 File 对象
+importFile(file) {
+    const dotIdx = file.name.lastIndexOf('.')
+    const accepts = ['xls', 'xlsx']
+    if (!accepts.includes(file.name.substring(dotIdx + 1).toLowerCase())) {
+        this.$message.warning('只接受 xlsx 或 xls 文件！')
+        return
+    }
+    let reader = new FileReader();
+    reader.onload = e => {
+        let data = e.target.result;
+        let wb = XLSX.read(data, {type: 'binary'});
+        this.$refs.upload.clearFiles()
+        let dataArr = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    }
+    reader.readAsBinaryString(file.raw);
+}
+
+exportFile(exportTable) {
+    let wb = XLSX.utils.book_new();
+    wb.SheetNames = ['samples']
+    let sheet = XLSX.utils.json_to_sheet(exportTable)
+    wb.Sheets = {'samples': sheet}
+    return XLSX.writeFile(wb, 'xxx.xlsx')
+}
+```
+
+
+
 # 项目总结
 
 
