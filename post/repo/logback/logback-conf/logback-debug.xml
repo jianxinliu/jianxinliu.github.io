@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration debug="true">
+
+    <include resource="logback/logback-base.xml"/>
+    <!-- 日志输出级别 -->
+    <root level="DEBUG">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="errorLog"/>
+        <appender-ref ref="warnLog"/>
+        <appender-ref ref="infoLog"/>
+        <appender-ref ref="debugLog"/>
+    </root>
+
+</configuration>
