@@ -29,6 +29,14 @@ saveCityZipCode(
   address.match(cityZipCodeRegex)[1],
   address.match(cityZipCodeRegex)[2]
 );
+
+let flag = true
+let obj = {
+    flag: false
+}
+if (obj.flag) {
+    // xxx
+}
 ```
 
 **Good:**
@@ -38,6 +46,14 @@ const address = "One Infinite Loop, Cupertino 95014";
 const cityZipCodeRegex = /^[^,\\]+[,\\\s]+(.+?)\s*(\d{5})?$/;
 const [_, city, zipCode] = address.match(cityZipCodeRegex) || [];
 saveCityZipCode(city, zipCode);
+
+let isActive = true
+let tableData = {
+    notEmpty: false
+}
+if (tableData.notEmpty) {
+    // xxx
+}
 ```
 
 ### Explicit is better than implicit.
@@ -412,6 +428,8 @@ const review = new PerformanceReview(employee);
 review.perfReview();
 ```
 
+
+
 ## 注释
 
 Comments are an apology, not a requirement. Good code *mostly* documents itself.
@@ -455,6 +473,86 @@ function hashIt(data) {
 }
 ```
 
+
+
+## 工程
+
+1. 使用全局通用的常量，定义共同术语
+2. 使用全局通用的类型，规范类型定义（class）
+3. 尽量组件化，而不是复制。便于更改。
+
+```js
+// Constants.js
+export default {
+    PAGE_SIZE: 100,
+    EXPIRE_SECONDS: 30 * 60 * 60
+    ...
+}
+
+// Types.js
+class SqlTransformError {
+    constructor(sql) {
+        this.sql = sql
+    }
+    getError(msg) {
+        return new Error(JSON.stringify({sql:this.sql, msg}))
+    }
+}
+export class SqlTransformError
+```
+
+
+
+## 其他
+
+1. 通过设定默认值或添加卫语句，减少 `if-else`
+2. 格式化！格式化！格式化！
+3. 使用 `async await` 代替 `then` 回调带来的“缩进地狱”
+
+```js
+// 1.
+function confirm({name, sex}) {
+    if (!name || !sex) {
+        // alarm ...
+        return
+    }
+    if (!/someReg/.test(name)) {
+        // alarm...
+        return
+    }
+    let handler = FemaleHandler()
+    if (sex === 'male') {
+        handler = MaleHandler()
+    }
+    // ...
+}
+
+// 3.
+// Bad
+api.getClassId(className).then(res => {
+    if (res.data.result) {
+        const classId = res.data.result
+        api.listStudents(classId).then(result => {
+            if (result.data.result.length > 0) {
+----------------let students = result.data.result
+----------------// .... balabala
+            }
+        })
+    }
+})
+
+// Better
+const classIdResp = await api.getClassId(className)
+if (!classIdResp.data.result) return
+const classId = classIdResp.data.result
+const studentResp = await api.listStudents(classId)
+if (studentResp.data.result.length < 1) return
+let students = studentResp.data.result
+// .... balabala
+```
+
+
+
 # for Echarts
 
 责任链模式对 Option 进行设置
@@ -463,6 +561,8 @@ function hashIt(data) {
 
 # for Vue
 
-使用 Vues mapState 函数，给 store 中的变量添加 namespace，对一堆变量进行分类、分层。
+使用 Vuex mapState 函数，给 store 中的变量添加 namespace，对一堆变量进行分类、分层。
 
 把逻辑交给 Vue（or ElementUI）。制定特殊的数据格式，以此来代替 `if else` 或循环。
+
+Vue option API : options 大致按 `name -> data(computed) -> created(mounted) -> methods -> afterXXX -> watchs ` 的顺序写。其中 `methods` 各方法之间至少有一个空行。
