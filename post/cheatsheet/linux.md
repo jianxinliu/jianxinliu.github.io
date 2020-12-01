@@ -31,11 +31,11 @@ u
 x
 
 # 删除光标后的一个单词
-dw
+dw， dd 删除当前行； {x,y}d 删除 x~y 行
 
 # 复制，粘贴
-y(yank)
-p
+y(yank) yy 复制整行； nyy 复制从当前行开始往下的 n 行
+p（可以先 o 另起一行）
 
 # undo 
 u

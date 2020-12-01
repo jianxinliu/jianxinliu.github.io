@@ -944,6 +944,8 @@ let ooc = arrP.filter(d => eval(conditionExpression(ucl,lcl))).length
 
 `group by` 按字段分组，相同的在一组，并对各组执行聚合操作。透视表就是基于分组实现的，在分组的基础上，选择聚合操作。统计中的分组也是一样的原理。
 
+**窗口函数** 标量函数的参数与结果是一行对一行，聚合函数的是多行对一行，窗口函数的是多行对多行。`over([partion by xx] order by xx)`
+
 ## 聚合函数 & 标量函数
 
 聚合函数是将多行通过函数聚合成一行，如 `avg`,`sum`,`count`,`max` ……
