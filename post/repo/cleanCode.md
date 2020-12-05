@@ -2,6 +2,8 @@
 
 https://github.com/ryanmcdermott/clean-code-javascript	
 
+https://github.com/airbnb/javascript
+
 ## 变量
 
 ### Use meaningful and pronounceable variable names
@@ -17,6 +19,14 @@ const yyyymmdstr = moment().format("YYYY/MM/DD");
 ```js
 const currentDate = moment().format("YYYY/MM/DD");
 ```
+
+
+
+### 不要使用 `var` , 尽量使用 `const`
+
+使用 `const` 不可保证变量不会被重新赋值，在弱类型语言中，变量被重新赋值不能保证类型不发生改变。而类型发生改变也会导致不可预期的问题和增加理解成本。也可使用 `let` 在必须重新赋值的场景。
+
+`let`,`const` 声明的变量是块级作用域，而 `var` 是函数级作用域。 
 
 ### 使用可自解释的变量名
 
@@ -139,6 +149,45 @@ function createMicrobrewery(name = "Hipster Brew Co.") {
   // ...
 }
 ```
+
+
+
+## 对象
+
+### 对象属性
+
+```js
+// bad 
+let value = 1
+let obj = {
+    value: value,
+    addValue: function(v) {
+        return obj.value + v
+    }
+}
+
+// good
+let obj = {
+    'a': 1,
+    value,
+    'min-width': 3,
+    addValue(v) {
+        return obj.value + v
+    }
+}
+
+// better (简写和非简写形式不要混在一起。分组写，并且简写形式放在对象定义的开头)
+let obj = {
+    value,
+    a: 1,
+    'min-width': 3, // 只有包含非法字符的属性名才加引号，否则不加
+    addValue(v) {
+        return obj.value + v
+    }
+}
+```
+
+
 
 ## 函数
 
@@ -340,6 +389,67 @@ if (isDOMNodePresent(node)) {
   // ...
 }
 ```
+
+### 使用默认参数而不是改变参数值
+
+```js
+// really bad
+function handleThings(opts) {
+  // No! We shouldn’t mutate function arguments.
+  // Double bad: if opts is falsy it'll be set to an object which may
+  // be what you want but it can introduce subtle bugs.
+  opts = opts || {};
+  // ...
+}
+
+// still bad
+function handleThings(opts) {
+  if (opts === void 0) {
+    opts = {};
+  }
+  // ...
+}
+
+// good
+function handleThings(opts = {}) {
+  // ...
+}
+
+// 且将带默认值的参数放在最后（因为可以不传，而不会占位）
+```
+
+
+
+### 不要使用 `eval`
+
+
+
+### 不要改变参数的值，不要给参数重新赋值
+
+```js
+// bad
+function f1(a) {
+  a = 1;
+  // ...
+}
+
+function f2(a) {
+  if (!a) { a = 1; }
+  // ...
+}
+
+// good
+function f3(a) {
+  const b = a || 1;
+  // ...
+}
+
+function f4(a = 1) {
+  // ...
+}
+```
+
+
 
 ## 格式
 
