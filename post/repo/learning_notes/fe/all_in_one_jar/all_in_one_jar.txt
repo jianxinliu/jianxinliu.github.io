@@ -1,0 +1,13 @@
+
+
+http://bohr.me/frontend-backend/
+
+https://blog.codecentric.de/en/2018/04/spring-boot-vuejs/
+
+开发前后端分离，部署 all in one jar
+
+前后端工程分别做为一个父工程的两个子工程。
+
+
+
+mock server or swagger？
