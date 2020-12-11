@@ -676,3 +676,19 @@ let students = studentResp.data.result
 把逻辑交给 Vue（or ElementUI）。制定特殊的数据格式，以此来代替 `if else` 或循环。
 
 Vue option API : options 大致按 `name -> data(computed) -> created(mounted) -> methods -> afterXXX -> watchs ` 的顺序写。其中 `methods` 各方法之间至少有一个空行。
+
+
+
+
+
+# 一般规范 & 体验优化
+
+1. 表格中每行须有一个 id , 便于删改
+2. select 选择组件，需支持搜索
+3. 输入框后表示输入结束的按钮，需添加按键触发
+4. 删除不必要的注释，被注释的代码
+5. Vue 等框架中，剥离和框架实例不相关的功能函数
+6. 相关常量单文件存放
+7. Vue 中，Vuex 相关变量操作在 mutation 中执行，代码中使用 mapMutation 引入
+8. 函数中，参数不符合函数执行条件，及时退出
+9. 及时整理代码，发现坏味道及时清理
