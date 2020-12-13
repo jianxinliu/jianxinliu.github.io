@@ -242,6 +242,32 @@ export class Person{
 
 ## 函数
 
+```ts
+function create(x: string, addOn: string){
+    return x + addOn
+}
+// function type
+let myFunc: (a: string) => string
+myFunc = c => c + ' sd'
+console.log(myFunc('a'))
+
+// optional parameter 
+function findIn(text: string, pattern: string, start?: number): number {
+    if (start !== undefined) return text.substring(start).indexOf(pattern) + start
+    return text.indexOf(pattern)
+}
+console.log(findIn("hello world world", 'world'))    // => 6
+console.log(findIn("hello world world", 'world', 7)) // => 12
+
+// defaule initialized parameters
+function findInFrom(text: string, pattern: string, start = 0) {
+    return findIn(text, pattern, start)
+}
+console.log(findInFrom("hello world world", 'world'))
+
+// this parameters & Overloads
+```
+
 
 
 
