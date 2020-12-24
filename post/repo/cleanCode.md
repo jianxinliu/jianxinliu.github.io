@@ -677,6 +677,8 @@ let students = studentResp.data.result
 
 Vue option API : options 大致按 `name -> data(computed) -> created(mounted) -> methods -> afterXXX -> watchs ` 的顺序写。其中 `methods` 各方法之间至少有一个空行。
 
+逻辑操作和数据操作剥离。 **store 中的数据操作，在 store 中完成，不要放在程序逻辑中**。获取 store 中的变量值，使用 `getters`, 设置 store 中的变量，使用 `mutation`。
+
 
 
 
@@ -689,6 +691,6 @@ Vue option API : options 大致按 `name -> data(computed) -> created(mounted) -
 4. 删除不必要的注释，被注释的代码
 5. Vue 等框架中，剥离和框架实例不相关的功能函数
 6. 相关常量单文件存放
-7. Vue 中，Vuex 相关变量操作在 mutation 中执行，代码中使用 mapMutation 引入
+7. Vue 中，Vuex 相关变量操作在 mutation 中执行，代码中使用 mapMutation 引入 （代码中分离数据操作和逻辑操作）
 8. 函数中，参数不符合函数执行条件，及时退出
 9. 及时整理代码，发现坏味道及时清理
