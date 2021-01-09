@@ -42,6 +42,7 @@ saveCityZipCode(
   address.match(cityZipCodeRegex)[2]
 );
 
+// flag for what???
 let flag = true
 let obj = {
     flag: false
@@ -696,6 +697,30 @@ let students = studentResp.data.result
 
 
 
+`Array.prototype.forEach` VS `Array.prototype.map`
+
+使用 `map` 必须在回调函数中 `return` ，以此返回一个新的数组，否则对原数组修改，使用 `forEach`
+
+
+
+```js
+// bad
+students.map(stu => {
+    stu.name = `${stu.firstName}-${stu.lastName}`
+})
+
+// better
+students.forEach(stu => {
+    stu.name = `${stu.firstName}-${stu.lastName}`
+})
+const students = students.map(stu => {
+    stu.name = `${stu.firstName}-${stu.lastName}`
+    return stu
+})
+```
+
+
+
 # for Echarts
 
 责任链模式对 Option 进行设置
@@ -744,5 +769,3 @@ Vue option API : options 大致按 `name -> data(computed) -> created(mounted) -
 
 
 
-
-[^sd]:
