@@ -2101,12 +2101,116 @@ exportFile(exportTable) {
 ```
 
 
+# 有向图遍历
+
+如有如下有向图：
+
+```mermaid
+graph LR
+A((a)) --> B((b))
+A --> C((c))
+C --> D((d))
+D --> B
+```
+
+存储结构为：
+
+```js
+points = ['a', 'b', 'c', 'd']
+edges = [
+    ['a', 'b'],
+    ['a', 'c'],
+    ['c', 'd'],
+    ['d', 'b']
+]
+```
 
 
+
+特殊要求：
+
+以点 `b` 为例。有路线 `a -> b`, `d -> b`，`a -> ... -> d` ,故输出结果必然是 `a -> ... -> d -> ... -> b`。
+
+即，**到点 X 的所有路径上的所有点都必须排在 X 之前**。实际上，执行到 X 点时，X 点执行的前提条件是 X 的所有前置点都已经被执行过。
+
+此处的答案为 `a -> c -> d -> b`
+
+```js
+let points = ["6", "3", "a", "d"]
+
+let edges = [
+    ["6","a"],
+    ["a","d"],
+    ["d","3"],
+    ["6","3"]
+]
+
+// 存储边
+let innerEdges = []
+// 存储前置节点，用于防止闭环导致无限递归
+let preList = []
+
+/**
+ * 将一个图转换为一个有序数组
+ * ref: ./graphToArr.md
+ * @param edges 模块间的连线。[[a,b], [b,c], [c,a]] => 有向环形图
+ * @param points 模块列表。 [a,b,c]
+ * @return [] 重排后的 points, 就是 element 执行的顺序
+ */
+export function elementsRearrange(points, edges) {
+  innerEdges = edges
+  let ret = []
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i]
+    if (ret.includes(p)) {
+      continue
+    }
+    travelPre(p, ret)
+  }
+  return ret
+}
+
+function travelPre(p, ret) {
+  const pres = findNotTraveledPrevious(p, ret)
+  if (pres.length < 1) {
+    // 根节点或所有前置均已遍历
+    ret.push(p)
+  } else {
+    for (let j = 0; j < pres.length; j++) {
+      const pre = pres[j]
+      if (ret.includes(pre)) {
+        continue
+      }
+      const goAhead = checkLoop(pre)
+      goAhead && travelPre(pre, ret)
+    }
+    // 处理完前置，遍历当前点
+    if (!ret.includes(p)) {
+      ret.push(p)
+    }
+  }
+}
+
+function findNotTraveledPrevious(node, ret) {
+  const tmp = innerEdges.filter(v => v[1] === node).map(v => v[0]).filter(v => !ret.includes(v))
+  return Array.from(new Set(tmp))
+}
+
+function checkLoop(p) {
+  if (preList.includes(p)) {
+    // 形成闭环，停止前溯
+    return false
+  }
+  preList.push(p)
+  return true
+}
+```
 
 
 
 # 项目总结
+
+参考 [cleanCode](./cleanCode.md)
 
 
 
