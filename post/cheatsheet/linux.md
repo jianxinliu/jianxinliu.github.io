@@ -2,10 +2,10 @@
 
 ```shell
 # 解压 tar.gz 文件
-tar -zxvf source_file target_file
+tar -zxvf target_file.tar.gz
 
 # 压缩并打包文件为 tar.gz
-tar -zcvf source_file
+tar -zcvf target_file.tar.gz  source_file
 
 # 不解压，查看文件
 tar -tf source_file
@@ -54,7 +54,8 @@ echo $NAME
 export NAME=value
 ```
 
-# Fiel Permissions
+# File Permissions
+
 ```shell
 # 修改文件的权限
 chmod mode file
@@ -108,5 +109,23 @@ cmd 2>&1
 # 重定向所有流到文件
 
 cmd &> file
-
 ```
+
+
+
+# file
+
+```shell
+find -name filename // 按名称查找文件
+
+whereis file/command
+
+grep pattern          params: [-i]:忽略大小写; [-v] 反选 ;[-a] 处理二进制文件; [-R] 递归方式
+```
+
+
+
+
+
+
+
