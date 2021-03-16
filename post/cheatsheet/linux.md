@@ -127,5 +127,15 @@ grep pattern          params: [-i]:忽略大小写; [-v] 反选 ;[-a] 处理二�
 
 
 
+# network
+
+```shell
+// 查看端口使用情况（any one）
+sudo lsof -i -P -n | grep LISTEN
+sudo netstat -tulpn | grep LISTEN
+sudo lsof -i:22 ## see a specific port such as 22 ##
+sudo nmap -sTU -O IP-address-Here
+```
+
 
 
