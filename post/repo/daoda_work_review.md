@@ -175,7 +175,7 @@ Vue 通过给组件添加 `is` 属性来动态的渲染不同的组件，一般�
 - [单文件组件 (`.vue`)](https://cn.vuejs.org/v2/guide/single-file-components.html)
 - [`<script type="text/x-template">`](https://cn.vuejs.org/v2/guide/components-edge-cases.html#X-Templates)
 
-## 例子
+### 例子
 
 以一个简单的日志记录为例，主界面有 tab 页，选择不同级别的日志进行记录，底部展示当前所有日志记录。
 
@@ -211,6 +211,58 @@ add(){
 ```
 
 Warning logger、Success logger……
+
+## Vue Directives
+
+自定义指令实现 debounce
+
+```js
+// default is triggered by click event: v-debounce:1000="triggerFn"
+// change trigger type:  v-debounce:1000 = "{event: 'keyup', fn: triggerFn}"  ('event' can be 'evt' for shorten)
+// default: interval -> 200ms; trigger event -> click
+/**
+ * examples:
+ *
+ * 1. trigger by click , after 200ms call the function without arguments (default)
+ *  v-debounce="funcName"
+ *
+ * 2. trigger by keyup , after 500ms call the function without arguments
+ *  v-debounce:500="{fn: funcName, evt: 'keyup'}" or {event: 'keyup'}
+ *
+ * 3. trigger by keyup , after 500ms call the function with arguments
+ *  v-debounce:500="{fn: funcName, evt: 'keyup', args: [arg1, arg2, ....]}" or {args: arg} (for single argument)
+ * @type {DirectiveOptions}
+ */
+const debounce = Vue.directive('debounce', {
+  inserted: function (el, binding) {
+    const {value, arg} = binding
+
+    let interval = arg || 200
+    interval = interval < 1 ? 200 : interval
+    let evtType = 'click'
+    let fn
+    let fnArgs = []
+    if (typeof value === 'function') {
+      fn = value
+    } else if (typeof value === 'object') {
+      evtType = value.event || value.evt || 'click'
+      fn = value.fn
+      fnArgs = Array.isArray(value.args) ? value.args : [value.args]
+    }
+
+    if (!fn || typeof fn !== 'function') {
+      throw Error("trigger function must be specified as a function(not string)!")
+    }
+    let timer
+    el.addEventListener(evtType, () => {
+      timer && clearTimeout(timer)
+      timer = setTimeout(() => fn.call(null, ...fnArgs), interval)
+    })
+  }
+});
+```
+
+
 
 # CSS
 
