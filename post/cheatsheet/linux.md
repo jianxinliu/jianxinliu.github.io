@@ -73,6 +73,8 @@ chmod -R mode folder
 # process snapshot
 ps
 
+ps -ef  (-e select all process.Identical to -A)(-f do full format listing, -H show process hierarchy)
+
 # real time process
 top
 
@@ -138,4 +140,10 @@ sudo nmap -sTU -O IP-address-Here
 ```
 
 
+
+
+
+# sed、awk
+
+sed for stream editor
 

@@ -149,3 +149,211 @@ $ docker inspect efe
 
 
 参考[《循序渐进学 Docker》]( https://book.douban.com/subject/26957408/ )
+
+
+
+
+
+# Docker Hands Dirty
+
+ref: 《Docker-容器与容器云》第二版
+
+
+
+## 第一个 Hello World
+
+使用常见的组件搭建一个 Web 应用（Docker 应用栈）。HAProxy 为两个 AP 服务做负载均衡， AP 服务连接 Redis 获取数据，Redis 由一个 master 和两个 slave 节点组成。
+
+```mermaid
+graph TB
+	HAProxy --> App1
+	HAProxy --> App2
+	App1 --> Redis-master
+	App2 --> Redis-master
+	Redis-master --> Redis-slave1
+	Redis-master --> Redis-slave2
+```
+
+此处 APP 使用 golang 连接 Redis 进行简单示例
+
+### 安装镜像
+
+```bash
+$ sudo docker pull ubuntu
+$ sudo docker pull golang
+$ sudo docker pull haproxy
+$ sudo docker pull redis
+$ sudo docker images
+REPOSITORY    TAG       IMAGE ID       CREATED        SIZE
+ubuntu        latest    26b77e58432b   29 hours ago   72.9MB
+golang        latest    0debfc3e0c9e   2 days ago     862MB
+redis         latest    7f33e76fcb56   3 days ago     105MB
+haproxy       latest    56132d856f67   4 days ago     93.8MB
+```
+
+### 容器栈节点互联
+
+使用 `docker run --link` 可以联结 docker 节点。`--link` 选项可以使得容器间建立安全的交互通信，格式为 `--link name:alias` 将容器 `name` 连接到本次启动的容器上，取别名为 `alias` ，如启动 App 服务，连接 Redis `docker run --name app1 --link redis-master:db` 则在 APP 内部可以通过 `db` 为主机名访问 `redis-master`
+
+容器栈各个节点的连接信息：
+
+- 启动 redis-master 容器节点
+- 两个 Redis-slave 容器节点启动时要连接到 redis-master
+- 两个 APP 容器节点启动时要连接到 redis-master
+- HAProxy  容器节点启动时要连接到两个 APP 节点
+
+故，容器的启动顺序为：
+
+redis-master -> redis-slave -> app -> HAProxy
+
+### 应用栈容器节点启动 & 配置
+
+```bash
+# 启动 Redis 容器
+$ sudo docker run -it --name redis-master redis /bin/bash # 以交互模式启动 redis 镜像作为 master, 起名为 redis-master，启动后运行 /bin/bash 命令
+$ redis-server # 启动 master
+
+$ sudo docker run -it --name redis-salve1 --link redis-master:master redis /bin/bash
+$ redis-server --slaveof master 6379 # 启动 slave1 并连接 master
+
+$ sudo docker run -it --name redis-salve2 --link redis-master:master redis /bin/bash
+$ redis-server --slaveof master 6379 # 启动 slave2 并连接 master
+
+# 测试 Redis 容器节点互联
+$ docker exec -it <redis-master container id> /bin/bash
+$ redis-cli
+$ 127.0.0.1:6379> set xxx yyy
+
+$ docker exec -it <redis-salve container id> /bin/bash
+$ redis-cli
+$ 127.0.0.1:6379> get xxx
+"yyy"
+
+# 启动应用容器
+$ sudo docker run -it --name app1 --link redis-master:db -v ~/project/app:/usr/src/data goredis ./goOnDocker
+server listening on 8090...
+
+$ sudo docker run -it --name app2 --link redis-master:db -v ~/project/app:/usr/src/data goredis ./goOnDocker
+server listening on 8090...
+
+# 启动 HAProxy ,将容器的 6301 端口绑定 host 的 6301 端口
+$ docker run -it --name haproxy --link ap1:ap1 --link ap2:ap2 -p 6301:6301 -v ~/project/haproxy:/tmp haproxy /bin/bash
+# 因为将 host 的 ~/project/haproxy 挂载到容器 /tmp 下，所以在 host 中修改 HAProxy 的配置在容器中亦可见
+# 修改 ~/project/haproxy/haproxy.cfg 后，启动 HAProxy
+$ haproxy -f /tmp/haproxy.cfg
+
+# 应用栈访问测试
+curl http://localhost:6301/get?key=<>
+
+# Done
+# 可以访问 http://localhost:6301/haproxy-stats 查看两个 ap 的情况
+```
+
+### AP 程序 & 配置
+
+```go
+// goRedis.go
+package main
+
+import (
+	"fmt"
+	"github.com/go-redis/redis"
+	"net/http"
+)
+
+var client *redis.Client
+
+func get(w http.ResponseWriter, req *http.Request)  {
+	key := req.URL.Query().Get("key")
+	fmt.Println(key + "....")
+	res, err := client.Get(key).Result()
+	if err != nil {
+		fmt.Fprintf(w, "nil")
+		fmt.Println(err)
+	} else {
+		fmt.Fprintf(w, "%s", res)
+	}
+}
+
+func main() {
+	client = redis.NewClient(&redis.Options{
+		Addr:"db:6379",
+		Password:"",
+		DB: 0,
+	})
+
+	http.HandleFunc("/get", get)
+
+	fmt.Println("server listening on 8090...")
+	http.ListenAndServe(":8090", nil)
+}
+```
+
+
+
+```dockerfile
+FROM golang
+
+ENV GOPROXY=https://goproxy.cn,https://goproxy.io,direct \
+  GO111MODULE=on \
+  CGO_ENABLED=1
+WORKDIR /opt/app
+RUN go env -w GOPROXY=https://goproxy.cn,https://goproxy.io,direct
+COPY goRedis.go ./
+COPY go.mod ./
+COPY go.sum ./
+
+RUN go env && go list && go build
+```
+
+
+
+```bash
+$ mkdir goRedis
+$ cd goRedis
+$ vi goRedis.go # AP code
+$ go mod init goOnDocker # use go module & init module alias goOnDocker
+$ go mod tidy # generate go.mod & go.sum, declare dependenceies
+
+$ docker build . -t goredis  # build Ap image
+```
+
+
+
+```text
+# haproxy.cfg
+global
+  log 127.0.0.1 local0 # 日志输出位置，所有日志都记录在本机，通过 local0 输出
+  maxconn 4096
+  chroot /usr/local/sbin # 改变当前工作目录
+  daemon # 以后台形式运行 HAProxy
+  nbproc 4 # 启动 4 个 HAProxy 实例
+  pidfile /usr/local/sbin/haproxy.pid
+
+defaults
+  log 127.0.0.1 local3
+  mode http # {tcp|http|health} 设定启动实例的协议类型
+  option dontlognull # 保证 HAProxy 不记录上级负载均衡发送过来的心跳包
+  option redispatch # 当 serverId 对应服务器挂掉后，强制定向到其他健康的服务器
+  retries 2 # 重试两次连接失败就认为服务器不可用，主要通过后面的 check 检查
+  maxconn 2000
+  balance roundrobin # 负载均衡选项 {roundrobin|source}, 1:轮训，2:固定转发
+  timeout connect 5000ms
+  timeout client 5000ms
+  timeout server 5000ms
+  listen redis_proxy
+    bind 0.0.0.0:6301  # haproxy 向外暴露的地址端口
+    stats enable
+    stats refresh 5s
+    stats uri /haproxy-stats # haproxy 状态页
+      server ap1 ap1:8090 check inter 2000 rise 2 fall 5 # 负载的 AP， 可以是不同端口
+      server ap2 ap2:8090 check inter 2000 rise 2 fall 5
+
+```
+
+
+
+
+
+
+
