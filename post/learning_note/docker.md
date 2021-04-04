@@ -211,7 +211,7 @@ redis-master -> redis-slave -> app -> HAProxy
 ```bash
 # 启动 Redis 容器
 $ sudo docker run -it --name redis-master redis /bin/bash # 以交互模式启动 redis 镜像作为 master, 起名为 redis-master，启动后运行 /bin/bash 命令
-$ redis-server # 启动 master
+$ redis-server # 使用默认配置启动 master
 
 $ sudo docker run -it --name redis-salve1 --link redis-master:master redis /bin/bash
 $ redis-server --slaveof master 6379 # 启动 slave1 并连接 master
@@ -259,37 +259,55 @@ import (
 	"fmt"
 	"github.com/go-redis/redis"
 	"net/http"
+	"time"
 )
 
 var client *redis.Client
 
-func get(w http.ResponseWriter, req *http.Request)  {
+func get(w http.ResponseWriter, req *http.Request) {
 	key := req.URL.Query().Get("key")
-	fmt.Println(key + "....")
+	fmt.Printf("get key:%s\n", key)
 	res, err := client.Get(key).Result()
 	if err != nil {
-		fmt.Fprintf(w, "nil")
+		fmt.Fprintf(w, "nil\n")
 		fmt.Println(err)
 	} else {
-		fmt.Fprintf(w, "%s", res)
+		fmt.Fprintf(w, "key: %s, res: %s\n", key, res)
+	}
+}
+
+func set(w http.ResponseWriter, req *http.Request) {
+	query := req.URL.Query()
+	key := query.Get("key")
+	value := query.Get("value")
+	fmt.Printf("set key:%s\n", key)
+	res, err := client.Set(key, value, time.Second * -1).Result()
+	if err != nil {
+		fmt.Fprintf(w, "nil\n")
+		fmt.Println(err)
+	} else {
+		fmt.Fprintf(w, "key: %s, value: %s, res: %s\n", key, value, res)
 	}
 }
 
 func main() {
 	client = redis.NewClient(&redis.Options{
-		Addr:"db:6379",
-		Password:"",
-		DB: 0,
+		Addr:     "db:6379",
+		Password: "",
+		DB:       0,
 	})
 
 	http.HandleFunc("/get", get)
 
+	http.HandleFunc("/set", set)
+
 	fmt.Println("server listening on 8090...")
 	http.ListenAndServe(":8090", nil)
 }
+
 ```
 
-
+Dockfile:
 
 ```dockerfile
 FROM golang
@@ -306,7 +324,7 @@ COPY go.sum ./
 RUN go env && go list && go build
 ```
 
-
+ap build
 
 ```bash
 $ mkdir goRedis
@@ -318,7 +336,7 @@ $ go mod tidy # generate go.mod & go.sum, declare dependenceies
 $ docker build . -t goredis  # build Ap image
 ```
 
-
+haproxy.cfg
 
 ```text
 # haproxy.cfg
