@@ -2260,6 +2260,194 @@ function checkLoop(p) {
 
 
 
+# Java 邮件
+
+使用  java 发送邮件，需要用到 `javax.mail` 包
+
+```java
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import javax.mail.Address;
+import javax.mail.Message;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Component
+public class MailUtils {
+
+    private static String host;
+    private static String port;
+    private static String username;
+    private static String password;
+    private static List<String> alarmUsers;
+    private static boolean auth;
+    private static String connectionTimeOut;
+    private static String timeOut;
+
+    /**
+     * 注意： @Value 注解只针对实例字段有效，对 static 字段无效
+     * 且只支持简单类型，不支持 List 等复杂类型，需要自己手动转换或使用 spring 表达式
+     */
+
+    @Value("${java.mail.smtp.host}")
+    public void setHost(String host) {
+        MailUtils.host = host;
+    }
+
+    @Value("${java.mail.smtp.port}")
+    public void setPort(String port) {
+        MailUtils.port = port;
+    }
+
+    static {
+        System.setProperty("mail.mime.splitlongparameters", "false");
+        System.setProperty("mail.mime.charset", "UTF-8");
+    }
+
+    public static void sendMailToUser(String text) {
+        try {
+            log.info("smtp info -> from user {} at {}:{} to {}, with auth: {}",
+                    username, host, port, String.join(",", alarmUsers), auth);
+            MailDTO mailDTO = new MailDTO();
+            mailDTO.setText(text);
+            mailDTO.setSubject("REPORT");
+            mailDTO.setFrom(username);
+            mailDTO.setTo(String.join(",", alarmUsers));
+            mailDTO.setCc("");
+            mailDTO.setBcc("");
+            sendMimeMail(mailDTO);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    //构建复杂邮件信息类
+    private static void sendMimeMail(MailDTO mailVo) throws Exception {
+        Properties properties = new Properties();
+        properties.put("mail.smtp.host", host); // 指定SMTP服务器
+        properties.put("mail.smtp.port", port); // 指定SMTP端口
+        properties.put("mail.smtp.auth", auth); // 指定是否需要SMTP验证
+        properties.put("mail.smtp.connectiontimeout", connectionTimeOut);
+        properties.put("mail.smtp.timeout", timeOut);
+        Session session = Session.getInstance(properties, new MyAuthenticator(username, password));
+        Message mailMessage = new MimeMessage(session);
+
+        Address from = new InternetAddress(mailVo.getFrom());
+        mailMessage.setFrom(from);
+        if (StringUtils.isNotBlank(mailVo.getTo())) {
+            InternetAddress[] arr = getInternetAddresses(mailVo.getTo());
+            mailMessage.setRecipients(Message.RecipientType.TO, arr);
+        }
+        if (StringUtils.isNotBlank(mailVo.getBcc())) {
+            InternetAddress[] arr = getInternetAddresses(mailVo.getBcc());
+            mailMessage.setRecipients(Message.RecipientType.BCC, arr);
+        }
+        if (StringUtils.isNotBlank(mailVo.getCc())) {
+            InternetAddress[] arr = getInternetAddresses(mailVo.getCc());
+            mailMessage.setRecipients(Message.RecipientType.CC, arr);
+        }
+        mailMessage.setSubject(mailVo.getSubject());
+        mailMessage.setText(mailVo.getText());
+        mailMessage.setSentDate(new Date());
+        // 发送邮件
+        Transport.send(mailMessage);
+    }
+
+    private static InternetAddress[] getInternetAddresses(String addrStr) throws AddressException {
+        String[] bccArr = addrStr.split(",");
+        InternetAddress[] arr = new InternetAddress[bccArr.length];
+        for (int i = 0; i < bccArr.length; i++) {
+            arr[i] = new InternetAddress(bccArr[i].trim());
+        }
+        return arr;
+    }
+
+    @Value("${java.mail.smtp.username}")
+    public void setUserName(String uname) {
+        MailUtils.username = uname;
+    }
+
+    @Value("${java.mail.smtp.password}")
+    public void setPassword(String pwd) {
+        MailUtils.password = pwd;
+    }
+
+    // 不支持直接解析复杂类型，只能通过 spring 表达式转换
+    @Value("#{'${java.mail.smtp.alarm-users}'.split(',')}")
+    public void setAlarmUsers(List<String> alarmUsers) {
+        MailUtils.alarmUsers = alarmUsers.stream().map(String::trim).distinct().collect(Collectors.toList());
+    }
+
+    @Value("${java.mail.smtp.auth}")
+    public void setAuth(boolean auth) {
+        MailUtils.auth = auth;
+    }
+
+    @Value("${java.mail.smtp.connectiontimeout}")
+    public void setConnectionTimeOut(String connectionTimeOut) {
+        MailUtils.connectionTimeOut = connectionTimeOut;
+    }
+
+    @Value("${java.mail.smtp.timeout}")
+    public void setTimeOut(String timeOut) {
+        MailUtils.timeOut = timeOut;
+    }
+
+}
+
+
+// MyAuthenticator.java
+import javax.mail.Authenticator;
+import javax.mail.PasswordAuthentication;
+
+public class MyAuthenticator extends Authenticator {
+    String userName = null;
+    String password = null;
+
+    public MyAuthenticator() {
+    }
+
+    public MyAuthenticator(String username, String password) {
+        this.userName = username;
+        this.password = password;
+    }
+
+    @Override
+    protected PasswordAuthentication getPasswordAuthentication() {
+        return new PasswordAuthentication(userName, password);
+    }
+}
+```
+
+使用 QQ 邮箱
+
+```yaml
+java:
+  mail:
+    smtp:
+      host: smtp.exmail.qq.com(smtp.qq.com)
+      port: 25
+      username: xxx@qq.com
+      password: xxxx
+      auth: true
+      connectiontimeout: 30000
+      timeout: 30000
+      alarm-users: >
+        xxx@qq.com,
+        yyy@qq.com,
+```
+
+
+
 # 项目总结
 
 参考 [cleanCode](./cleanCode.md)

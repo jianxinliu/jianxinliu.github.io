@@ -7,9 +7,9 @@
 文件权限：文件所属者、文件所属用户组、其他人的权限
 用户权限表示：
 
-- `r `:read，打开文件或者使用ls 查看目录下的内容
-- `w` :write:，修改文件内容，在目录中创建或删除文件
-- `x` :excute:，将文件作为程序运行或使用cd 进入目录
+- `r `:read，打开文件或者使用ls 查看目录下的内容 (4)
+- `w` :write:，修改文件内容，在目录中创建或删除文件 (2)
+- `x` :excute:，将文件作为程序运行或使用cd 进入目录 (1)
 
 文件权限表示：`-rw-r--r--`
 
@@ -38,13 +38,10 @@ command -options arguments
 
 `file`:查看文件类型，使用空格分隔多个文件
 
-{
-
-​	$ file test.txt 
-
-​	test.txt: ASCII text
-
-}
+```bash
+$ file test.txt
+test.txt: ASCII text
+```
 
 `pwd`:present working directory
 
@@ -114,7 +111,7 @@ command -options arguments
    {man 5 passwd}				
    whatis:{whatis ls}
 
-##查找文件
+## 查找文件
 
 - `find` 。
 - `locate`。速度更快，查找已经建立的文件，新文件可能还没被添加索引，所以可能找不到。
@@ -186,9 +183,17 @@ kill [-signal] PID ...   man kill
 
 ### 任务控制
 
-在命令后加 `&` 可以在后台运行这个命令，但是无法和用户进行交互。最好的方法是将输出冲定向到文件。
+在命令后加 `&` 可以在后台运行这个命令，但是无法和用户进行交互。最好的方法是将输出重定向到文件。
+
+#### 后台运行程序的方法
+
+1. `setsid command` 设置 sessionId， 在单独的 session 里运行程序，pty 退出也不会影响
+2. `nohup command $` 后台运行程序。一般会重定向输出 `nohup command > /dev/null 2>&1 $` 。 `>/dev/null 2>&1` 表示将 `stdout`重定向到 `/dev/null` 表示不输出到控制台，并且将 `stderr` 重定向到 `stdout`。
+
+https://linuxize.com/post/how-to-run-linux-commands-in-background/
 
 ## 环境：
+
 shell在环境中存储了两种变量，分别是环境变量和shell变量，但这在bash中基本没区别。
 `printenv [var name]` 输出环境变量[值]
 `echo $USER` 显示环境变量的值
