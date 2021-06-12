@@ -811,7 +811,7 @@ classNo.forEach(v => console.log(v)) // => 1 2 3 4
 classNo.map(v => console.log(v))     // => 1 2 3 4
 students.map(v => console.log(v.name))  // => ['jack','rose','mary','pony','robin']
 
-// 实际上 map 的主要作用不是遍历，而是遍历的过程中，对所遍历值的操作
+// 实际上 map 的主要作用不是遍历，而是遍历的过程中，对所遍历值的映射操作
 let student_age = students.map(v => v.age) // => [12,12,25,24,24]
 let student_age_formatted = students.map(v => v.age + '岁') => ['12岁','12岁','25岁','24岁','24岁']
 
@@ -2447,6 +2447,12 @@ java:
 ```
 
 
+
+# IDEA 远程调试
+
+IDEA 支持直接调试运行在远程的应用。
+
+IDEA 添加一个 `Run/Debug Configurations` 选择 `Remote` ,添加程序运行的服务器 IP，复制自动生成的 JVM 启动参数， 一般是 `-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005` 作为远程程序启动时的命令行参数 `java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -jar xxx.jar`。远程应用使用新参数启动后，启动本地刚配置的 Configuration ，控制台出现 `Connected to the target VM, address: '192.168.0.171:5005', transport: 'socket'` 表示可以开始打断点进行远程调试。
 
 # 项目总结
 

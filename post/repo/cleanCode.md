@@ -1,6 +1,216 @@
+[TOC]
+
+# for Vue
+
+使用 Vuex mapState 函数，给 store 中的变量添加 namespace，对一堆变量进行分类、分层。（否则 store 中的变量全部都是绝对路径，一行代码全看路径了，看不到真正的代码逻辑）
+
+把逻辑交给 Vue（or ElementUI）。制定特殊的数据格式，以此来代替 `if else` 或循环。
+
+Vue option API : options 大致按 `name -> data(computed) -> created(mounted) -> methods -> afterXXX -> watchs ` 的顺序写。其中 `methods` 各方法之间至少有一个空行。
+
+逻辑操作和数据操作剥离。 **store 中的数据操作，在 store 中完成，不要放在程序逻辑中**。获取 store 中的变量值，使用 `getters`, 设置 store 中的变量，使用 `mutation`。
+
+
+
+# 一般规范 & 体验优化
+
+1. 表格中每行须有一个 id , 便于删改
+2. select 选择组件，需支持搜索
+3. 输入框后表示输入结束的按钮，需添加按键触发
+4. 删除不必要的注释，被注释的代码
+5. Vue 等框架中，剥离和框架实例不相关的功能函数
+6. 相关常量单文件存放
+7. Vue 中，Vuex 相关变量操作在 mutation 中执行，代码中使用 mapMutation 引入 （代码中分离数据操作和逻辑操作）
+8. 函数中，参数不符合函数执行条件，及时退出
+9. 及时整理代码，发现坏味道及时清理
+10. 严格控制单行代码长度（看代码时尽量不需要横向滚动）及函数行数。（缩进地狱）
+11. 给条件表达式命名。如 ： `if (a && b || c.indexOf('xxx') > -1) then ...` -> `withXXX = c.indexOf('xxx') > -1; needUpdate = a && b || withXXX; if (needUpdate) then ...`
+12. 整体观感：紧凑不挤，疏密得当，减少复制
+13. 整体原则：不多写一行无用代码，不少写一行增强明确性的代码
+14. 代码提交前再过一遍改动的地方，检查有无废弃变量，代码，注释，日志打印未删除，代码未格式化。
+15. 和 DB 紧密接触的系统需要做 DB 抽象层，将 DB 相关的细节限制在这一层中，便于集中修改。可以使用 ts 等强类型手段限制 DB 层的输入输出。
+16. 页面按钮需要做幂等，或是防抖节流。Vue 中可以做成指令 `v-throttle:1000="doFn"`
+
+
+
+# ESLint 配置
+
+...
+
+# 工程 & 项目规范
+
+## 代码
+
+代码规范参考下文
+
+### 代码提交规范
+
+具体什么强制格式倒没必要。主要目的是一目了然，便于搜索，提交时写上以下信息即可：
+
+1. 什么类型的提交。新功能？ debug？ 更新文档？……
+2. 提交的代码属于的模块、页面、接口、服务……
+3. 提交内容详情，最好分要点写。debug 需要写简明的原因
+
+把信息持久化到文档里，而不是脑子里。
+
+## 文档
+
+文档类型：
+
+1. 业务 & 需求需要固化为文档，可以由 PM 和 Dev 共同完善。
+
+2. 代码 & 逻辑文档，如果模块足够复杂的话。主要有 Dev 编写。
+
+3. 使用手册，可由 PM 、 Dev、Test 编写完善。
+
+4. 版本记录 & 上线日志。由 Ops 负责编写维护。
+
+5. 项目基础信息文档。如服务器、DB地址 & 账密等。
+
+以上文档注意及时更新。同时：
+
+1. 文档以文本或图片形式，加入版本控制（Markdown，Git）。
+2. 文档应当和代码一样贯穿整个项目，是项目重要的一部分。
+3. 如使用手册应当支持开放给客户。
+
+不错的文档 wiki 产品：
+
+1. http://dynalon.github.io/mdwiki/#
+
+## 工程
+
+1. 使用全局通用的常量，定义共同术语
+2. 使用全局通用的类型，规范类型定义（class）
+3. 尽量组件化，而不是复制。便于更改。
+4. **项目伊始，就要做出规范，并严格执行，否则后期维护是无尽的深渊。规范包括代码规范，业务上的流程规范**
+
+```js
+// Constants.js
+export default {
+    PAGE_SIZE: 100,
+    EXPIRE_SECONDS: 30 * 60 * 60
+    ...
+}
+
+// Types.js
+class SqlTransformError {
+    constructor(sql) {
+        this.sql = sql
+    }
+    getError(msg) {
+        return new Error(JSON.stringify({sql:this.sql, msg}))
+    }
+}
+export class SqlTransformError
+```
+
+
+
+## 模块
+
+1. 总是使用 `import` ,`export`， 而不是其他的模块系统。这是 ECMAScript 标准，是未来。
+2. 尽量按需导入，减少全量导入 `imort * as xxx from 'xxx'`
+3. 合并相同来源的导入 `import foo, {bar, buzz} from 'xxx'`
+4. 模块导出的变量需要是 `const`  的，防止引用变化导致的隐含问题
+5. 导入语句全部写在非导入语句前面
+6. bad: `import foo from './foo.js'`, good: `import foo from './foo'`
+
+
+
+## 杂项
+
+1. 使用高级函数代替 `for in` `for of` 循环。以此强化代码的不可变性（immutable）。
+2. 使用 `.` 访问对象属性。特殊情况如： 属性含有非法字符，属性是变量，才使用 `[]` 访问。（容易与数组访问混淆）
+3. 使用 `**` 计算幂。（ `Math.pow(2, 3)` -> `2 ** 3`）
+4. 一个 `const` 或 `let` 一次只声明一个变量。（bad: `let a, b, c = 0`）
+5. 将使用 `const` 和 `let` 声明的变量放置在一起。
+6. 变量声明处尽量靠近其使用处。
+7. 使用 `===` , `!==` 代替 `==`, `!=` 进行比较
+8. **条件语句如 if 对其表达式求值有一定的隐含规则**。如对象解析为 true, 0 解析为 false。所以通过 `if(array){...}` 判断数组有值是行不通的，数组就算是空 `[]` 也是一个对象。在条件语句表达式中，尽量写明，而不是让编译器去解析。只有 boolean 类型的可以直接写如 `if(isValid)`，字符串和数字最好写明比较表达式 `if(name !== '')` ,`if(list.length > 0)`。
+9. 避免嵌套三元运算符。`a ? b : c ? d : e`  -> `const maybe = c ? d : e; const may = a ? b : maybe` 。也避免不必要的三元运算符。 `foo = a ? a : b` -> `foo = a || b`, `foo = a ? true : false` -> `foo = !!a`, `foo = a ? false : true` -> `foo = !a`
+10. 对运算符使用括号分组，防止因为优先级混淆导致的错误。`const foo = a && b < 0 || c > 0 || d + 1 === 0;` -> `const foo = (a && b < 0) || c > 0 || (d + 1 === 0);`, `const bar = a ** b - 5 % d;` -> `const bar = a ** b - (5 % d);`。
+11. 不要在循环内包含大量的代码，如果有，请抽成函数，尽量让循环的逻辑在一屏之内。循环内应该是逻辑的总体描述，而不应该包含太多细节。
+12. 同样的，分支代码也不要超过一屏，如果有，请抽成函数。
+13. 不同分支的代码，请抽出公共的部分，而不是再复制一份。即节省代码量又减少看代码时的理解负担。
+
+## 其他
+
+1. 通过设定默认值或添加卫语句，减少 `if-else`
+2. 格式化！格式化！格式化！
+3. 使用 `async await` 代替 `then` 回调带来的“缩进地狱”
+
+```js
+// 1.
+function confirm({name, sex}) {
+    if (!name || !sex) {
+        // alarm ...
+        return
+    }
+    if (!/someReg/.test(name)) {
+        // alarm...
+        return
+    }
+    let handler = FemaleHandler()
+    if (sex === 'male') {
+        handler = MaleHandler()
+    }
+    // ...
+}
+
+// 3.
+// Bad
+api.getClassId(className).then(res => {
+    if (res.data.result) {
+        const classId = res.data.result
+        api.listStudents(classId).then(result => {
+            if (result.data.result.length > 0) {
+----------------let students = result.data.result
+----------------// .... balabala
+            }
+        })
+    }
+})
+
+// Better
+const classIdResp = await api.getClassId(className)
+if (!classIdResp.data.result) return
+const classId = classIdResp.data.result
+const studentResp = await api.listStudents(classId)
+if (studentResp.data.result.length < 1) return
+let students = studentResp.data.result
+// .... balabala
+```
+
+
+
+`Array.prototype.forEach` VS `Array.prototype.map`
+
+使用 `map` 必须在回调函数中 `return` ，以此返回一个新的数组，否则对原数组修改，使用 `forEach`
+
+
+
+```js
+// bad
+students.map(stu => {
+    stu.name = `${stu.firstName}-${stu.lastName}`
+})
+
+// better
+students.forEach(stu => {
+    stu.name = `${stu.firstName}-${stu.lastName}`
+})
+const students = students.map(stu => {
+    stu.name = `${stu.firstName}-${stu.lastName}`
+    return stu
+})
+```
+
+
+
+
 # Clean Code for JavaScript[^almost]
 
-https://github.com/ryanmcdermott/clean-code-javascript	
+https://github.com/ryanmcdermott/clean-code-javascript
 
 https://github.com/airbnb/javascript
 
@@ -28,7 +238,7 @@ const currentDate = moment().format("YYYY/MM/DD");
 
 使用 `const` 不可保证变量不会被重新赋值，在弱类型语言中，变量被重新赋值不能保证类型不发生改变。而类型发生改变也会导致不可预期的问题和增加理解成本。也可使用 `let` 在必须重新赋值的场景。
 
-`let`,`const` 声明的变量是块级作用域，而 `var` 是函数级作用域。 
+`let`,`const` 声明的变量是块级作用域，而 `var` 是函数级作用域。
 
 ### 使用可自解释的变量名
 
@@ -160,7 +370,7 @@ function createMicrobrewery(name = "Hipster Brew Co.") {
 ### 对象属性
 
 ```js
-// bad 
+// bad
 let value = 1
 let obj = {
     value: value,
@@ -566,7 +776,7 @@ function hashIt(data) {
     // Convert to 32-bit integer
     hash &= hash;
   }
-    
+
   //some comment一些中英文混杂的注释comments with xxx
 }
 ```
@@ -588,233 +798,3 @@ function hashIt(data) {
   // some comment 一些中英文混杂的注释 comments with xxx
 }
 ```
-
-
-
-## 工程
-
-1. 使用全局通用的常量，定义共同术语
-2. 使用全局通用的类型，规范类型定义（class）
-3. 尽量组件化，而不是复制。便于更改。
-4. **项目伊始，就要做出规范，并严格执行，否则后期维护是无尽的深渊。规范包括代码规范，业务上的流程规范**
-
-```js
-// Constants.js
-export default {
-    PAGE_SIZE: 100,
-    EXPIRE_SECONDS: 30 * 60 * 60
-    ...
-}
-
-// Types.js
-class SqlTransformError {
-    constructor(sql) {
-        this.sql = sql
-    }
-    getError(msg) {
-        return new Error(JSON.stringify({sql:this.sql, msg}))
-    }
-}
-export class SqlTransformError
-```
-
-
-
-## 模块
-
-1. 总是使用 `import` ,`export`， 而不是其他的模块系统。这是 ECMAScript 标准，是未来。
-2. 尽量按需导入，减少全量导入 `imort * as xxx from 'xxx'`
-3. 合并相同来源的导入 `import foo, {bar, buzz} from 'xxx'`
-4. 模块导出的变量需要是 `const`  的，防止引用变化导致的隐含问题
-5. 导入语句全部写在非导入语句前面
-6. bad: `import foo from './foo.js'`, good: `import foo from './foo'`
-
-
-
-## 杂项
-
-1. 使用高级函数代替 `for in` `for of` 循环。以此强化代码的不可变性（immutable）。
-2. 使用 `.` 访问对象属性。特殊情况如： 属性含有非法字符，属性是变量，才使用 `[]` 访问。（容易与数组访问混淆）
-3. 使用 `**` 计算幂。（ `Math.pow(2, 3)` -> `2 ** 3`）
-4. 一个 `const` 或 `let` 一次只声明一个变量。（bad: `let a, b, c = 0`）
-5. 将使用 `const` 和 `let` 声明的变量放置在一起。
-6. 变量声明处尽量靠近其使用处。
-7. 使用 `===` , `!==` 代替 `==`, `!=` 进行比较
-8. **条件语句如 if 对其表达式求值有一定的隐含规则**。如对象解析为 true, 0 解析为 false。所以通过 `if(array){...}` 判断数组有值是行不通的，数组就算是空 `[]` 也是一个对象。在条件语句表达式中，尽量写明，而不是让编译器去解析。只有 boolean 类型的可以直接写如 `if(isValid)`，字符串和数字最好写明比较表达式 `if(name !== '')` ,`if(list.length > 0)`。
-9. 避免嵌套三元运算符。`a ? b : c ? d : e`  -> `const maybe = c ? d : e; const may = a ? b : maybe` 。也避免不必要的三元运算符。 `foo = a ? a : b` -> `foo = a || b`, `foo = a ? true : false` -> `foo = !!a`, `foo = a ? false : true` -> `foo = !a`
-10. 对运算符使用括号分组，防止因为优先级混淆导致的错误。`const foo = a && b < 0 || c > 0 || d + 1 === 0;` -> `const foo = (a && b < 0) || c > 0 || (d + 1 === 0);`, `const bar = a ** b - 5 % d;` -> `const bar = a ** b - (5 % d);`。
-11. 不要在循环内包含大量的代码，如果有，请抽成函数，尽量让循环的逻辑在一屏之内。循环内应该是逻辑的总体描述，而不应该包含太多细节。
-12. 同样的，分支代码也不要超过一屏，如果有，请抽成函数。
-13. 不同分支的代码，请抽出公共的部分，而不是再复制一份。即节省代码量又减少看代码时的理解负担。
-
-## 其他
-
-1. 通过设定默认值或添加卫语句，减少 `if-else`
-2. 格式化！格式化！格式化！
-3. 使用 `async await` 代替 `then` 回调带来的“缩进地狱”
-
-```js
-// 1.
-function confirm({name, sex}) {
-    if (!name || !sex) {
-        // alarm ...
-        return
-    }
-    if (!/someReg/.test(name)) {
-        // alarm...
-        return
-    }
-    let handler = FemaleHandler()
-    if (sex === 'male') {
-        handler = MaleHandler()
-    }
-    // ...
-}
-
-// 3.
-// Bad
-api.getClassId(className).then(res => {
-    if (res.data.result) {
-        const classId = res.data.result
-        api.listStudents(classId).then(result => {
-            if (result.data.result.length > 0) {
-----------------let students = result.data.result
-----------------// .... balabala
-            }
-        })
-    }
-})
-
-// Better
-const classIdResp = await api.getClassId(className)
-if (!classIdResp.data.result) return
-const classId = classIdResp.data.result
-const studentResp = await api.listStudents(classId)
-if (studentResp.data.result.length < 1) return
-let students = studentResp.data.result
-// .... balabala
-```
-
-
-
-`Array.prototype.forEach` VS `Array.prototype.map`
-
-使用 `map` 必须在回调函数中 `return` ，以此返回一个新的数组，否则对原数组修改，使用 `forEach`
-
-
-
-```js
-// bad
-students.map(stu => {
-    stu.name = `${stu.firstName}-${stu.lastName}`
-})
-
-// better
-students.forEach(stu => {
-    stu.name = `${stu.firstName}-${stu.lastName}`
-})
-const students = students.map(stu => {
-    stu.name = `${stu.firstName}-${stu.lastName}`
-    return stu
-})
-```
-
-
-
-# for Echarts
-
-责任链模式对 Option 进行设置
-
-
-
-# for Vue
-
-使用 Vuex mapState 函数，给 store 中的变量添加 namespace，对一堆变量进行分类、分层。（否则 store 中的变量全部都是绝对路径，一行代码全看路径了，看不到真正的代码逻辑）
-
-把逻辑交给 Vue（or ElementUI）。制定特殊的数据格式，以此来代替 `if else` 或循环。
-
-Vue option API : options 大致按 `name -> data(computed) -> created(mounted) -> methods -> afterXXX -> watchs ` 的顺序写。其中 `methods` 各方法之间至少有一个空行。
-
-逻辑操作和数据操作剥离。 **store 中的数据操作，在 store 中完成，不要放在程序逻辑中**。获取 store 中的变量值，使用 `getters`, 设置 store 中的变量，使用 `mutation`。
-
-
-
-
-
-# 一般规范 & 体验优化
-
-1. 表格中每行须有一个 id , 便于删改
-2. select 选择组件，需支持搜索
-3. 输入框后表示输入结束的按钮，需添加按键触发
-4. 删除不必要的注释，被注释的代码
-5. Vue 等框架中，剥离和框架实例不相关的功能函数
-6. 相关常量单文件存放
-7. Vue 中，Vuex 相关变量操作在 mutation 中执行，代码中使用 mapMutation 引入 （代码中分离数据操作和逻辑操作）
-8. 函数中，参数不符合函数执行条件，及时退出
-9. 及时整理代码，发现坏味道及时清理
-10. 严格控制单行代码长度（看代码时尽量不需要横向滚动）及函数行数。（缩进地狱）
-11. 给条件表达式命名。如 ： `if (a && b || c.indexOf('xxx') > -1) then ...` -> `withXXX = c.indexOf('xxx') > -1; needUpdate = a && b || withXXX; if (needUpdate) then ...`
-12. 整体观感：紧凑不挤，疏密得当，减少复制
-13. 整体原则：不多写一行无用代码，不少写一行增强明确性的代码
-14. 代码提交前再过一遍改动的地方，检查有无废弃变量，代码，注释，日志打印未删除，代码未格式化。
-15. 和 DB 紧密接触的系统需要做 DB 抽象层，将 DB 相关的细节限制在这一层中，便于集中修改。可以使用 ts 等强类型手段限制 DB 层的输入输出。
-16. 页面按钮需要做幂等，或是防抖节流。Vue 中可以做成指令 `v-throttle:1000="doFn"`
-
-
-
-# ESLint 配置
-
-```js
-
-```
-
-
-
-
-
-
-
-# 工程 & 项目规范
-
-## 代码
-
-代码规范参考上文
-
-### 代码提交规范
-
-具体什么强制格式倒没必要。主要目的是一目了然，便于搜索，提交时写上以下信息即可：
-
-1. 什么类型的提交。新功能？ debug？ 更新文档？……
-2. 提交的代码属于的模块、页面、接口、服务……
-3. 提交内容详情，最好分要点写。debug 需要写简明的原因
-
-把信息持久化到文档里，而不是脑子里。
-
-## 文档
-
-文档类型：
-
-1. 业务 & 需求需要固化为文档，可以由 PM 和 Dev 共同完善。
-
-2. 代码 & 逻辑文档，如果模块足够复杂的话。主要有 Dev 编写。
-
-3. 使用手册，可由 PM 、 Dev、Test 编写完善。
-
-4. 版本记录 & 上线日志。由 Ops 负责编写维护。
-
-5. 项目基础信息文档。如服务器、DB地址 & 账密等。
-
-以上文档注意及时更新。同时：
-
-1. 文档以文本或图片形式，加入版本控制（Markdown，Git）。
-2. 文档应当和代码一样贯穿整个项目，是项目重要的一部分。
-3. 如使用手册应当支持开放给客户。
-
-不错的文档 wiki 产品：
-
-1. http://dynalon.github.io/mdwiki/#
-
-
-
-
-

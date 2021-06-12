@@ -123,6 +123,13 @@ find -name filename // 按名称查找文件
 whereis file/command
 
 grep pattern          params: [-i]:忽略大小写; [-v] 反选 ;[-a] 处理二进制文件; [-R] 递归方式
+
+
+# remote to local
+scp uname@remote_host:<path_to_file> <local_path>
+
+# local to remote
+scp local_file uname@remote_host:<remote_path>
 ```
 
 
@@ -146,4 +153,15 @@ sudo nmap -sTU -O IP-address-Here
 # sed、awk
 
 sed for stream editor
+
+
+
+# Disk
+
+```sh
+# disk useage in human style
+du -sh *
+```
+
+
 
