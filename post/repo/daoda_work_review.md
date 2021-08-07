@@ -2153,7 +2153,73 @@ exportFile(exportTable) {
 ```
 
 
-# 有向图遍历
+
+# CS in EDA
+
+## 有条件的并发控制
+
+flow 是数据还是程序呢？对这个问题的理解程度可以对等到对 EDA 系统的理解程度。
+
+实际上，flow 应该是程序，每个模块都可以看做一行待执行的代码，基于 flow 建立的 task 可以看做是执行程序的线程，当多个 task 运行同一个 flow 时，就可以认为，当前产生了并发问题。因为从执行器代码来看，多个线程运行时，读写的数据都是一样的（blockId），也就造成了客观上的资源竞争问题。
+
+flow 的整体执行也应该具有原子性，因为其内部每个模块之间是有依赖关系的，若是不保证原子性，模块上游数据被其他线程修改，则本模块的引用就会出问题。
+
+同时，只有当 task 所运行的 flow 是同一个时，才会产生数据竞争，故需要特殊控制。最简单的方式可以参考 redis 实现分布式锁的原理实现。这期间注意加锁代码也是被竞争的资源！
+
+```java
+public void execute() {
+    // ......
+    chartKey = StringUtil.splicingNoEndWith(flowChartTaskDTO.getFlowName(), String.valueOf(flowChartTaskDTO.getChartId()), "__");
+    XxlJobLogger.log("chart: {} 执行锁获取中……", chartKey);
+    while (chartRunning(chartKey)) {
+        Thread.sleep(lockCheckInterval);
+    }
+    XxlJobLogger.log("chart: {} 获得执行锁！", chartKey);
+    // ......
+}
+
+/**
+     * 将当前 chart 设置为运行状态，若有 chart 在运行，则设置失败，否则设置成功
+     * @param chartKey
+     * @return boolean 设置成功与否
+     */
+private synchronized boolean chartRunning(String chartKey) {
+    if (chartRunWaitMinutes < 0) {
+        return !redisUtil.setNx(FinalOutEnum.CHART_RUNNING + chartKey);
+    } else {
+        return !redisUtil.setNx(FinalOutEnum.CHART_RUNNING + chartKey, Duration.ofMinutes(chartRunWaitMinutes));
+    }
+}
+
+private synchronized void chartRunUnlock(String chartKey) {
+    if (StringUtils.isEmpty(chartKey)) {
+        return;
+    }
+    final boolean exists = redisUtil.exists(FinalOutEnum.CHART_RUNNING + chartKey);
+    if (exists) {
+        redisUtil.remove(FinalOutEnum.CHART_RUNNING + chartKey);
+        XxlJobLogger.log("chart : {} 执行结束，释放锁。", chartKey);
+    }
+}
+```
+
+## GC 算法的实现
+
+依上文所述，flow 中的模块可以被看做是一行代码，模块中会产生 n 个 block，但这 n 个 block 之后最终挂载在该模块上的才会被固定在 flow 的依赖树上，存储到 DB。而其他的游离态 block, 则需要做清理。
+
+需要清理的内容总结如下：
+
+1. 没有被绑定到 element 上的 block
+2. 没有被绑定到 flow 上的 element 及其下属所有 block
+
+可以想象，服务器上的 redis 以及 spark 的逻辑内存中，是一个关于 flow 的森林，其中一颗颗 flow 树表示一个个 flow，还有一些游离的 block 节点，游离的 element 树。需要 GC 对内存进行管理。
+
+依据该特性，选用**可达性分析算法**和**标记清除算法**实现 GC 是最合适的。即，从叶节点 block 开始往根找，如果到最后能找到在 DB 中存储的 chart, 则这一整棵树保留，否则需要标记清除。整个森林遍历完成，需要清除的 block 也已经标记出，最后需要做的就是清除，包括 block 在 redis 中存储的条件， 在 spark 中存储的结果，以及在 DB 中维护的关系。总结成一句话就是“师出有名，叶出有根”。
+
+
+
+
+## 有向图遍历
 
 如有如下有向图：
 
@@ -2211,6 +2277,7 @@ let preList = []
  */
 export function elementsRearrange(points, edges) {
   innerEdges = edges
+  preList = []
   let ret = []
   for (let i = 0; i < points.length; i++) {
     const p = points[i]
@@ -2257,6 +2324,7 @@ function checkLoop(p) {
   return true
 }
 ```
+
 
 
 
