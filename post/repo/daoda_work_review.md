@@ -2530,6 +2530,33 @@ IDEA 添加一个 `Run/Debug Configurations` 选择 `Remote` ,添加程序运行
 
 `.once` 修饰符是 vue 官方支持的事件修饰符，被修饰的事件只会被触发一次。可以利用该特性来实现需求。现在的问题是，事件不能只触发一次，而是需要在一定时间后能够再次触发。那只能重新 mount 该按钮。于是参考 https://www.coder.work/article/1331735 实现。原理是给按钮一个可变的 key, 当逻辑执行完后，改变这个 key ，则按钮就会被重载，事件只能触发一次的限制也被重置。
 
+
+
+# 数据库事务的四种隔离级别
+
+参考：https://www.huaweicloud.com/articles/ffc11869bfea5f6793631f9b30369be0.html
+
+数据库事务的隔离级别四种，从低到高分别为：
+
+1. read uncommitted。读未提交，即一个事务可以读取另一个事务未提交的数据。这会产生**脏读问题**。解决的办法是提高隔离级别到 read commited。
+2. read committed。读已提交，即一个事务要等到另一个事务提交后才能读取。一般是读事务需等待写事务完成再读取，也是**大多数数据库的默认事务隔离级别**。但这会产生**不可重复读**的问题，如：读事务在写事务前后各读取一次，而写事务在读取的间隙对数据做了修改，那读事务中的两次读取就会读到不同的数据，这就是不可重复读的问题，可通过提升隔离级别到 repeatable read 解决。
+3. repeatable read。可重复读，即当读事务开启时，不允许**修改操作**（`update`），直到读取完成。这里需要注意的是，**该隔离级别对应的是修改操作，即 `update`，**但还可能出现**幻读问题**，即 `insert` 操作。如：**同一个读事务中的两次读取中，虽然不会再出现 `update` 操作影响重复读取，但若是发生 `insert` 操作，则两次的读取数据仍然可能不同**，这就是幻读，仿佛出现了幻觉（明明禁止了修改）。可通过提升隔离级别到 serializable 解决。
+4. serializable。序列化，是最高的事务隔离级别，事务串行执行，可避免**脏读**，**不可重复读**以及**幻读**。但由于串行，事务执行效率低下比较耗费数据库性能。
+
+
+
+# EChart SSR
+
+EChart SSR  是指不需要在浏览器界面操作而在服务端渲染 chart 。如根据给定的 option，在服务端渲染 chart。基本原理就是在服务端使用 node，创建 canvas 和 echart，进行渲染。可参考 echart 官方提供的方案： https://echarts.apache.org/zh/tutorial.html#%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%B8%B2%E6%9F%93。
+
+其中 [node-echarts](https://github.com/hellosean1025/node-echarts) 使用简单，可做首推，但由于其依赖未更新，运行不起来，可使用[node-echart5](https://www.npmjs.com/package/node-echart5)代替。但由于后者使用 ts 编写，且对原有代码有些许改变，可以结合二者的代码进行改写。
+
+以上方案可以说是静态渲染，即给定 option，再渲染 chart， 即 option 的生成逻辑未考虑在内。若是 option 的生成逻辑在前端，则 SSR 也无能为力。此时就需要 headless 环境，如  echarts 官方推荐的 puppeteer, phantomjs……
+
+headless 环境可以在服务端运行一个浏览器，并渲染指定页面，且一般可以使用编程方式对页面进行一些控制，以此来触发前端逻辑。
+
+[puppeteer](https://github.com/puppeteer) 是 Chrome 团队开源的， API 简单，功能丰富，可作为首推。但 10.2.0 版本有一个小问题就是，无法自动下载 Chrome，需要进入 node_modules/puppeteer 下执行 `node install.js` 手动下载。
+
 # CI/CD
 
 使用 Jenkins 实现持续集成、持续开发。
