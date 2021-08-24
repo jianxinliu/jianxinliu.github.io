@@ -2557,6 +2557,283 @@ headless 环境可以在服务端运行一个浏览器，并渲染指定页面�
 
 [puppeteer](https://github.com/puppeteer) 是 Chrome 团队开源的， API 简单，功能丰富，可作为首推。但 10.2.0 版本有一个小问题就是，无法自动下载 Chrome，需要进入 node_modules/puppeteer 下执行 `node install.js` 手动下载。
 
+
+
+# Server 互信
+
+使服务器间相互信任，免密登录
+
+1. 先在各服务器上生成 rsa key, 若有则可跳过：
+
+    ```sh
+    ssh-keygen -t rsa # 创建公钥和秘钥
+    ```
+
+2. 将本机公钥复制到需要信任自己的机器上
+
+    ```sh
+    ssh-copy-id -i <path-to>/<id_rsa>.pub <account>@<remote ip>
+    ```
+
+    
+
+    此时若成功，则可 ssh 免密登录到远程机器上
+
+    
+
+# Linux 下修改 jar 内配置文件
+
+用 Vim 可直接打开 jar 内所有文件，之后可以进行搜索，找到要修改的文件，`enter` 即可进入该文件，随后修改即可。
+
+**方式二 通过jar命令替换jar包中的文件(也可新增)**
+
+```sh
+##列出jar包中的文件清单
+jar tf genesys_data_etl-0.0.1-SNAPSHOT.jar
+
+##提取出内部jar包的指定文件
+jar xf genesys_data_etl-0.0.1-SNAPSHOT.jar BOOT-INF/classes/realtime/t_ivr_data_bj.json
+
+##然后可以修改文件
+vim BOOT-INF/classes/realtime/t_ivr_data_bj.json
+
+##更新配置文件到内部jar包.(存在覆盖，不存在就新增)
+jar uf genesys_data_etl-0.0.1-SNAPSHOT.jar BOOT-INF/classes/realtime/t_ivr_data_bj.json   
+
+##更新内部jar包到jar文件
+jar uf genesys_data_etl-0.0.1-SNAPSHOT.jar 内部jar包.jar   
+
+##可以查看验证是否已经更改
+vim genesys_data_etl-0.0.1-SNAPSHOT.jar
+```
+
+**方式三 解压jar包，修改后重新打包jar**
+
+```sh
+#解压
+unzip genesys_data_etl-0.0.1-SNAPSHOT.jar 
+#移除jar包,最好备份
+rm genesys_data_etl-0.0.1-SNAPSHOT.jar
+#重新打包
+jar -cfM0 new-genesys_data_etl-0.0.1-SNAPSHOT.jar *
+#或者
+jar -cvfm0 genesys_data_etl-0.0.1-SNAPSHOT.jar ./META-INF/MANIFEST.MF ./
+#运行
+java -jar new-genesys_data_etl-0.0.1-SNAPSHOT.jar
+
+#jar命令参数:
+#-c 创建新的存档
+#-f 指定存档文件名
+#-M 不配置配置清单，这样还可以使用maven生成的配置清单也就是MANIFEST.MF
+#-0 不进行压缩,如果压缩会有问题
+#-m 指定清单文件
+#-t 列出归档目录
+#-x 从档案中提取指定的 (或所有) 文件 
+#-u 更新现有的归档文件 
+#-v 在标准输出中生成详细输出 
+```
+
+
+
+# Java 并发批处理框架
+
+```java
+package com.service.automation.impl;
+
+import cn.hutool.core.thread.ThreadFactoryBuilder;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
+
+/**
+ * @author jianxinliu
+ * @date 2021/08/20 17:33
+ */
+@Service
+public class FlowCreatorImpl implements FlowCreator {
+
+    @Override
+    public Report createBatch(AutoCreateDto setting, String evtUser) throws InterruptedException {
+        int flowCount = setting.getFlowCount();
+        int batchSize = setting.getBatchSize();
+        if (batchSize < 1) {
+            batchSize = 1;
+        }
+        int batchCount = getBatchCount(flowCount, batchSize);
+        Report ret = new Report();
+        List<ReportSingle> flowList = new ArrayList<>(flowCount);
+        int executeCnt = 0;
+
+        final ThreadFactory threadFactory = ThreadFactoryBuilder.create().build();
+        final ThreadPoolExecutor poolExecutor = new ThreadPoolExecutor(batchSize, batchSize, 0L,
+                TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(batchSize), threadFactory,
+                new ThreadPoolExecutor.AbortPolicy());
+
+        LogUtil.info("batch create start: flow:{}, batchCount:{}, batchSize:{}", flowCount, batchCount, batchSize);
+        final LocalDateTime startTime = LocalDateTime.now();
+        for (int i = 0; i < batchCount; i++) {
+            List<Future<ReportSingle>> resultList = new ArrayList<>(batchSize);
+            for (int j = 0; j < batchSize; j++) {
+                if (executeCnt >= flowCount) {
+                    break;
+                }
+                String threadName = (i + 1) + "_" + (j + 1);
+                Future<ReportSingle> submit = poolExecutor.submit(new Creator(this, setting, threadName, evtUser));
+                resultList.add(submit);
+                executeCnt++;
+            }
+            for (Future<ReportSingle> future : resultList) {
+                try {
+                    flowList.add(future.get());
+                } catch (Exception e) {
+                    Log.error("执行失败@{}: {}", Thread.currentThread().getName(), e);
+                }
+            }
+            if (i < batchCount - 1) {
+                int intervalSecond = setting.getBatchIntervalSecond();
+                if (intervalSecond < 0) {
+                    intervalSecond = 0;
+                }
+                Thread.sleep(intervalSecond * 1000);
+                Log.info("sleep {} seconds..................", intervalSecond);
+            }
+        }
+        ret.setFlowList(flowList);
+        ret.setTotalSecond(Duration.between(startTime, LocalDateTime.now()).getSeconds());
+        poolExecutor.shutdown();
+        report(ret);
+        return ret;
+    }
+
+    @Override
+    public ReportSingle createOne(AutoCreateDto setting, String evtUser) {
+		// do creaete one
+        return null;
+    }
+    private String extractIndexFromThreadName() {
+        return Thread.currentThread().getName().replace("create-flow-", "");
+    }
+
+    private int getBatchCount(Integer all, int batchSize) {
+        if (batchSize > all || batchSize < 1) {
+            return 1;
+        }
+        return Double.valueOf(Math.ceil(all.doubleValue() / batchSize)).intValue();
+    }
+
+    private void report(Report report) {
+        final List<ReportSingle> flowList = report.getFlowList().stream().filter(ReportSingle::isSuccess).collect(Collectors.toList());
+        final LongSummaryStatistics statisticsFlow = flowList.stream().mapToLong(ReportSingle::getFlowSeconds).summaryStatistics();
+        final LongSummaryStatistics statisticsTask = flowList.stream().mapToLong(ReportSingle::getTaskSecond).summaryStatistics();
+        final long success = flowList.stream().filter(ReportSingle::isSuccess).count();
+        report.setSuccessCnt(success);
+        report.setTotalSecond(statisticsFlow.getSum() + statisticsTask.getSum());
+        report.setAvgSeconds(report.getTotalSecond().doubleValue() / (statisticsFlow.getCount() + statisticsTask.getCount()));
+        report.setTotalFlowSeconds(statisticsFlow.getSum());
+        report.setAvgFlowSeconds(statisticsFlow.getAverage());
+        report.setTotalTaskSeconds(statisticsTask.getSum());
+        report.setAvgTaskSeconds(statisticsTask.getAverage());
+    }
+
+    private class Creator implements Callable<ReportSingle> {
+
+        private AutoCreateDto setting;
+        private FlowCreator flowCreator;
+        private String threadName;
+        private String evtUser;
+
+        Creator(FlowCreator flowCreator, AutoCreateDto settings, String threadName, String evtUser) {
+            this.flowCreator = flowCreator;
+            this.setting = settings;
+            this.threadName = threadName;
+            this.evtUser = evtUser;
+        }
+
+        @Override
+        public ReportSingle call() throws Exception {
+            Thread.currentThread().setName("create-flow-" + threadName);
+            return flowCreator.createOne(setting, evtUser);
+        }
+    }
+}
+
+
+
+package com.automation;
+
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import lombok.Data;
+
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+import java.util.List;
+
+/**
+ * @author jianxinliu
+ * @date 2021/08/20 16:21
+ */
+
+@ApiImplicitParams({
+        @ApiImplicitParam(name = "password", value = "通行密码"),
+        @ApiImplicitParam(name = "originChartId", value = "复制的 flow 的 chartId"),
+        @ApiImplicitParam(name = "taskSetting", value = "任务设定"),
+        @ApiImplicitParam(name = "flowPrefix", value = "flow 名称前缀"),
+        @ApiImplicitParam(name = "userPrefix", value = "用户名前缀"),
+        @ApiImplicitParam(name = "flowCount", value = "本次创建的 flow 个数"),
+        @ApiImplicitParam(name = "batchSize", value = "每批创建多少个"),
+        @ApiImplicitParam(name = "batchIntervalSecond", value = "批次间隔秒数")
+})
+@Data
+public class AutoCreateDto {
+    /**
+     * 开启创建的密码, 防止误触
+     */
+    @NotEmpty
+    private String password;
+    /**
+     * 所创建的 flow 从哪个 flow 复制
+     */
+    @NotNull
+    private Long originChartId;
+
+    @NotNull
+    private TaskSettingDto taskSetting;
+
+    @NotNull
+    private String flowPrefix;
+
+    @NotNull
+    private String userPrefix;
+
+    /**
+     * 总共需要创建多少个
+     */
+    @NotNull
+    private int flowCount;
+
+    /**
+     * 每批创建多少个
+     */
+    private int batchSize;
+
+    /**
+     * 批次间隔秒数
+     */
+    private int batchIntervalSecond;
+}
+```
+
+
+
+
 # CI/CD
 
 使用 Jenkins 实现持续集成、持续开发。

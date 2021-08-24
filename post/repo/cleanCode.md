@@ -218,6 +218,27 @@ https://github.com/airbnb/javascript
 
 ## 变量
 
+**Bad**: 使用这些变量命名，就像是问你是哪里人，你回答说“地球人”一样无聊和令人费解。
+
+1. data.(xxxData, 此种形式，若是 xxx 是有比较明确的意义，那还能凑合，如 tableData 就不会太迷惑)
+2. value.(xxxValue)
+3. data, date 傻傻分不清.
+
+这些单词都有比较多的含义，作为变量名，如果变量声明和使用的上下文中，语境不是特别明确的，则使用这些单词作为变量名，就会令人费解，就需要从更大的上下文中来明确该变量究竟是什么。
+
+
+变量命名举例：
+1. 数组、列表： xxList, xxArr, 或直接变为复数形式（items, options, promises……）
+2. 返回值： ret, res, resp, xxResult……
+3. 遍历项：`userList.forEach(user => ...)`, `tableData.forEach(row => ...)`, `xxList.forEach(item => ...)`
+
+
+函数命名举例： 
+
+1. 获取类：`getXXX`, `fetchXXX`, `loadXXX`, `queryXXX`
+2. 检查类：`checkXXX`, `validateXXX`, `testXXX`
+3. 生成类：`genXXX`, `generaterXXX`, `xxGenerator`
+
 ### Use meaningful and pronounceable variable names
 
 **Bad:**
