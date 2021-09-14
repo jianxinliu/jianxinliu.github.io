@@ -2833,6 +2833,165 @@ public class AutoCreateDto {
 
 
 
+# 定时器实现
+
+```scala
+private def startCheck(): Unit = {
+    val blockingQueue = new ArrayBlockingQueue[Boolean](1)
+    val producer = new Timer(blockingQueue, appConf.checkInterval)
+    producer.start()
+    while (true) {
+        val bool = blockingQueue.take()
+        if (bool && !isChecking) {
+            doFlowDoneCheck()
+        }
+    }
+}
+
+private class Timer(blockingQueue: BlockingQueue[Boolean], interval: Int) extends Thread {
+    override def run(): Unit = {
+        Thread.currentThread().setName("flow-checker-timer")
+        while (true) {
+            blockingQueue.put(true)
+            Thread.sleep(interval)
+        }
+    }
+}
+```
+
+
+
+# 异步多线程 & 简易 MQ
+
+```scala
+  def collectDataFrame(fileName: String, dataFrame: DataFrame): Unit = {
+    enQueue(new PersistBean(flowId, fileName, dataFrame))
+  }
+
+
+  private val workingQ = new LinkedBlockingQueue[PersistBean]
+  private val appConf = new AppConfig
+  private var workerPool: ThreadPoolExecutor = _
+
+  /**
+    * 缓存单个模块的结果集，是实际的缓存逻辑所在
+    * @param bean
+    */
+  private def persistSingle(bean: PersistBean): Unit = {
+    val threadName = Thread.currentThread().getName
+    if (appConf.logSaver) log.info(s"$threadName --> flush block: {${bean.getBlockId}} at ${bean.getFlowId} and un persist")
+    val alluxioFilePath = appConf.alluxioAddr + bean.getBlockId
+    val st = LocalDateTime.now()
+    val frame = bean.getFrame
+    frame.write.parquet(alluxioFilePath)
+    setAlluxioFileExpireTime(alluxioFilePath, appConf.alluxioLongTermFileExpire)
+    // 写完去除缓存
+    frame.unpersist(false)
+    val seconds = Duration.between(st, LocalDateTime.now()).getSeconds
+    if (appConf.logSaver) log.info(s"flush and un persist block ${bean.getBlockId} , cost $seconds...")
+  }
+
+  /**
+    * 当前情况统计, 包括：队列情况，线程池情况，运行时间……
+    */
+  private def reportRunningInfo(): Unit = {
+    if (!appConf.logChecker) {
+      return
+    }
+    val workingQSize = workingQ.size()
+    val qRestCap = workingQ.remainingCapacity()
+    val qCap = qRestCap + workingQSize
+
+    val activeCount = workerPool.getActiveCount
+    val completedTaskCount = workerPool.getCompletedTaskCount
+    val poolSize = workerPool.getPoolSize
+    val taskCount = workerPool.getTaskCount
+
+    log.info(">>>>>>>>>>>>>>>> running info <<<<<<<<<<<<<<<<<<")
+    log.info(s"|Queue  info: cap:$qCap, working:$workingQSize, restCap:$qRestCap ")
+    log.info(s"|Worker info: workers:$poolSize, ~actives:$activeCount, ~waiting:$taskCount, ~completed:$completedTaskCount")
+    log.info("<<<<<<<<<<<<<<<< running info >>>>>>>>>>>>>>>>>>")
+  }
+
+  /**
+    * 需要持久化的 bean 入队，若队满则阻塞，直到有空间再入队
+    * @param bean
+    */
+  private def enQueue(bean: PersistBean): Unit = {
+    workingQ.put(bean)
+    if (appConf.logSaver) log.info(s"bean enqueue: ${bean.getBlockId} at ${bean.getFlowId}")
+  }
+
+  /**
+    * 创建一个指定最大最小线程数的线程池
+    * 失败采用 rerun 策略，保证任务不会因为队列或线程资源不够而被丢弃
+    * 等待队列长度可调整，具目前测试情况看，使用 rerun 策略，队列长度对执行效率影响不大
+    * @return
+    */
+  private def createWorkerPool() = {
+    val poolMinSize = appConf.threadPoolMinSize
+    val poolMaxSize = appConf.threadPoolMaxSize
+    val queueSize = poolMaxSize + poolMinSize
+    val threadFactory = new ThreadFactoryBuilder().setNameFormat("flow-saver").build()
+
+    val pool = new ThreadPoolExecutor(poolMinSize, poolMaxSize, 0L, TimeUnit.MILLISECONDS,
+      new ArrayBlockingQueue[Runnable](queueSize), threadFactory, new ThreadPoolExecutor.CallerRunsPolicy)
+    log.info("worker pool init done....")
+    pool
+  }
+
+  /**
+    * 实际的工作线程
+    * @param bean
+    */
+  private class Saver(bean: PersistBean) extends Thread {
+    override def run(): Unit = {
+      Thread.currentThread().setName("saver_" + bean.getBlockId)
+      persistSingle(bean)
+      if (appConf.logTimer) reportRunningInfo()
+    }
+  }
+
+  /**
+    * 作为队列的消费者，若线程池有资源可运行任务，则消费队列里的 bean
+    */
+  private class BeanManager extends Thread {
+    override def run(): Unit = {
+      Thread.currentThread().setName("manager")
+      workerPool = createWorkerPool()
+      // 消费的节奏和线程安排由线程池管理安排
+      while (true) {
+        val bean = workingQ.take()
+        if (appConf.logSaver) log.info(s"take bean to persist: ${bean.getBlockId} at ${bean.getFlowId}")
+        workerPool.execute(new Saver(bean))
+      }
+    }
+  }
+
+  private val beanManager = new BeanManager
+  beanManager.start()
+  log.info("manager start....")
+  log.info(s"use config file at : ${appConf.configFilePath}")
+```
+
+
+
+# JVM 问题排查 & 调试常用方法
+
+```sh
+# 查询当前机器上所有的 jvm 进程
+jps -l
+
+# 查看某进程的 gc 及 jvm 内存使用情况
+jstat -gcutil <pid> <check_interval_in_ms>
+
+# 查看某进程的堆栈信息(:live 触发一次 FullGC)
+jmap -histo[:live] <pid>
+```
+
+
+
+
 
 # CI/CD
 
