@@ -2991,6 +2991,48 @@ jmap -histo[:live] <pid>
 
 
 
+# spark application running on cluster
+
+spark 支持使用 `spark-submit` 向 spark 提交应用，在测试一些程序的功能和性能的时候非常便捷。我们常常在测试 spark 不同参数和不同操作方式下的性能表现时使用。测试应用使用 scala 编写，sbt 编译成 jar ，提交给 spark。
+
+在使用 sbt 的过程中也会遇到一些问题。比如换镜像，如何打成 jar……
+
+## sbt
+
+设置国内镜像何可参考华为云或其他国内镜像站的教程。
+
+设置之后，在应用程序根目录添加 `build.sbt` 文件，作用类似于 maven 的 pom.xml，可以指定程序的名称、版本、使用的 scala 版本，依赖等。如：
+
+```sbt
+name := "test-scala-2"
+version := "0.1"
+scalaVersion := "2.12.14"
+libraryDependencies ++= Seq(
+  "org.apache.spark" % "spark-core_2.12" % "3.0.0" % "provided",
+  "org.apache.spark" % "spark-sql_2.12" % "3.0.0" % "provided"
+)
+```
+
+编译打包：
+
+```bash
+# scala 使用 sbt 打成 jar
+sbt package
+```
+
+## spark-submit
+
+编译好 jar 之后，就可以将 jar 作为 application 提交给 spark
+
+```bash
+spark-submit \
+	--name <appname> \
+	--master <masterAddr> \
+	--class <path.className> <jar_path> [<app args>] > log.ingo
+```
+
+
+
 
 
 # CI/CD
