@@ -2909,7 +2909,7 @@ private class Timer(blockingQueue: BlockingQueue[Boolean], interval: Int) extend
 
     log.info(">>>>>>>>>>>>>>>> running info <<<<<<<<<<<<<<<<<<")
     log.info(s"|Queue  info: cap:$qCap, working:$workingQSize, restCap:$qRestCap ")
-    log.info(s"|Worker info: workers:$poolSize, ~actives:$activeCount, ~waiting:$taskCount, ~completed:$completedTaskCount")
+    log.info(s"|Worker info: workers:$poolSize, ~scheduled:$activeCount, ~waiting:$taskCount, ~completed:$completedTaskCount")
     log.info("<<<<<<<<<<<<<<<< running info >>>>>>>>>>>>>>>>>>")
   }
 
