@@ -1,0 +1,3 @@
+根据 Redis 的设计修改 goredis 的部分实现，使得 goredis 的模拟更逼真
+
+JavaScript 可视化计算机网络，模拟 TCP/IP 传输过程，路由选择过程（深入研究计算机网络）
