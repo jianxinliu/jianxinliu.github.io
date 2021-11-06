@@ -3033,6 +3033,147 @@ spark-submit \
 
 
 
+# Redis list 遍历中删除
+
+```scala
+import com.typesafe.scalalogging.Logger
+import org.apache.spark.sql.SparkSession
+import org.springframework.scheduling.annotation.Scheduled
+import org.springframework.stereotype.Component
+import redis.clients.jedis.Jedis
+
+/**
+  *
+  * @author jianxinliu
+  * @date 2021/10/27 17:07
+  */
+@Component
+class CacheRound {
+  var appConf: AppConfig = new AppConfig;
+
+  var jedisPool: RedisTool = new RedisTool;
+
+  val redisLock = new RedisLock
+
+  var sparkSession: SparkSession = SparkUtil.sparkSession
+
+  private val log: Logger = Logger(this.getClass)
+
+  @Scheduled(fixedDelay = 3000, initialDelay = 3000)
+  def doClean(): Unit = {
+    Thread.currentThread().setName("cache")
+    if (appConf.logChecker) log.info("schedule do... range top 10")
+    val conn = jedisPool.getConnection
+    try {
+      redisLock.lock()
+      for (i <- 1 to 10) {
+        val key = conn.lindex(appConf.sparkViewListKey, i - 1)
+        if (appConf.logChecker && key != null) log.info(s"key $key on top $i")
+        if (key != null && !conn.exists(key)) {
+          if (appConf.logChecker) log.info(s"key $key should remove")
+          lrem(conn, key)
+        }
+      }
+    } finally {
+      redisLock.unlock()
+    }
+    jedisPool.closeConnection(conn)
+  }
+
+  private def lrem(conn: Jedis, blockKey: String): Unit = {
+    val name = blockKey.replace("cacheBlock_", "")
+    if (appConf.logChecker) log.info(s"remove block: $name")
+    if (appConf.logSaver) log.info(s"unpersist name:: $name")
+
+    val dropped = sparkSession.catalog.dropTempView(name)
+    if (appConf.logChecker) log.info(s"drop tempView success: $dropped")
+    // 从表头开始查找删除
+    conn.lrem(appConf.sparkViewListKey, 1, blockKey)
+  }
+}
+```
+
+
+
+Redis 分布式锁简易实现
+
+```scala
+import com.typesafe.scalalogging.Logger
+import redis.clients.jedis.Jedis
+
+/**
+  *
+  * @author jianxinliu
+  * @date 2021/11/03 10:54
+  */
+class RedisLock {
+  private val log: Logger = Logger(this.getClass)
+
+  var appConf: AppConfig = new AppConfig;
+
+  /**
+    * 加分布式锁，自旋转等待锁释放
+    */
+  def lock(): Unit = {
+    if (appConf.logChecker) log.info("try lock...")
+    while (RedisLock.tryLock()) {
+      Thread.sleep(1000)
+    }
+    if (appConf.logChecker) log.info("got lock")
+  }
+
+  def unlock(): Unit = RedisLock.unlock()
+}
+
+object RedisLock {
+  val jedisPool: RedisTool = new RedisTool;
+  val conn = jedisPool.getConnection
+  val lockKey = "redisDisLock"
+
+  /**
+    * 获取分布式锁，获取成功则给该 key 设置过期时间，防止长久不过期，导致死锁
+    * @return 是否加锁成功
+    */
+  def tryLock(): Boolean = {
+    val set = conn.setnx(lockKey, "a")
+    if (set == 1) {
+      conn.expire(lockKey, 300)
+    }
+    set == 0
+  }
+
+  def unlock(): Unit = {
+    if (conn.exists(lockKey)) {
+      conn.del(lockKey)
+    }
+  }
+}
+```
+
+
+
+# Scala 应用集成 SpringBoot
+
+```scala
+import org.springframework.boot.SpringApplication
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.scheduling.annotation.EnableScheduling
+
+/**
+  *
+  * @author jianxinliu
+  * @date 2021/10/27 17:05
+  */
+@SpringBootApplication
+@EnableScheduling
+class CacheApp;
+
+object CacheApp extends App {
+  SpringApplication.run(classOf[CacheApp])
+}
+
+```
+
 
 
 # CI/CD

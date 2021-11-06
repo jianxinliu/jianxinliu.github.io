@@ -1,6 +1,6 @@
 # tar
 
-```shell
+```sh
 # 解压 tar.gz 文件
 tar -zxvf target_file.tar.gz
 
@@ -13,7 +13,7 @@ tar -tf source_file
 
 # Vim
 
-```shell
+```sh
 # quit or without saving
 :q[!]
 
@@ -43,7 +43,7 @@ u
 
 # Bash Veriables
 
-```shell
+```sh
 # 打印环境变量
 env
 
@@ -56,7 +56,7 @@ export NAME=value
 
 # File Permissions
 
-```shell
+```sh
 # 修改文件的权限
 chmod mode file
 
@@ -68,8 +68,10 @@ chmod -R mode folder
 # 2 == write(w)
 # 1 == execute(x)
 ```
+
 # Process Management
-```shell
+
+```sh
 # process snapshot
 ps
 
@@ -86,10 +88,14 @@ pkill name
 
 # kill all process starts with name
 killall name
+
+# java process manager
+jps -l
 ```
 
 # IO Redirection
-```shell
+
+```sh
 # 将命令执行结果输出到文件（改变输出流到文件）
 cmd > file
 
@@ -117,7 +123,7 @@ cmd &> file
 
 # file
 
-```shell
+```sh
 find -name filename // 按名称查找文件
 
 whereis file/command
@@ -138,11 +144,14 @@ scp local_file uname@remote_host:<remote_path>
 
 # network
 
-```shell
+```sh
 // 查看端口使用情况（any one）
 sudo lsof -i -P -n | grep LISTEN
+
 sudo netstat -tulpn | grep LISTEN
+
 sudo lsof -i:22 ## see a specific port such as 22 ##
+
 sudo nmap -sTU -O IP-address-Here
 ```
 
@@ -159,9 +168,55 @@ sed for stream editor
 # Disk
 
 ```sh
-# disk useage in human style
-du -sh *
+# disk useage in human style, with specified path
+du -sh /aplog/*
+3.9M	/aplog/agvservice
+36K	    /aplog/apiboot
+24K	    /aplog/bg-service
+822M	/aplog/data
+1.5G	/aplog/eda
+1.6M	/aplog/eda-hkc
+240K	/aplog/jstack.log
+232K	/aplog/license
+64K	    /aplog/log
+27M	    /aplog/R
+4.0K	/aplog/spark
+4.0K	/aplog/sparklog
+2.9M	/aplog/sso
+13G	    /aplog/xxl-job
+
+# disk free in human style, with specified path
+df -h /
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda6        97G   43G   49G  48% /
+none            4.0K     0  4.0K   0% /sys/fs/cgroup
+udev            3.9G  8.0K  3.9G   1% /dev
+tmpfs           799M  1.7M  797M   1% /run
+none            5.0M     0  5.0M   0% /run/lock
+none            3.9G   12M  3.9G   1% /run/shm
+none            100M   20K  100M   1% /run/user
+/dev/sda8       196G  154G   33G  83% /media/13f35f59-f023-4d98-b06f-9dfaebefd6c1
+/dev/sda5        98G   37G   62G  38% /media/4668484A68483B47
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
