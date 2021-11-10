@@ -3115,19 +3115,24 @@ class RedisLock {
     * 加分布式锁，自旋转等待锁释放
     */
   def lock(): Unit = {
-    if (appConf.logChecker) log.info("try lock...")
-    while (RedisLock.tryLock()) {
-      Thread.sleep(1000)
+    this.synchronized {
+      if (appConf.logChecker) log.info("try lock...")
+      while (RedisLock.tryLock()) {
+        Thread.sleep(1000)
+      }
+      if (appConf.logChecker) log.info("got lock")
     }
-    if (appConf.logChecker) log.info("got lock")
   }
 
-  def unlock(): Unit = RedisLock.unlock()
+  def unlock(): Unit = {
+  	this.synchronized {
+      RedisLock.unlock()
+    }
+  }
 }
 
 object RedisLock {
   val jedisPool: RedisTool = new RedisTool;
-  val conn = jedisPool.getConnection
   val lockKey = "redisDisLock"
 
   /**
@@ -3135,17 +3140,19 @@ object RedisLock {
     * @return 是否加锁成功
     */
   def tryLock(): Boolean = {
+    val conn = jedisPool.getConnection
     val set = conn.setnx(lockKey, "a")
     if (set == 1) {
       conn.expire(lockKey, 300)
     }
+    jedisPool.closeConnection(conn)
     set == 0
   }
 
   def unlock(): Unit = {
-    if (conn.exists(lockKey)) {
-      conn.del(lockKey)
-    }
+    val conn = jedisPool.getConnection
+    conn.del(lockKey)
+    jedisPool.closeConnection(conn)
   }
 }
 ```
