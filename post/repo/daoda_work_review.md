@@ -3053,42 +3053,67 @@ class CacheRound {
 
   var jedisPool: RedisTool = new RedisTool;
 
-  val redisLock = new RedisLock
-
   var sparkSession: SparkSession = SparkUtil.sparkSession
 
   private val log: Logger = Logger(this.getClass)
+
+  // 对于 drop 失败的 tempView, 在 30Min 内重试 drop ，还未成功则直接丢弃，不再尝试 drop
+  private val MAX_RETRY_COUNT = (30 * 60 * 1000) / 3000
 
   @Scheduled(fixedDelay = 3000, initialDelay = 3000)
   def doClean(): Unit = {
     Thread.currentThread().setName("cache")
     if (appConf.logChecker) log.info("schedule do... range top 10")
     val conn = jedisPool.getConnection
-    try {
-      redisLock.lock()
-      for (i <- 1 to 10) {
-        val key = conn.lindex(appConf.sparkViewListKey, i - 1)
-        if (appConf.logChecker && key != null) log.info(s"key $key on top $i")
-        if (key != null && !conn.exists(key)) {
+    val pushBackList = new java.util.ArrayList[String]()
+
+    // 该操作 Redis list 的方式可以不需要分布式锁也可以保证不出问题
+    for (i <- 1 to 10) {
+      val key = conn.lpop(appConf.sparkViewListKey)
+      if (key != null) {
+        if (appConf.logChecker) log.info(s"key $key on top $i")
+        if (conn.exists(key)) {
+          pushBackList.add(key)
+        } else {
           if (appConf.logChecker) log.info(s"key $key should remove")
-          lrem(conn, key)
+          val dropped = doDrop(conn, key)
+          if (!dropped) {
+            handleNotDropped(conn, key, pushBackList)
+          }
         }
       }
-    } finally {
-      redisLock.unlock()
+    }
+
+    // 未过期的 key 放回队尾, 不断淘洗，早过期的最终都会被清理掉。此时，该任务的调度频率应该高一些
+    if (!pushBackList.isEmpty) {
+      pushBackList.forEach(key => conn.rpush(appConf.sparkViewListKey, key))
     }
     jedisPool.closeConnection(conn)
   }
 
-  private def lrem(conn: Jedis, blockKey: String): Unit = {
+  private def doDrop(conn: Jedis, blockKey: String): Boolean = {
     val name = blockKey.replace("cacheBlock_", "")
-    if (appConf.logChecker) log.info(s"remove block: $name")
-    if (appConf.logSaver) log.info(s"unpersist name:: $name")
+    if (appConf.logChecker) log.info(s"try to remove block: $name")
 
     val dropped = sparkSession.catalog.dropTempView(name)
     if (appConf.logChecker) log.info(s"drop tempView success: $dropped")
-    // 从表头开始查找删除
-    conn.lrem(appConf.sparkViewListKey, 1, blockKey)
+    dropped
+  }
+
+  private def handleNotDropped(conn: Jedis, key: String, pushBackList: java.util.List[String]): Unit = {
+    // drop failed key
+    val dfKey = "dfk_" + key
+    var lastCntStr = conn.get(dfKey)
+    if (lastCntStr == null) {
+      lastCntStr = "0"
+    }
+    val lastCntInt = lastCntStr.toInt
+    if (lastCntInt < MAX_RETRY_COUNT) {
+      conn.set(dfKey, (lastCntInt + 1).toString)
+      pushBackList.add(key)
+    } else {
+      conn.del(dfKey)
+    }
   }
 }
 ```
@@ -3102,7 +3127,7 @@ import com.typesafe.scalalogging.Logger
 import redis.clients.jedis.Jedis
 
 /**
-  *
+  * @deprecated
   * @author jianxinliu
   * @date 2021/11/03 10:54
   */
@@ -3111,21 +3136,33 @@ class RedisLock {
 
   var appConf: AppConfig = new AppConfig;
 
+  val MAX_TRY_LOCK_COUNT = 4
+
   /**
-    * 加分布式锁，自旋转等待锁释放
+    * 加分布式锁
+    * @param force 是否强制等待锁
+    * @param name 锁的名称
+    * @return
     */
-  def lock(): Unit = {
+  def lock(force: Boolean = false, name: String = "A"): Boolean = {
+    var got = false;
     this.synchronized {
       if (appConf.logChecker) log.info("try lock...")
-      while (RedisLock.tryLock()) {
-        Thread.sleep(1000)
+      var tryCnt = 0;
+      while (RedisLock.tryLock(name) && tryCnt <= MAX_TRY_LOCK_COUNT) {
+        if (!force) {
+          tryCnt += 1
+        }
+        Thread.sleep(3000)
       }
-      if (appConf.logChecker) log.info("got lock")
+      got = tryCnt <= MAX_TRY_LOCK_COUNT
+      if (appConf.logChecker && got) log.info("got lock")
     }
+    got
   }
 
   def unlock(): Unit = {
-  	this.synchronized {
+    this.synchronized {
       RedisLock.unlock()
     }
   }
@@ -3139,9 +3176,9 @@ object RedisLock {
     * 获取分布式锁，获取成功则给该 key 设置过期时间，防止长久不过期，导致死锁
     * @return 是否加锁成功
     */
-  def tryLock(): Boolean = {
+  def tryLock(name: String): Boolean = {
     val conn = jedisPool.getConnection
-    val set = conn.setnx(lockKey, "a")
+    val set = conn.setnx(lockKey, name)
     if (set == 1) {
       conn.expire(lockKey, 300)
     }
@@ -3158,6 +3195,12 @@ object RedisLock {
 ```
 
 
+- 分布式锁问题：
+  - 加锁、解锁方法本身也是被竞争的资源，也需要加锁
+  - 获取锁不应该无限制的等待，否则容易造成死锁
+  - 只要用锁，就存在死锁的可能性，尽量使用无锁结构
+  - 加锁是因为 Redis list 读写存在竞争，改变这个操作方式就可以去除锁
+  - 需要注意锁使用的环境，并发量，竞争资源的各方
 
 # Scala 应用集成 SpringBoot
 
@@ -3179,6 +3222,7 @@ object CacheApp extends App {
   SpringApplication.run(classOf[CacheApp])
 }
 
+// 同时，Scala 集成 spring boot 后，也可以作为另一个 spring boot 应用的依赖，二者可以共存
 ```
 
 
