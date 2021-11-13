@@ -335,7 +335,7 @@ this.$once('hook:beforeDestroy', function() {
 
 ref:https://github.com/apache/incubator-echarts/issues/7234
 
-
+除此之外，Vue 在使用过程中，如果有大数据挂载在 Vue 实例上，也会导致一定的性能问题，因为挂载在 Vue 实例上的数据都是响应式的，就会遍历数据，造成一定的开销。此时，同样的，尽量不把大数据作为 Vue 的状态。
 
 # 回调
 
@@ -2549,13 +2549,13 @@ IDEA 添加一个 `Run/Debug Configurations` 选择 `Remote` ,添加程序运行
 
 EChart SSR  是指不需要在浏览器界面操作而在服务端渲染 chart 。如根据给定的 option，在服务端渲染 chart。基本原理就是在服务端使用 node，创建 canvas 和 echart，进行渲染。可参考 echart 官方提供的方案： https://echarts.apache.org/zh/tutorial.html#%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%B8%B2%E6%9F%93。
 
-其中 [node-echarts](https://github.com/hellosean1025/node-echarts) 使用简单，可做首推，但由于其依赖未更新，运行不起来，可使用[node-echart5](https://www.npmjs.com/package/node-echart5)代替。但由于后者使用 ts 编写，且对原有代码有些许改变，可以结合二者的代码进行改写。
+其中 [node-echarts](https://github.com/hellosean1025/node-echarts) 使用简单，可做首推，但由于其依赖未更新，运行不起来，可使用[node-echart5](https://www.npmjs.com/package/node-echart5)代替。但由于后者使用 ts 编写，且对原有代码有些许改变，可以结合二者的代码进行改写。见 demo: [echart-ssr](https://github.com/jianxinliu/echart-ssr).
 
 以上方案可以说是静态渲染，即给定 option，再渲染 chart， 即 option 的生成逻辑未考虑在内。若是 option 的生成逻辑在前端，则 SSR 也无能为力。此时就需要 headless 环境，如  echarts 官方推荐的 puppeteer, phantomjs……
 
 headless 环境可以在服务端运行一个浏览器，并渲染指定页面，且一般可以使用编程方式对页面进行一些控制，以此来触发前端逻辑。
 
-[puppeteer](https://github.com/puppeteer) 是 Chrome 团队开源的， API 简单，功能丰富，可作为首推。但 10.2.0 版本有一个小问题就是，无法自动下载 Chrome，需要进入 node_modules/puppeteer 下执行 `node install.js` 手动下载。
+[puppeteer](https://github.com/puppeteer) 是 Chrome 团队开源的， API 简单，功能丰富，可作为首推。但 10.2.0 版本有一个小问题就是，无法自动下载 Chrome，需要进入 node_modules/puppeteer 下执行 `node install.js` 手动下载。 见 demo :[chart-ssr](https://github.com/jianxinliu/chart-ssr).
 
 
 
