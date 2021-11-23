@@ -3248,6 +3248,178 @@ jenkins 使用简单，下载官方 war 包即可运行起来。具体添加项�
 
 宁缺毋滥
 
+
+
+# Kafka
+
+## Mac 下 Kafka 安装
+
+使用 Homebrew 进行安装。Kafka 依赖 Zookeeper，所以需要先安装 zookeeper.
+
+```sh
+brew install -s zookeeper && brew test zookeeper
+```
+
+安装 Kafka:
+
+```sh
+brew install kafka
+# 可能会遇到问题： Error: kafka: no bottle available!
+# 根据提示运行：
+brew install --build-from-source kafka
+```
+
+检验安装情况:
+
+```sh
+brew info zookeeper
+brew info kafka
+```
+
+启动服务:
+
+```sh
+# 启动服务
+brew services start zookeeper|kafka
+# 或者使用 zookeeper|kafka 自带的命令行启动
+# zkServer|kafka-server-start|zookeeper-server-start
+# 查看 brew services
+brew services
+```
+
+简易操作:(以下命令在 kafka/bin 目录下均有对应 sh 文件，若不是通过 Homebrew 安装且未指定环境变量，都可以指定该路径下的 sh 文件进行运行)
+
+```sh
+# 创建 topic (指定 zookeeper 地址，创建一个副本为 1 ，名为 test 的 topic)
+kafka-topics --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+# 查看所有 topic
+kafka-topics --list --zookeeper localhost:2181
+# 启动一个命令行生产者，往 test 这个 topic 中加数据（在命令行中输入，回车）
+kafka-console-producer --broker-list localhost:9092 --topic test
+# 启动一个命令行消费者，从 test 这个 topic，从头开始读取（offset 为最开始）
+kafka-console-consumer --bootstrap-server localhost:9092 --topic test --from-beginning
+```
+
+
+
+## 一个 Kafka 生产者例子
+
+```java
+import org.apache.commons.lang3.StringUtils;
+import org.apache.kafka.clients.producer.Callback;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author jianxinliu
+ * @date 2021/11/22 19:52
+ */
+@Component
+public class MqServiceKafkaImpl implements MqService {
+
+    @Value("${kafka.brokers}")
+    private String hosts;
+
+    @Value("${kafka.topics}")
+    private String topics;
+
+    @Value("${kafka.acks:1}")
+    private int acks;
+
+    @Value("${kafka.retries:5}")
+    private int retries;
+
+    @Autowired
+    private MqAlarmInfoRepository alarmInfoRepository;
+
+    private KafkaProducer<String, String> producer;
+
+    private final String serializer = "org.apache.kafka.common.serialization.StringSerializer";
+
+    @Override
+    public boolean sendMq(Map<String, String> params) {
+        return false;
+    }
+
+    @Override
+    public boolean sendMqAsync(Map<String, String> params) {
+        KafkaMessageTemplate template = new KafkaMessageTemplate().accept(params);
+        String msg = template.getMessage();
+        ProducerRecord<String, String> record = new ProducerRecord<String, String>(topics, msg);
+        sendAsync(record, (RecordMetadata metadata, Exception exception) -> {
+            MqAlarmInfo alarmInfo = new MqAlarmInfo();
+            alarmInfo.setMsgId(template.getMsgId());
+            alarmInfo.setFlowName(template.getFlowName());
+            alarmInfo.setMailContent(template.getMailContent());
+            alarmInfo.setFireTime(template.getFireTime());
+            alarmInfo.setBase64Text(template.getBase64());
+            alarmInfo.setBase64Md5(template.getBase64Md5());
+
+            alarmInfoRepository.save(alarmInfo);
+        });
+        return true;
+    }
+
+    @PostConstruct
+    public void init() throws DataValidationException {
+        if (StringUtils.isEmpty(hosts) || StringUtils.isEmpty(topics)) {
+            throw new DataValidationException("mq config empty! hosts or topics");
+        }
+        Properties properties = new Properties();
+
+        // 指定 Broker
+        properties.put("bootstrap.servers", hosts);
+
+        // 将 key 的 Java 对象转成字节数组
+        properties.put("key.serializer", serializer);
+
+        // 将 value 的 Java 对象转成字节数组
+        properties.put("value.serializer", serializer);
+
+        // 消息至少成功发给一个副本后才返回成功
+        properties.put("acks", String.valueOf(acks));
+
+        // 消息重试 5 次
+        properties.put("retries", String.valueOf(retries));
+
+        producer = new KafkaProducer<String, String>(properties);
+    }
+
+    /**
+     * 同步发送消息
+     */
+    public void send(ProducerRecord<String, String> record) {
+        try {
+            producer.send(record).get(200, TimeUnit.MILLISECONDS);
+        } catch (Exception ex) {
+            LogUtil.error(ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * 异步发送消息
+     */
+    public void sendAsync(ProducerRecord<String, String> record, Callback callback) {
+        try {
+            producer.send(record, callback);
+        } catch (Exception ex) {
+            LogUtil.error(ex.getMessage(), ex);
+        }
+    }
+}
+```
+
+
+
 # 项目总结
 
 参考 [cleanCode](./cleanCode.md)

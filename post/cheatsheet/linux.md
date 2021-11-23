@@ -136,6 +136,19 @@ scp uname@remote_host:<path_to_file> <local_path>
 
 # local to remote
 scp local_file uname@remote_host:<remote_path>
+
+
+## grep
+# grep,fgrep,egrep,zgrep,zegrep,zfgrep
+# grep is use for basic regular expression(BREs)
+# egrep can handler extention regular expression(EREs)
+# fgrep is quicker than grep and egrep, but can only handler fixed patterns
+# zXgrep is act like Xgrep, but accept input file compressed.
+
+# grep options
+# -c --count : only a count of selected lines
+# -i : ignore case
+# -v : invert match
 ```
 
 
@@ -198,7 +211,6 @@ none            100M   20K  100M   1% /run/user
 /dev/sda8       196G  154G   33G  83% /media/13f35f59-f023-4d98-b06f-9dfaebefd6c1
 /dev/sda5        98G   37G   62G  38% /media/4668484A68483B47
 ```
-
 
 
 
