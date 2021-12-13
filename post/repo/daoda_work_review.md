@@ -3420,6 +3420,106 @@ public class MqServiceKafkaImpl implements MqService {
 
 
 
+# Node.js log rotate
+
+```js
+const config = require('./config/config.index').getConfig();
+const chalk = require('chalk');
+const fs = require('fs');
+const { exec } = require('child_process');
+
+const { logs: {logDir, logBackDir, holdDays} } = config;
+
+function dateFormat (date, formatter = 'YYYY-MM-DD HH:mm:ss.SSS') {
+  if (Object.prototype.toString.call(date) !== '[object Date]') {
+    return date;
+  }
+  const fillTime = (time) => (time < 10) ? '0' + time : time;
+  // YYYY-MM-DD HH:mm:ss
+  formatter = formatter.replace('YYYY', date.getFullYear())
+    .replace('MM', fillTime(date.getMonth() + 1))
+    .replace(/DD/i, fillTime(date.getDate()))
+    .replace('HH', fillTime(date.getHours()))
+    .replace('mm', fillTime(date.getMinutes()))
+    .replace('ss', fillTime(date.getSeconds()))
+    .replace('SSS', fillTime(date.getMilliseconds()));
+  return formatter;
+}
+
+module.exports = {
+  info(...args) {
+    const date = new Date()
+    console.log(`[---][${dateFormat(date)}]` + chalk.cyan(...args));
+  },
+  error(...args) {
+    const date = new Date()
+    console.error(`[---][${dateFormat(date)}]` + chalk.red(...args));
+  }
+};
+
+function checkHisLogs () {
+  const logBackDirName = logBackDir + (logBackDir.endsWith('/') ? '' : '/');
+  const fileNames = fs.readdirSync(logBackDirName)
+  const nowTime = new Date().getTime()
+  const filesNeedRm = fileNames.filter(name => {
+    let timeStr = name.match(/\d{14,17}/g)
+    if (!timeStr) return false;
+
+    let replacement = '$<Y>-$<M>-$<D> $<H>:$<m>:$<s>';
+    timeStr = (timeStr + '').replace(/(?<Y>\d{4})(?<M>\d{2})(?<D>\d{2})(?<H>\d{2})(?<m>\d{2})(?<s>\d{2})/, replacement)
+    const fileTime = new Date(timeStr).getTime();
+    const needRm = (nowTime - fileTime) / (1000 * 60 * 60 * 24) > holdDays
+    return needRm;
+  })
+  filesNeedRm.forEach(name => fs.rmSync(logBackDirName + name))
+}
+
+function rotateLogs () {
+  const logFile = logDir + '/info.log';
+  if (!fs.existsSync(logBackDir)) {
+    fs.mkdirSync(logBackDir)
+  }
+
+  const timeStr = dateFormat(new Date(), 'YYYYMMDDHHmmssSSS');
+  const tmpFile = logBackDir + `/info.${timeStr}.log`
+  fs.copyFileSync(logFile, tmpFile, fs.constants.COPYFILE_FICLONE);
+  fs.writeFileSync(logFile, "")
+
+  exec(`tar -zcf log.${timeStr}.tar.gz ${tmpFile}`, (error, stdout, stderr) => {
+    if (error) {
+      console.log(`error: ${error.message}. \n tar error`);
+      return;
+    }
+    if (stderr) {
+      console.log(`stderr: ${stderr}`);
+      return;
+    }
+    console.log(`stdout: ${stdout}. \n tar done`);
+    fs.rmSync(tmpFile);
+  });
+
+  checkHisLogs();
+}
+
+function createInterval () {
+  setInterval(() => {
+    const hour = new Date().getHours();
+    if (hour !== 0) {
+      return;
+    }
+    rotateLogs();
+  }, 60 * 60 * 1000);
+}
+
+// 之后的一个整点，设置定时器
+let nowMinutes = new Date().getMinutes();
+setTimeout(() => {
+  createInterval();
+}, (60 - nowMinutes) * 60 * 1000);
+```
+
+
+
 # 项目总结
 
 参考 [cleanCode](./cleanCode.md)
