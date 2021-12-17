@@ -3518,6 +3518,26 @@ setTimeout(() => {
 }, (60 - nowMinutes) * 60 * 1000);
 ```
 
+使用命令行：
+
+```sh
+# 本命令需要被定时调用
+LOG_BACK_PATH=./logBack
+LOG_PATH=./logs
+DATE=`date +"%Y%m%d"`
+DELETE_LOG_NAME=$LOG_BACK_PATH/deleteInfo_$DATE.log
+LOG_HOLD_DAYS=30
+
+# 滚动备份日志
+cp $LOG_PATH/info.log $LOG_BACK_PATH/backLog_$DATE.log
+echo '' > $LOG_PATH/info.log
+echo $DATE 'log rotate completed' >> $DELETE_LOG_NAME
+
+# 检查并删除超期日志
+find $LOG_BACK_PATH -mtime +$LOG_HOLD_DAYS >> $DELETE_LOG_NAME
+find $LOG_BACK_PATH -mtime +$LOG_HOLD_DAYS -exec rm {} \;
+```
+
 
 
 # 项目总结
