@@ -3538,6 +3538,77 @@ find $LOG_BACK_PATH -mtime +$LOG_HOLD_DAYS >> $DELETE_LOG_NAME
 find $LOG_BACK_PATH -mtime +$LOG_HOLD_DAYS -exec rm {} \;
 ```
 
+# Sleep in js
+
+```js
+/**
+ * 延时函数，一般可用来测试
+ * @param milliseconds
+ * @return {Promise<void>}
+ */
+export async function sleep (milliseconds = 0) {
+  await new Promise((resolve, reject) => {
+    setTimeout(resolve, milliseconds);
+  });
+}
+
+// call
+
+await sleep(3000)
+```
+
+# Chrome 进程
+
+https://zhuanlan.zhihu.com/p/133239925
+
+Chrome 对于每个 Tab 页都使用独立的进程。但是对于由同一个站点中使用 `<a>` 或者 `window.open` 开启的 tab 页，则会共用同一个进程，不同 tab 页对应的是不同的渲染进程而已，所以如果一个 tab 崩溃，则该站点上所有的 tab 页都会崩溃，这会带来不好的体验。测试发现，如果 Chrome 限制一个 tab 最多使用 4G 内存，则当多个 tab 页占用内存总和超出 4G 时会引起页面崩溃。
+
+如果同一个站点打开多个 tab 页，并且需要每个 tab 页都能独占一个进程，享用 Chrome 规定的最大内存，则需要突破该限制。
+
+需要明确的是，同一站点的多个 tab 共享同一进程，实际上是属于同一个 Session 的，sessionStorage 也会被继承到新开的 tab 也中。
+
+```js
+// 新开页面前将 sessionStorage 信息暂存
+dumpSessionStorage();
+// 控制新开页面不与前面页面共享内存
+window.open('url', '_blank', 'noopener noreferrer');
+```
+
+## tab 页独立进程
+
+使用 `window.open` api 开启新 tab 页时，可以指定参数：`noopener noreferrer` 来使得新 tab 也独占一个进程，但是缺点是，相当于新开一个 session，对于 sessionStorage 来说，新页面不会继承，也就是说，如果有登录状态，则在新页面会丢失。此时可以曲线救国，在开启页面前将 sessionStorage 中的所有值都临时存储在 localStorage 中，在新页面加载前再手动恢复就可同步 sessionStorage 中的值。
+
+```js
+/**
+ * 将 sessionStorage 中的所有值暂存到 localStorage
+ * @param tmpName
+ */
+export function dumpSessionStorage (tmpName = 'tmpSess') {
+  let keyMap = {};
+  for (let sessionStorageKey in window.sessionStorage) {
+    keyMap[sessionStorageKey] = window.sessionStorage[sessionStorageKey];
+  }
+  window.localStorage.setItem(tmpName, JSON.stringify(keyMap));
+}
+
+/**
+ * 将暂存到 localStorage 中的 sessionStorage 信息还原，并删除暂存
+ * 一般在路由跳转前进行恢复
+ * @param tmpName
+ */
+export function restoreSessionStorage (tmpName = 'tmpSess') {
+  let sess = window.localStorage.getItem(tmpName);
+  if (!sess) {
+    return;
+  }
+  sess = JSON.parse(sess);
+  Object.keys(sess).forEach(key => {
+    window.sessionStorage.setItem(key, sess[key]);
+  });
+  window.localStorage.removeItem(tmpName);
+}
+```
+
 
 
 # 项目总结
