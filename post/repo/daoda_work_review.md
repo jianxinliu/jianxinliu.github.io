@@ -3611,6 +3611,261 @@ export function restoreSessionStorage (tmpName = 'tmpSess') {
 
 
 
+# Vue i18n 分模块
+
+```js
+/**
+ *  模块化 i18n 使用说明：
+ *  新增模块时，新增对应语言文件即可，文件名需和该模块的路由 path 名一致（去除前置斜杠）
+ *  使用时，模块自动增加 namespace, <_<block_route_path>> 加下划线是为了防止和之前的变量名重复
+ */
+import Vue from 'vue';
+import VueI18n from 'vue-i18n';
+import zh from './zh/zh.json';
+import en from './en/en.json';
+import {allPaths} from '@/util/Constants';
+import elementEnLang from 'element-ui/lib/locale/lang/en';
+import elementZhLang from 'element-ui/lib/locale/lang/zh-CN';
+
+function getSingleLocals (path = '') {
+  let ret = {};
+  try {
+    // https://github.com/webpack/webpack/issues/4921
+    ret = require(`${path}`);
+  } catch (e) {
+  }
+  return ret;
+}
+
+function flatObject (arr = []) {
+  let ret = {};
+  arr.forEach(obj => {
+    Object.keys(obj).forEach(key => {
+      if (obj[key] && Object.keys(obj[key]).length) {
+        ret[key] = obj[key];
+      }
+    });
+  });
+  return ret;
+}
+
+// 用于非路由组件
+function loadExtraModule (fileName = '') {
+  const zh = getSingleLocals(`./zh/${fileName}.json`);
+  const en = getSingleLocals(`./en/${fileName}.json`);
+  return {
+    zh: {
+      ['_' + fileName]: zh
+    },
+    en: {
+      ['_' + fileName]: en
+    }
+  };
+}
+
+function getI18nLocales () {
+  // 模块名使用下划线做前缀， 防止和之前的重名
+  const zhes = allPaths.map(name => ({['_' + name]: getSingleLocals(`./zh/${name}.json`)}));
+  const enes = allPaths.map(name => ({['_' + name]: getSingleLocals(`./en/${name}.json`)}));
+  const dataResult = loadExtraModule('dataResult');
+  return {
+    zh: {
+      ...flatObject(zhes),
+      ...zh,
+      ...elementZhLang,
+      ...dataResult.zh
+    },
+    en: {
+      ...flatObject(enes),
+      ...en,
+      ...elementEnLang,
+      ...dataResult.en
+    }
+  };
+}
+
+const locales = getI18nLocales();
+const i18n = new VueI18n({
+  locale: DEFAULT_LANG,
+  messages: locales
+});
+```
+
+# Once in Java
+
+```java
+import java.util.function.Consumer;
+
+/**
+ * 对特定逻辑只执行一次
+ * 两种使用方式：
+ * 第一种使用方式
+ * <pre>
+ *     DoOnce doOnce = new DoOnce();
+ *     doOnce.once(() -> {})
+ *             .otherwise(() -> {});
+ * </pre>
+ * <p>
+ * 第二种使用方式
+ * <pre>
+ *     DoOnce doOnce = new DoOnce();
+ *     boolean onceDone = doOnce.doIt(() -> {});
+ *     if (!onceDone) {
+ *         // otherwise
+ *     }
+ * </pre>
+ *
+ * @author jianxinliu
+ * @date 2022/02/21 15:57
+ */
+public class DoOnce {
+
+    private Boolean did = false;
+
+    public <T> DoOnce once(Consumer<T> consumer) {
+        if (!this.did) {
+            consumer.accept(null);
+        }
+        this.did = true;
+        return this;
+    }
+
+    public <T> void otherwise(Consumer<T> other) {
+        if (this.did) {
+            other.accept(null);
+        }
+        this.did = true;
+    }
+
+
+    private Boolean aDid = false;
+
+    /**
+     * @param consumer
+     * @param <T>
+     * @return 本次未做
+     */
+    public <T> boolean doIt(Consumer<T> consumer) {
+        boolean did = false;
+        if (!this.aDid) {
+            consumer.accept(null);
+            this.aDid = true;
+            did = true;
+        }
+        return !did;
+    }
+}
+```
+
+# Optional
+
+```java
+/**
+     * 如果对象不为空则执行相应的逻辑
+     * 如：
+     * <pre>
+     *     ifNotNullThen(student, stu -> {
+     *        // do something with student object
+     *     })
+     * </pre>
+     *
+     * @param obj      待判断的对象
+     * @param consumer 处理的逻辑。消费者，消费 obj 对象
+     * @param <T>      对象类型
+     * @return Optional<T>
+     */
+public static <T> Optional<T> ifNotNullThen(T obj, Consumer<? super T> consumer) {
+  Optional<T> optional = Optional.ofNullable(obj);
+  optional.ifPresent(consumer);
+  return optional;
+}
+
+/**
+     * 如果对象不为空，对该对象进行操作得到中间结果，并将中间结果传给最后的 consumer
+     * <p>
+     * 如：
+     * <pre>
+     *     Sugar.ifNotNullThenThen(fontSetting, fontSetting::getFontSize, style::setFontSize);
+     * </pre>
+     *
+     * @param obj      待检测对象
+     * @param supplier 对该对象的操作， 得到中间结果
+     * @param consumer 对中间结果的操作
+     * @param <T>      对象的类型
+     * @param <S>      中间结果的类型
+     * @return
+     */
+public static <T, S> Optional<T> ifNotNullThenThen(T obj, Supplier<S> supplier, Consumer<? super S> consumer) {
+  Optional<T> op = Optional.ofNullable(obj);
+  if (op.isPresent()) {
+    Optional.ofNullable(supplier.get()).ifPresent(consumer);
+  }
+  return op;
+}
+```
+
+# Functional in java
+
+```java
+/**
+     * 在对象不为空的前提下获取属性值，否则给默认值
+     * 如： getOrElse(student, () -> student.getName(), "jack");
+     *
+     * @param p   取值的对象
+     * @param iff 对象不为空时的取值逻辑
+     * @param els 默认值
+     * @param <T> 对象的类型
+     * @param <R> 值的类型
+     * @return 对象字段值
+     */
+public static <T, R> R getOrElse(T p, Supplier<R> iff, R els) {
+  return p != null ? iff.get() : els;
+}
+
+/**
+     * 组成观感上更内聚的代码块，无实际作用
+     *
+     * @param description 该代码块的功能，可代替注释
+     * @param fn          代码块实际内容
+     */
+public static void codeBlock(String description, FunctionVoid fn) {
+  fn.apply();
+}
+
+// Function 类型声明
+@FunctionalInterface
+public interface Function3<One, Two, Three, Ret> {
+    Ret apply(One one, Two two, Three three);
+}
+
+@FunctionalInterface
+public interface FunctionVoid {
+    void apply();
+}
+
+// 具体函数
+public class Fns {
+
+  /**
+     * 对数据分组时的 key 生成函数
+     * @params row 单行数据
+     * @params fields 需要合并分组的字段
+     * @params delimiter 多字段的分割符
+     */
+    public static Function3<Map<String, Object>, List<String>, String, String> genMapKey = (Map<String, Object> row, List<String> fields, String delimiter) -> {
+        if (delimiter == null) {
+            delimiter = "-";
+        }
+        return fields.stream().map(row::get).map(Objects::toString).collect(Collectors.joining(delimiter));
+    };
+}
+
+// 调用
+Fns.genMapKey.apply(row, selected, null);
+```
+
+
+
 # 项目总结
 
 参考 [cleanCode](./cleanCode.md)
