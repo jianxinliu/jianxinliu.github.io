@@ -3785,23 +3785,41 @@ public static <T> Optional<T> ifNotNullThen(T obj, Consumer<? super T> consumer)
      * <p>
      * 如：
      * <pre>
-     *     Sugar.ifNotNullThenThen(fontSetting, fontSetting::getFontSize, style::setFontSize);
+     *     Sugar.ifNotNullThenThen(fontSetting, FontSetting::getFontSize, style::setFontSize);
      * </pre>
      *
      * @param obj      待检测对象
-     * @param supplier 对该对象的操作， 得到中间结果
+     * @param fn       对该对象的操作， 得到中间结果
      * @param consumer 对中间结果的操作
      * @param <T>      对象的类型
      * @param <S>      中间结果的类型
      * @return
      */
-public static <T, S> Optional<T> ifNotNullThenThen(T obj, Supplier<S> supplier, Consumer<? super S> consumer) {
-  Optional<T> op = Optional.ofNullable(obj);
-  if (op.isPresent()) {
-    Optional.ofNullable(supplier.get()).ifPresent(consumer);
-  }
-  return op;
-}
+    public static <T, S> Optional<T> ifNotNullThenThen(T obj, Function<T, S> fn, Consumer<? super S> consumer) {
+        Optional<T> op = Optional.ofNullable(obj);
+        if (op.isPresent()) {
+            Optional.ofNullable(fn.apply(obj)).ifPresent(consumer);
+        }
+        return op;
+    }
+
+
+		/**
+     * 如果对象不为空，则传递给后面的函数作为参数，对其进行操作
+     *
+     * @param obj 被判断的对象
+     * @param fn  具体操作对象的逻辑，返回另一个值
+     * @param <T> 对象类型
+     * @param <R> 返回值类型
+     * @return 若对象为 null，则返回的 Optional 是 empty
+     */
+    public static <T, R> Optional<R> ifNotNullThenGet(T obj, Function<T, R> fn) {
+        Optional<R> ret = Optional.empty();
+        if (obj != null) {
+            ret = Optional.ofNullable(fn.apply(obj));
+        }
+        return ret;
+    }
 ```
 
 # Functional in java
@@ -3862,6 +3880,46 @@ public class Fns {
 
 // 调用
 Fns.genMapKey.apply(row, selected, null);
+```
+
+# Java sort by multi parameters
+
+```java
+    /**
+     * 按 value 进行排序
+     *
+     * @param orderBy
+     * @return 特定的比较器，可用于串联
+     */
+    private static Comparator<SplitKey> getComparatorByValue(OrderBy orderBy) {
+        Comparator<SplitKey> comparing = Comparator.comparing(sk -> sk.getValue(orderBy.getField()).toString());
+        if (orderBy.getDirection().equals(OrderByDirection.desc)) {
+            comparing = comparing.reversed();
+        }
+        return comparing;
+    }
+
+    /**
+     * 对集合进行多维排序（不改变集合）
+     *
+     * @param list        待排序集合
+     * @param orderByList 多维排序信息，当前者等同时，使用后者作为排序依据
+     * @return 返回有序 List
+     */
+    public static List<SplitKey> sortByMulti(Set<SplitKey> list, List<OrderBy> orderByList) {
+        List<SplitKey> splitKeys = new ArrayList<>(list);
+        if (orderByList.isEmpty()) {
+            return splitKeys;
+        }
+        OrderBy orderBy1 = orderByList.get(0);
+        Comparator<SplitKey> comparator = getComparatorByValue(orderBy1);
+        // 构建不同排序维度
+        for (int i = 1; i < orderByList.size(); i++) {
+            OrderBy order = orderByList.get(i);
+            comparator = comparator.thenComparing(getComparatorByValue(order));
+        }
+        return list.stream().sorted(comparator).collect(Collectors.toList());
+    }
 ```
 
 
