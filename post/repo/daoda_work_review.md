@@ -3694,8 +3694,6 @@ const i18n = new VueI18n({
 # Once in Java
 
 ```java
-import java.util.function.Consumer;
-
 /**
  * 对特定逻辑只执行一次
  * 两种使用方式：
@@ -3722,17 +3720,16 @@ public class DoOnce {
 
     private Boolean did = false;
 
-    public <T> DoOnce once(Consumer<T> consumer) {
+    public DoOnce once(FunctionVoid consumer) {
         if (!this.did) {
-            consumer.accept(null);
+            consumer.apply();
         }
-        this.did = true;
         return this;
     }
 
-    public <T> void otherwise(Consumer<T> other) {
+    public void otherwise(FunctionVoid other) {
         if (this.did) {
-            other.accept(null);
+            other.apply();
         }
         this.did = true;
     }
@@ -3742,13 +3739,12 @@ public class DoOnce {
 
     /**
      * @param consumer
-     * @param <T>
      * @return 本次未做
      */
-    public <T> boolean doIt(Consumer<T> consumer) {
+    public boolean doIt(FunctionVoid consumer) {
         boolean did = false;
         if (!this.aDid) {
-            consumer.accept(null);
+            consumer.apply();
             this.aDid = true;
             did = true;
         }
@@ -3819,6 +3815,40 @@ public static <T> Optional<T> ifNotNullThen(T obj, Consumer<? super T> consumer)
             ret = Optional.ofNullable(fn.apply(obj));
         }
         return ret;
+    }
+
+		/**
+     * 安全的访问数组，而不报 ArrayIndexOutOfRangeException
+     * 如： safeArrayAccess(arr, -1);  => null
+     *
+     * @param array 待访问的数组
+     * @param index 下标
+     * @param <T>   数组元素的类型
+     * @return 访问不到则返回 null
+     */
+    public static <T> T safeArrayAccess(T[] array, int index) {
+        return safeAccess(array, arr -> arr[index]).orElse(null);
+    }
+
+    public static <T> T safeListAccess(List<T> list, int index) {
+        return safeAccess(list, li -> li.get(index)).orElse(null);
+    }
+
+    /**
+     * 安全的从 T 类型的对象中获取 R 类型的值
+     * @param t
+     * @param accessFn 获取方式
+     * @param <T> 源对象类型
+     * @param <R> 返回值类型
+     * @return
+     */
+    public static <T, R> Optional<R> safeAccess(T t, Function<T, R> accessFn) {
+        R r = null;
+        try {
+            r = accessFn.apply(t);
+        } catch (Exception ignored) {
+        }
+        return Optional.ofNullable(r);
     }
 ```
 
@@ -3920,6 +3950,69 @@ Fns.genMapKey.apply(row, selected, null);
         }
         return list.stream().sorted(comparator).collect(Collectors.toList());
     }
+```
+
+# ThreadLocal
+
+**作用**：用于同一个线程调用的各个方法间共享变量。相当于一个线程独占的空间。
+
+比如，有 N 个方法都需要某个参数，但给 N 个方法的参数列表中加该参数的声明又显得冗余，此时可以使用 ThreadLocal， 将该参数存放于 ThreadLocal 中，在各个方法中共享，而且还不用担心资源竞争。
+
+```java
+ThreadLocal<String> typeLocal = new ThreadLocl<>();
+
+void init() {
+  typeLocal.set("name");
+}
+
+void m1() {
+	String name = typeLocal.get();
+}
+
+void m2() {
+	String name = typeLocal.get();
+}
+
+void m3() {
+	String name = typeLocal.get();
+}
+
+typeLocal.remove();
+```
+
+测试：
+
+```java
+public class Util {
+
+    public static ThreadLocal<String> local = null;
+
+    public static void test() {
+        String s = local.get();
+        System.out.println(Thread.currentThread().getName() + ":" + s);
+    }
+}
+
+
+public class Test {
+    public static void main(String[] args) {
+        for (int i = 0; i < 10; i++) {
+            new Task().start();
+        }
+    }
+}
+
+class Task extends Thread {
+    @Override
+    public void run() {
+        ThreadLocal<String> local = new ThreadLocal<>();
+        local.set("aa:" + Task.currentThread().getName());
+        Util.local = local;
+        Util.test();
+    }
+}
+
+// 该测试可以发现，每个线程都有自己的 local 变量，互不影响
 ```
 
 
