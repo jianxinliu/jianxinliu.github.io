@@ -4015,6 +4015,79 @@ class Task extends Thread {
 // 该测试可以发现，每个线程都有自己的 local 变量，互不影响
 ```
 
+# Web Worker
+
+[阮一峰 Web Worker 教程](https://www.ruanyifeng.com/blog/2018/07/web-worker.html)
+
+```js
+// 将函数转成一个二进制对象，然后为这个二进制对象生成 URL，再让 Worker 加载这个 URL。这样就做到了，主线程和 Worker 的代码都在同一个网页上。
+function createWorker(f) {
+  var blob = new Blob(['(' + f.toString() +')()']);
+  var url = window.URL.createObjectURL(blob);
+  var worker = new Worker(url, {name: 'worker1'});
+  return worker;
+}
+
+const worker = createWorker(function (e) {
+    // 该函数有自己的作用域，是 worker 的实际运行逻辑。使用 this 和 self 有同样的作用
+    self.onmessage = function (params) {
+        console.log('worker init:', params.data)
+    }
+    // worker 运行的逻辑
+    setInterval(() => {
+        self.postMessage('ha')
+    }, 1000)
+})
+
+worker.onmessage = function (e) {
+    console.log(e.data)
+}
+
+worker.postMessage("init")
+
+setTimeout(() => {
+    worker.terminate()
+}, 5000)
+```
+
+更加实际的例子：
+
+```js
++(async function(params) {
+    const sumWorker = createWorker(function () {
+        async function sleep (milliseconds = 0) {
+          await new Promise((resolve, reject) => {
+            setTimeout(resolve, milliseconds);
+          });
+        }
+
+        self.onmessage = async function (req) {
+            let sum = 0;
+            const n = req.data
+            console.log('sum to:', n)
+            for (let i = 0; i < n; i++) {
+                await sleep(5)
+                sum += i;
+            }
+            self.postMessage({done: true, ret: sum})
+        }
+    })
+    // 一直等待 worker 结束，且不阻塞主线程
+    let inte = setInterval(() => {
+      console.log('wait at:', new Date().getSeconds())
+    }, 1000)
+    
+    sumWorker.postMessage(1000)
+    sumWorker.onmessage = function (e) {
+      console.log('got result:', e.data)
+      clearInterval(inte)
+      if (e.data.done) {
+        sumWorker.terminate();
+      }
+    }
+})()
+```
+
 
 
 # 项目总结
