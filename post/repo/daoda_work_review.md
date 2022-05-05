@@ -4088,7 +4088,115 @@ setTimeout(() => {
 })()
 ```
 
+# ES Promise
 
+学会用 promise, 就两种情况
+
+1. 创建自己的 promise。
+2. 使用别人创建的 promise。
+
+先介绍什么是 promise. 就是一个可以一段代码指定到某件事发生之后再执行的能力。
+
+比如，登录时，需要等到网络请求返回才能进行下一步，是进入主页还是提示登录失败。这种情况下，一般都是网络请求库创建的 promise, 是第二种情况
+
+那什么时候需要创建自己的 promise 呢。
+
+比如，有一个方法，执行大数求和，需要执行很长时间，不确定什么时候执行完。但是又不想因为光等着计算而别的什么都不做，这个时候就可以用 promise 包裹这一段计算逻辑。
+
+```js
+async function sleep (milliseconds = 0) {
+  await new Promise((resolve, reject) => {
+    setTimeout(resolve, milliseconds);
+  });
+}
+// 1. 创建自己的
+
+// 不使用 ppromise
+;(async function test(params) {
+    console.log('no promise 开始计算')
+
+    // 用等待模拟长时间计算
+    await sleep(5000)
+
+    console.log('no promise 开始做除了计算的别的事情')
+})()
+
+// 使用 promise
+  
+;(async function test2(params) {
+  console.log('promise 开始计算')
+  
+  let promise = new Promise(async (resolve, reject) => {
+    // 用等待模拟长时间计算
+    await sleep(5000)
+    // 计算完成，调用 resolve 就行了。如果要传参数，传给 resolve, 外面的 then 函数能接收到
+    resolve('promise 完成')
+  })
+
+  promise.then(ret => {
+    console.log(ret)
+  })
+
+  console.log('promise 开始做除了计算的别的事情')
+})()
+
+
+// 2. 使用别人的
+
+// 基本上只要会使用 then, catch, finally 就行了
+// 比如 sleep 就返回一个创建好的 promise ，直接使用就行了
+
+sleep(2000)
+  .then(() => {
+    console.log('休息了 2 秒')
+    return sleep(1000)
+  })
+  .then(() => {
+    console.log('又休息了 1 秒')
+  })
+
+// 使用 promise 链对 api 结果进行连续处理
+let promiseChain = new Promise((resolve, reject) => {
+  resolve({
+    data: {
+      flag: true,
+      result: [1,2,3]
+    }
+  })
+})
+
+promiseChain.then(res => res.data)
+.then(data => data.flag ? data.result : new Error('fail  sdf'))
+.then(result => console.log(result))
+.catch(err => console.error(err))
+
+// 或者
+;(async function ee(params) {
+  const result = await promiseChain.then(res => res.data)
+          .then(data => data.flag ? data.result : new Error('fail  sdf'))
+          .catch(err => console.error(err))
+  console.log('aaa', result)
+})()
+
+
+
+// Promise 静态方法。all, race, any……
+
+// Promise.all([]) 用来等待多个 promise 都 resolve, 相当于 Array.prototype.every
+
+// Promise.race([]) 获取第一个 settled 的 promise 的结果，不论成功失败。（第一个成功的，第一个失败的）
+
+// Promise.any([]) 获取第一个 fulfilled 的 promise, 只有所有的都 reject, 结果才会 reject. 相当于 Array.prototype.some
+```
+
+# Map in java
+
+1. HashMap：使用哈希表实现，keys 和 values 都是无序的
+2. TreeMap: 使用红黑树实现，可以按 key 排序
+3. LinkedHashMap：可以保持插入的顺序
+4. ConcurrentHashMap：线程安全的 HashMap, 性能比 Hashtable 好。
+
+https://blog.csdn.net/renfufei/article/details/17287729
 
 # 项目总结
 
@@ -4096,15 +4204,19 @@ setTimeout(() => {
 
 ## 前端
 
-编码、重构、优化、规范
+编码、重构、优化、规范、设计
 
 ## 后端
 
-大数据技术、
+大数据技术、重构、设计、并发
 
 
 
+找一段时间梳理一下，自己这么久都干过一些什么事情。有哪些值得说道的。
 
+
+
+包括：前端，后端，大数据相关，系统设计，编码规范，
 
 
 
