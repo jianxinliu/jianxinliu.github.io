@@ -4198,6 +4198,130 @@ promiseChain.then(res => res.data)
 
 https://blog.csdn.net/renfufei/article/details/17287729
 
+
+
+# Equals & hashcode
+
+**hashCode 约定：**
+
+- 若 x.equals(y) 返回 true ，则 x.hashCode()==y.hashCode() ，其逆命题不一定成立。
+- 尽量使 hashCode 方法返回的散列码总体上呈均匀分布，可以提高哈希表的性能。
+- 程序运行时，若对象的 equals 方法中使用的字段没有改变，则在程序结束前，多次调用 hashCode 方法都应返回相同的散列码；程序结束后再执行时则没有此要求。
+
+自定义对象的对比方式以及 hashcode 生成方式
+
+```java
+package com.navi.eda.edacommon.pojo.chartv2.req.common;
+
+import com.navi.eda.edacommon.pojo.chartv2.constants.CommonConstant;
+import lombok.Data;
+import lombok.experimental.Accessors;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
+import java.util.Optional;
+
+/**
+ * @author jianxinliu
+ * @date 2022/02/24 16:01
+ */
+@Data
+@Accessors(chain = true)
+public class SingleSplitKey {
+    private String key;
+    private Object value;
+    private String delimiter = ":";
+
+    public SingleSplitKey(String key, Object value) {
+        this.key = key;
+        this.value = value;
+    }
+
+    public static SingleSplitKey set(String key, Object value) {
+        return new SingleSplitKey(key, value);
+    }
+
+    public boolean isDefault() {
+        return CommonConstant.DEFAULT_SINGLE_KEY.equals(this);
+    }
+
+    public boolean isNotDefault() {
+        return !this.isDefault();
+    }
+
+    @Override
+    public String toString() {
+        return key + delimiter + value;
+    }
+
+    /**
+     * 对比时排除 delimiter
+     */
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SingleSplitKey that = (SingleSplitKey) o;
+
+        boolean keyEquals = this.key.equals(that.key);
+        boolean valueEquals = this.value.equals(that.value);
+
+
+        Optional<Double> thisValueOp = SingleSplitKey.castToNumber(this.getValue());
+        Optional<Double> thatValueOp = SingleSplitKey.castToNumber(that.getValue());
+        if (thisValueOp.isPresent() && thatValueOp.isPresent()) {
+            Double thisValue = thisValueOp.get();
+            Double thatValue = thatValueOp.get();
+            valueEquals = Double.doubleToLongBits(thisValue) == Double.doubleToLongBits(thatValue);
+        }
+
+        return keyEquals && valueEquals;
+    }
+
+    @Override
+    public int hashCode() {
+        Object value = this.getValue();
+        Optional<Double> aDouble = SingleSplitKey.castToNumber(value);
+        if (aDouble.isPresent()) {
+            // 如果 value 是浮点型，则对比时转换为 bits 比较, 可避免诸如 6 与 6.0 产生的 hash 值不一致的问题
+            value = Double.doubleToLongBits(aDouble.get());
+        }
+        return new HashCodeBuilder(17, 37).append(key).append(value).toHashCode();
+    }
+
+    private static Optional<Double> castToNumber(Object v) {
+        Optional<Double> ret = Optional.empty();
+        double a;
+        try {
+            a = Double.parseDouble(v.toString());
+        } catch (Exception e) {
+            return ret;
+        }
+        // object v is instance of double or integer
+        return Optional.of(a);
+    }
+}
+```
+
+# Fastjson 输出实例时去除某些字段
+
+采用其提供的属性过滤器
+
+```java
+// call
+JSON.toJSONString(requestDTO, propertyFilter);
+
+@Bean(name = "logPropertyFilter")
+public PropertyFilter getLogPropertyFilter() {
+    return (item, name, value) -> {
+        // return false to filter out
+        return true;
+    };
+}
+```
+
 # 项目总结
 
 参考 [cleanCode](./cleanCode.md)
@@ -4216,9 +4340,13 @@ https://blog.csdn.net/renfufei/article/details/17287729
 
 
 
-包括：前端，后端，大数据相关，系统设计，编码规范，
+包括：前端，后端，大数据相关，系统设计，编码规范，（后端（java, spark, scala）, 前端，puppeteer）
+
+面试：如何面试，如何应对面试，面试官关注什么？
 
 
+
+在这份工作中学到了什么
 
 
 
