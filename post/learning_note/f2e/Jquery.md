@@ -27,6 +27,7 @@
 /jquery/1.4.0/jquery.min.js"></script>
 </head>
 ```
+
 **提示**：通过 Google CDN 来获得最新可用的版本：
 如果您观察上什么的 Google URL - 在 URL 中规定了 jQuery 版本 (1.8.0)。如果您希望使用最新版本的 jQuery，也可以从版本字符串的末尾（比如本例 1.8）删除一个数字，谷歌会返回 1.8 系列中最新的可用版本（1.8.0、1.8.1 等等），或者也可以只剩第一个数字，那么谷歌会返回 1 系列中最新的可用版本（从 1.1.0 到 1.9.9）。
 **Microsoft  的 CDN**
@@ -53,6 +54,7 @@ $(document).ready(function(){
   ---- jQuery functions go here ----
 })
 ```
+
 这是为了防止文档在完全加载（就绪）之前运行 jQuery 代码。
 
 如果在文档没有完全加载之前就运行函数，操作可能失败。下面是两个具体的例子：
@@ -96,15 +98,15 @@ $("p").css("background-color","red");
 
 ## 更多的选择器实例
 
-| 语法                   | 描述                                       |
-| -------------------- | ---------------------------------------- |
-| $(this)              | 当前 HTML 元素                               |
-| $("p")               | 所有 <p> 元素                                |
-| $("p.intro")         | 所有 class="intro" 的 <p> 元素                |
-| $(".intro")          | 所有 class="intro" 的元素                     |
-| $("#intro")          | id="intro" 的元素                           |
-| $("ul li:first")     | 每个 <ul> 的第一个 <li> 元素                     |
-| $("[href\$='.jpg']") | 所有带有以 ".jpg" 结尾的属性值的 href 属性             |
+| 语法                   | 描述                                         |
+| -------------------- | ------------------------------------------ |
+| $(this)              | 当前 HTML 元素                                 |
+| $("p")               | 所有 <p> 元素                                  |
+| $("p.intro")         | 所有 class="intro" 的 <p> 元素                  |
+| $(".intro")          | 所有 class="intro" 的元素                       |
+| $("#intro")          | id="intro" 的元素                             |
+| $("ul li:first")     | 每个 <ul> 的第一个 <li> 元素                       |
+| $("[href\$='.jpg']") | 所有带有以 ".jpg" 结尾的属性值的 href 属性               |
 | $("div#intro .head") | id="intro" 的 <div> 元素中的所有 class="head" 的元素 |
 
 # Jquery 事件
@@ -162,7 +164,6 @@ $("#show").click(function(){
 $(selector).hide(speed,callback);
 
 $(selector).show(speed,callback);
-
 ```
 
 可选的 speed 参数规定隐藏/显示的速度，可以取以下值："slow"、"fast" 或毫秒。
@@ -240,6 +241,7 @@ $(selector).fadeToggle(speed,callback);
 ```
 $(selector).fadeTo(speed,opacity,callback);
 ```
+
 # jQuery 效果 - 滑动
 
 ## jQuery 滑动方法
@@ -628,4 +630,3 @@ jQuery 提供多个处理尺寸的重要方法：
 三个最基本的过滤方法是：first(), last() 和 eq()，它们允许您基于其在一组元素中的位置来选择一个特定的元素。
 
 其他过滤方法，比如 filter() 和 not() 允许您选取匹配或不匹配某项指定标准的元素。
-

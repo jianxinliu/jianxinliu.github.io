@@ -77,8 +77,6 @@ eureka:
       defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
 ```
 
-
-
 ## Service Provider
 
 - 服务提供方
@@ -123,16 +121,16 @@ public class EurekaProviderApplication {
 
 ```yml
 eureka:
-	clent:
-		serviceUrl:
-			defaultZone:http://localhost:9001/eureka/
-			
-spring:	
-	application:
-		name:eureka-provider
-		
+    clent:
+        serviceUrl:
+            defaultZone:http://localhost:9001/eureka/
+
+spring:    
+    application:
+        name:eureka-provider
+
 server:
-	port:8089
+    port:8089
 ```
 
 其中`defaultZone`是一个魔术字符串后备值，为任何不表示首选项的客户端提供服务URL（即它是有用的默认值）。 通过`spring.application.name`属性，我们可以指定微服务的名称后续在调用的时候只需要使用该名称就可以进行服务的访问 
@@ -144,10 +142,12 @@ server:
 进入保护模式会干什么：
 
 1. Eureka Server不再从注册列表中移除因为长时间没收到心跳而应该过期的服务。
-2. Eureka Server仍然能够接受新服务的注册和查询请求，但是不会被同步到其它节点上，保证当前节点依然可用。
-3. 当网络稳定时，当前Eureka Server新的注册信息会被同步到其它节点中。
 
-  保护模式会给我们带来一些干扰, 比如Windows机器上启动了一个服务, 注册到Eureka, 当停止的时候Windows是直接杀进程的, 所以不会发生Deregistry, 这种残留的服务就会导致Eureka进入自我保护模式, 导致服务一会通一会不通. 我们可以通过配置
+2. Eureka Server仍然能够接受新服务的注册和查询请求，但是不会被同步到其它节点上，保证当前节点依然可用。
+
+3. 当网络稳定时，当前Eureka Server新的注册信息会被同步到其它节点中。
+   
+   保护模式会给我们带来一些干扰, 比如Windows机器上启动了一个服务, 注册到Eureka, 当停止的时候Windows是直接杀进程的, 所以不会发生Deregistry, 这种残留的服务就会导致Eureka进入自我保护模式, 导致服务一会通一会不通. 我们可以通过配置
 
 ```
 eureka.server.enable-self-preservation = false
@@ -155,14 +155,10 @@ eureka.server.enable-self-preservation = false
 
 来禁用自我保护模式, 不过官方不建议这么做.
 
- 
-
 ## `@SpringBootApplication` 与 `@SpringCloudApplication`
 
 `@SpringCloudApplication` 注解在 `@SpringBootApplication`的基础上，增加了服务发现`@EnableDiscoveryClient`和熔断器
 `@EnableCircuitBreaker`的支持。
-
-
 
 `@SpringCloudApplication`注解的实现
 
@@ -192,10 +188,9 @@ public @interface SpringCloudApplication {
 @SpringBootConfiguration
 @EnableAutoConfiguration
 @ComponentScan(excludeFilters = {
-		@Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
-		@Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class) })
+        @Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
+        @Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class) })
 public @interface SpringBootApplication {
     ...
 }
 ```
-

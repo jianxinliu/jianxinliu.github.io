@@ -2,15 +2,15 @@
 
 # 一、数据结构与对象
 
-##  SDS
+## SDS
 
 - Redis 只会使用 C 字符串作为字面量，在大多数情况下，Redis 使用 SDS（Simple Dynamic String，简单动态字符串）作为字符串表示。
 - 比起 C 字符串，SDS 具有以下优点：
-    1. **常数复杂度获取字符串长度**。
-    2.  杜绝缓冲区溢出。
-    3. 减少修改字符串长度时所需的内存重分配次数。
-    4. **二进制安全**。
-    5. 兼容部分 C 字符串函数。
+  1. **常数复杂度获取字符串长度**。
+  2. 杜绝缓冲区溢出。
+  3. 减少修改字符串长度时所需的内存重分配次数。
+  4. **二进制安全**。
+  5. 兼容部分 C 字符串函数。
 
 ## 链表
 
@@ -31,8 +31,8 @@
 重点：
 
 1. 渐进式 rehash。
-    1. 指的是 rehash 状态会持续一段时间，并且是非连续的。也就是说 rehash 的过程会**为了防止因 rehash 导致服务器停止服务而主动中断**，**分多次、渐进式的完成 rehash 的过程**。rehash 的状态由 `rehashidx` 字段指明，为 -1 时表示不是 rehash 状态，其余数字则指示当前 rehash 在 `ht[0]` 中进行到的位置。在渐进式 rehash 期间，每一次对字典的 CRUD 操作都会触发 rehash 操作。
-    2. **rehash 操作的实质**。字典内部维护两个 哈希表 `ht[0]` & `ht[1]`，其中，后者用于 rehash，前者用于平常存储数据。rehash 时，分多次的将 `ht[0]` 中的数据 rehash 到 `ht[1]` 中，全部迁移完成之后，释放`ht[0]`， 将 `ht[1]` 设置为 `ht[0]`，再新创建一个哈希表挂在 `ht[1]`上以备下次 rehash。
+   1. 指的是 rehash 状态会持续一段时间，并且是非连续的。也就是说 rehash 的过程会**为了防止因 rehash 导致服务器停止服务而主动中断**，**分多次、渐进式的完成 rehash 的过程**。rehash 的状态由 `rehashidx` 字段指明，为 -1 时表示不是 rehash 状态，其余数字则指示当前 rehash 在 `ht[0]` 中进行到的位置。在渐进式 rehash 期间，每一次对字典的 CRUD 操作都会触发 rehash 操作。
+   2. **rehash 操作的实质**。字典内部维护两个 哈希表 `ht[0]` & `ht[1]`，其中，后者用于 rehash，前者用于平常存储数据。rehash 时，分多次的将 `ht[0]` 中的数据 rehash 到 `ht[1]` 中，全部迁移完成之后，释放`ht[0]`， 将 `ht[1]` 设置为 `ht[0]`，再新创建一个哈希表挂在 `ht[1]`上以备下次 rehash。
 2. 链地址解决冲突。使用头插法加入冲突的新数据。为什么？因为因冲突产生的链表没有尾指针，若实行尾插，则时间复杂度为 O(n)，而查找时又由于程序的时间局部性原理，刚插入的数据很快就会被再次访问，所以会有更大的概率去访问表尾，时间复杂度也是 O(n)；而**使用头插法，插入和查询时间复杂度都是常数级的**。
 
 ## 跳表
@@ -184,8 +184,6 @@ appendfsync everysec
 ——来自 redis.conf
 ```
 
-
-
 ### RDB 和 AOF 效率与安全性辩证
 
 RDB 的快照方式可以将数据恢复到某一时间点，而在快照保存时间间隔内的数据则不可恢复，这就有很大的安全性问题（if a crush were to happen before a snapshot,you'd lose any data changed since the last snapshot）。而 AOF 的方式虽然几乎保证最少的数据丢失，但将日志的写磁盘的速度缓慢，且 AOF 文件容易体积膨胀，浪费存储空间且启动时加载时间长。**故常常将二者结合起来，先使用 RDB 文件将数据库恢复到某一时间点，再使用 AOF 恢复部分快照时间间隔内的数据。**
@@ -237,10 +235,10 @@ Redis 为什么这么快：
 1. 初始化服务器状态结构。对服务器进行一些默认配置，如端口号、运行架构、持久化方式、创建命令表……此处的配置可被下一步覆盖。
 2. 载入配置选项。应用启动服务器时指定的参数或者 `redis.conf` 文件的配置。
 3. 初始化服务器数据结构。除了第一步创建的命令表，此处还会创建:
-    1. `server.clients`。记录连上的客户端。
-    2. `server.db`。记录服务器包含的数据库。
-    3. ……
-    4. 执行完毕后，打印 redis logo
+   1. `server.clients`。记录连上的客户端。
+   2. `server.db`。记录服务器包含的数据库。
+   3. ……
+   4. 执行完毕后，打印 redis logo
 4. 还原数据库状态。载入 RDB 或 AOF 文件，回复数据库。若开启 AOF 则优先使用 AOF 文件还原数据库，否则使用 RDB 文件还原。
 5. 执行事件循环，等待接收客户端连接。
 
@@ -474,7 +472,7 @@ SENTINEL is-master-down-by-addr <ip> <port> <current_epoch> <runid>
 2. 让其他 salve 改为复制新的 master 
 3. 将已下线的 master 作为新的 master 的 salve，当旧的 master再次上线时，它将作为新 master 的 salve。
 
-#### 选新的 master 
+#### 选新的 master
 
 选新的 master 的标准是该 salve **状态良好、数据完整**。然后向其发送 `salveof no one` ，将其转换为 master。
 
@@ -571,14 +569,12 @@ Redis 通过``MULTI`、`EXEC`、`WATCH`等命令来实现事务（transaction）
 redis 的事务同样具有 ACID 特性。但 redis 事务不支持回滚。
 
 > - Redis commands can fail only if called with a wrong syntax (and the problem is not detectable during the command queueing), or against keys holding the wrong data type: this means that in practical terms a failing command is the result of a programming errors, and a kind of error that is very likely to be detected during development, and not in production.
->
+> 
 > - Redis is internally simplified and faster because it does not need the ability to roll back.
->
->     ​																																											 https://redis.io/topics/transactions 
+>   
+>     ​                                                                                                                                                                             https://redis.io/topics/transactions 
 
 ## Lua脚本
-
-
 
 ## 慢查询日志
 

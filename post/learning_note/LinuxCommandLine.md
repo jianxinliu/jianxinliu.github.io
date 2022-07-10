@@ -31,12 +31,12 @@ command -options arguments
 获取帮助：
 
 - man command
-- man ${chapter} command,man帮助手册有8个章节，每个章节都有不同的内容
+- man ${chapter} command, man帮助手册有8个章节，每个章节都有不同的内容
 - help functionName
   - info bash
 - command --help
 
-`file`:查看文件类型，使用空格分隔多个文件
+`file`: 查看文件类型，使用空格分隔多个文件
 
 ```bash
 $ file test.txt
@@ -66,12 +66,14 @@ test.txt: ASCII text
 {> /path/newfile}创建新文件
 {> /path/oldfile}清空此文件的内容
 
-`date`:显示日期  `cal`：显示当月的日历，高亮当天
+`date`: 显示日期  
 
-`mkdir`:make directory <-v>:verbose 显示详细过程
+`cal`：显示当月的日历，高亮当天
+
+`mkdir`: make directory <-v>:verbose 显示详细过程
 <-p>:同时创建子目录
 
-`rm` :remove 删除文件
+`rm` : remove 删除文件
 
 - <-v>:verbose
 - <-i>:interactive
@@ -79,18 +81,20 @@ test.txt: ASCII text
 - <-f>:force
 - <-rf>:combine two options,完全删除，难以恢复，可以删除非空目录
 
-`rmdir`:删除空目录
+`rmdir`: 删除空目录
 
-`mv` :move ,默认会覆盖同名文件
+`mv` : move ,默认会覆盖同名文件
 <-r>移动子文件     -v  -i  都适用
 {mv test.txt text}修改文件名
 
-`ln`:line 创建链接，<-s>:symbolic创建软链接
+`ln`: line 创建链接，<-s>:symbolic创建软链接
 {ln file lineName}
 
-`type`:{type cd}
-`which`:{which ls}
-`man`:manual{man ls},程序的手册文档分成多个部分
+`type`: {type cd}
+
+`which`: {which ls}
+
+`man`: manual{man ls}, 程序的手册文档分成多个部分
 
 1. 用户命令
 
@@ -113,15 +117,15 @@ test.txt: ASCII text
 
 ## 查找文件
 
-- `find` 。
+- `find`, 参考 `man find`。
 - `locate`。速度更快，查找已经建立的文件，新文件可能还没被添加索引，所以可能找不到。
 
 
 ## 重定向：I/O重定向，上文有提到
 
 - `2>` ：将标准错误流重定向。2是shell在内部用文件描述符的索引，同时，0表示标准输入流、1表示标准输出流
-- `&>`:将标准输出和标准错误流同时重定向
-- `|`:管道，通过管道符，将前一个命令的标准输出链接到后一个命令的标准输入`{ls -l /usr/bin | less}`
+- `&>`: 将标准输出和标准错误流同时重定向
+- `|`: 管道，通过管道符，将前一个命令的标准输出链接到后一个命令的标准输入`{ls -l /usr/bin | less}`
 
 ## 扩展：路径名扩展
 

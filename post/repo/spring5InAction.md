@@ -66,7 +66,7 @@ class Dto{
 
 
 
-### jdbc -> jdbsTemplate
+### jdbc -> jdbcTemplate
 
 ```java
 private JdbsTemplate jdbc;

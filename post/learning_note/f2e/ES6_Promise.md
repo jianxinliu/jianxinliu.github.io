@@ -64,8 +64,6 @@ preDefined.rest = result //preDefined.rest.length = 0
 
 这个问题的关键在于，就算循环执行`db.hgetall`，在每个回调函数里，也做不到对 `result`  不断添加元素，因为程序使用 `result`  时，回调函数还没有开始执行。
 
-
-
 ### Promise.all([p1,p2,p3])
 
 `Promise.all` 函数用于将多个 Promise 实例包装成一个实例，其返回值仍然是一个 Promise 实例 `p`，p的状态由p1,p2,p3决定，分成两种情况。
@@ -91,4 +89,3 @@ async function asyncValue(value) {
   return value;
 }
 ```
-

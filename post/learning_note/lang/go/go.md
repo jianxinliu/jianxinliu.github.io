@@ -108,8 +108,6 @@ go mod edit -fmt
 
 go 一共有 25 个关键字。列举特有的关键字：
 
-
-
 ```go
 func select defer go map chan fallthrough
 ```
@@ -270,23 +268,23 @@ import "encoding.json"
 
 // 只解析导出字段
 type Student struct {
-	Name string `json:"name"`
-	Age string `json:age`
+    Name string `json:"name"`
+    Age string `json:age`
 }
 
 type Students struct {
-	Stus []Student `json:stus`
+    Stus []Student `json:stus`
 }
 
 func main()  {
-	var stus Students
-	str := `{"stus":[
-		{"name":"jianxin","age":"14"},
-		{"name":"jianxinliu","age":"24"}
-		]}`
-	json.Unmarshal([]byte(str),&stus)
+    var stus Students
+    str := `{"stus":[
+        {"name":"jianxin","age":"14"},
+        {"name":"jianxinliu","age":"24"}
+        ]}`
+    json.Unmarshal([]byte(str),&stus)
     fmt.Println(stus)
-    
+
     // stus.Stus = append(stus.Stus, Student{Name:"jack",Age:35})
 
     b ,err := json.Marshal(stus)
@@ -339,19 +337,11 @@ func main()  {
 
 ### Socket
 
-
-
 ### WebSocket
-
-
 
 ### REST
 
-
-
 ### RPC
-
-
 
 ## 安全与加密
 
@@ -361,8 +351,6 @@ func main()  {
 
 Error 对象
 用法：errors.New() 将字符串转换为符合error接口的对象。
-
-
 
 ```go
 func Sqrt(f float64) (float64,error) {
@@ -404,12 +392,9 @@ func Sqrt(f float64) (float64,error) {
 
 [seelog](https://github.com/cihub/seelog)
 
-
-
 # Go 并发编程
 
 # 参考
 
 《Go Web编程》谢孟军
 《Go 并发编程实战》郝林
-

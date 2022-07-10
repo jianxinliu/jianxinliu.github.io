@@ -90,7 +90,7 @@ SHOW VARIABLE LIKE '%storage_engine%';
 CREATE INDEX inex_name ON table_name(prop_name[(length)][ASC|DESC]);
 -- 建表时建索引
 CREATE TABLE tb_name(
-	name char(10),
+    name char(10),
     INDEX idx_name(name)
 );
 -- 通过修改表定义创建
@@ -293,7 +293,5 @@ MySQL 日志记录了数据库的日常操作的和错误信息，分为二进�
 - 慢查询日志：记录所有执行时间超过`long_query_time`的查询，或未使用索引的查询。
 
 默认只启动错误日志。启用日志会降低数据库的性能，MySQL会花很多时间记录日志，日志也会占用大量磁盘空间。
-
-
 
 进阶参考：《MYSQL内核_InnoDB存储引擎》 姜承尧

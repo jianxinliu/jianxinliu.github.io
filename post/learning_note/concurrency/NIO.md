@@ -42,14 +42,14 @@ buffer.get();//122
 
 例子2：
 
-```java 
+```java
 FileInputStream fin = new FileInputStream("someFiel.txt");
 FileChannel chnl = fin.getChannel();
 ByteBuffer buf = ByteBuffer.allocate(1024);
 chnl.read(buf);// 给 buffer 赋值
 buf.flip();
 while(buf.hasRemaining())
-	System.out.print((char)buf.get());
+    System.out.print((char)buf.get());
 
 // 如果是很大的数据量，需要这样让一个 Buffer 循环的读，只需要在一次读完之后清空 buffer 就可以了
 while(chnl.read(buf) != -1){
@@ -70,7 +70,7 @@ Buffer 实际上就是一块内存，这块内存被 NIO Buffer 管理，并提�
 - 当往缓冲区写数据时，position 记录写了多少数据，准确的说应该是 position 指向下一个写入的数据在数组中应该存放的位置
 
 - 在从缓冲区中读取数据时，position 指向下一个读取的数据是来自数组中的那个位置,也就是说 position 能够记录从已经从缓冲区中获取了多少数据。
-
+  
     总的来说：**position 的作用就是指向下一个被操作的数据的位置**。
 
 **limit:**
@@ -89,7 +89,7 @@ Buffer 实际上就是一块内存，这块内存被 NIO Buffer 管理，并提�
  }
 ```
 
-**capacity:**底层数组的大小
+**capacity:** 底层数组的大小
 
 #### Buffer 读写
 
@@ -112,7 +112,7 @@ public abstract byte get();
 
 ```java
   /**
-     * Relative <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
+     * Relative <i>put</i> method  <i>(optional operation)</i>.
      *
      * <p> Writes the given byte into this buffer at the current
      * position, and then increments the position. </p>
@@ -143,8 +143,8 @@ NIO中所有的IO都是从 Channel 开始的
 - SocketChannel & ServerSocketChannel：前者用于 TCP 数据的读写，一般是客户端实现；后者可以监听 TCP 请求，一般是服务器实现
 - DatagramChannel：用于 UDP 的数据读写
 - Scatter & Gather
-    - Scatter：将从一个 Channel 读取的信息分散到多个 Buffer 中去，Buffer 数组，如：`ScatteringByteChannel`
-    - Gather：将多个 Buffer 的内容按照顺序发送到一个 Channel,如：`GatheringByteChannel`
+  - Scatter：将从一个 Channel 读取的信息分散到多个 Buffer 中去，Buffer 数组，如：`ScatteringByteChannel`
+  - Gather：将多个 Buffer 的内容按照顺序发送到一个 Channel,如：`GatheringByteChannel`
 
 Channel 是双向的，可读也可写，可以异步读写，一般都是基于Buffer进行读写
 
@@ -170,20 +170,16 @@ SelectionKey key = channel.register(selector, Selectionkey.OP_READ);
 ```
 
 - SelectionKey 介绍
-
+  
     一个 SelectionKey 键表示了一个特定的通道对象和一个特定的选择器对象之间的注册关系。
 
 - 从 Selector 中选择 channel(Selecting Channels via a Selector)
-
+  
     选择器维护注册过的通道的集合，并且这种注册关系都被封装在 SelectionKey 当中.
 
 - 停止选择的方法
-
+  
     wakeup() 方法和 close() 方法。
-
-
-
-
 
 ### 内存映射
 

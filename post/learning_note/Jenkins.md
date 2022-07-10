@@ -14,11 +14,9 @@ https://www.w3cschool.cn/jenkins/
 
 是一个持续集成（Continuous Integration，CI），持续交付（Continuous Delivery,CD）服务器。
 
-
-
 ## What is Pipeline in Jenkins
 
-Jenkins 的pipeline是一系列插件的集合。
+Jenkins 的 pipeline 是一系列插件的集合。
 
 ```groovy
 Jenkinsfile (Declarative Pipeline)
@@ -60,15 +58,10 @@ Jenkins 从根本上讲是一种支持多种自动化模式的自动化引擎。
 - 多功能：Pipeline支持复杂的现实世界连续交付要求，包括并行分叉/连接，循环和执行工作的能力。
 - 可扩展：Pipeline插件支持其DSL的自定义扩展 以及与其他插件集成的多个选项。
 
-
-
 [Pipeline](https://www.w3cschool.cn/jenkins/jenkins-epas28oi.html)由多个步骤组成，允许您构建，测试和部署应用程序。Jenkins Pipeline允许您**以简单的方式组合多个步骤**，可以帮助您**建模任何类型的自动化过程**。
 
 想像一个“一步一步”，就像执行单一动作的单一命令一样。当一个步骤成功时，它移动到下一步。当步骤无法正确执行时，Pipeline将失败。
 
 当Pipeline中的所有步骤成功完成后，Pipeline被认为已成功执行。
 
-
-
 ## Blue Ocean the Jenkins GUI
-
