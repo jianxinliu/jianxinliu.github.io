@@ -50,6 +50,7 @@
   - [java static](post/learning_note/Java_static.md)
   - [go](post/learning_note/lang/go/go.md) - 2020-03-15
   - [go pkg](post/learning_note/lang/go/gopkg.md) - 2020-03-15
+  - [java 19 preview demo](post/repo/java19_preview.md) - 2022-10-15
 - 前端系列
   - [jquery](post/learning_note/f2e/Jquery.md)
   - [jquery ajax](post/learning_note/f2e/Jquery_Ajax.md)
