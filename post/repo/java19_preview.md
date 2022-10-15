@@ -199,18 +199,22 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class VThread {
+
+    static CountDownLatch latch = new CountDownLatch(2);
+
 	public static void main(String[] args) throws Exception {
 		// create virtual thread to run single task
 		Thread.startVirtualThread(VThread::platformThread);
 		Thread.ofVirtual().start(VThread::vThread);
 		
-		Thread.currentThread().join(Duration.ofSeconds(20));
+		latch.await();
 	}
 
 	 // cost 10098ms
 	private static void platformThread() {
 		try {
 			threads(Executors.newFixedThreadPool(100), "platform");
+            latch.countDown();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -221,6 +225,7 @@ public class VThread {
 		try {
 			// create one new virtual thread per task
 			threads(Executors.newVirtualThreadPerTaskExecutor(), "virtual");
+            latch.countDown();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
