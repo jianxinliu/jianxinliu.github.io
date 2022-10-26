@@ -4322,6 +4322,25 @@ public PropertyFilter getLogPropertyFilter() {
 }
 ```
 
+# SQL
+
+## 删除数据
+
+全表删除使用 `truncate` 会比 `delete` 更快
+
+当删除的数据是根据很多条件查出来的，那就会导致删除的 SQL 巨大，解析是一个成本，执行也是一个成本。
+
+可以使用将条件字段存入一个临时表，再执行 SQL
+
+```sql
+delete from table where field_list in (select field_list from temp_table where condition_list)
+```
+
+或者 postgresql 可以使用 `delete using`, 实际上是表连接
+
+**善用中间表，可以将一些操作转换成 SQL 操作，从而提高一些性能与准确性**
+
+
 # 项目总结
 
 参考 [cleanCode](./cleanCode.md)
