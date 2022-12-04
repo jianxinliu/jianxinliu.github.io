@@ -4341,6 +4341,53 @@ delete from table where field_list in (select field_list from temp_table where c
 **善用中间表，可以将一些操作转换成 SQL 操作，从而提高一些性能与准确性**
 
 
+# Java 调用 Python 脚本
+
+```java
+public class PythonRunner {
+
+  @Value("${python.exe-path:/opt/pythonEnv/bin/python3}")
+  private String pythonExePath;
+
+  public String runPyScript(String scriptFilePath, List<String> args) throws ScriptException, IOException {
+        List<String> strings = new LinkedList<>();
+        strings.add(pythonExePath);
+        strings.add(scriptFilePath);
+        strings.addAll(args);
+
+        String[] args1 = strings.toArray(new String[]{});
+        Process proc = Runtime.getRuntime().exec(args1);
+
+        List<String> lines = getOutput(proc.getInputStream());
+
+        List<String> errList = getOutput(proc.getErrorStream());
+        if (!errList.isEmpty()) {
+          throw new ScriptException(String.join("\n", errList));
+        }
+        return String.join("\n", lines);
+    }
+
+  private List<String> getOutput(InputStream inputStream) throws IOException {
+    List<String> lines = new LinkedList<>();
+      BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
+      String line;
+      while ((line = in.readLine()) != null) {
+          lines.add(line);
+      }
+      in.close();
+      return lines;
+  }
+}
+```
+
+## 在服务端离线安装 Python 环境
+
+详见：`./Python 离线安装.md`
+
+## python 绘制等高线图
+
+脚本见 `contour.py`
+
 # 项目总结
 
 参考 [cleanCode](./cleanCode.md)
