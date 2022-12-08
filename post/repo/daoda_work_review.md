@@ -4388,6 +4388,143 @@ public class PythonRunner {
 
 脚本见 `contour.py`
 
+# Nginx
+
+反向代理与 LB
+
+nginx 操作命令
+```sh
+# start
+# -t test conf file syntax -c config file
+nginx -t -c path/to/conf
+
+# stop
+nginx -s stop
+```
+
+Nginx 配置示例
+
+```conf
+# 此处的用户应该有权限访问代理的静态文件
+user root;
+worker_processes auto;
+pid /run/nginx.pid;
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+	worker_connections 768;
+	# multi_accept on;
+}
+
+http {
+
+	##
+	# Basic Settings
+	##
+
+	sendfile on;
+	tcp_nopush on;
+	types_hash_max_size 2048;
+	# server_tokens off;
+
+	underscores_in_headers on;
+
+	# server_names_hash_bucket_size 64;
+	# server_name_in_redirect off;
+
+	include /etc/nginx/mime.types;
+	default_type application/octet-stream;
+
+	##
+	# SSL Settings
+	##
+
+	ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3; # Dropping SSLv3, ref: POODLE
+	ssl_prefer_server_ciphers on;
+
+	##
+	# Logging Settings
+	##
+
+	access_log /var/log/nginx/access.log;
+	error_log /var/log/nginx/error.log;
+
+	##
+	# Gzip Settings
+	##
+
+	gzip on;
+
+	##
+	# Virtual Host Configs
+	##
+
+	include /etc/nginx/conf.d/*.conf;
+	include /etc/nginx/sites-enabled/*;
+
+  # 被代理的服务器
+	upstream authServer {
+    # weight 标识 LB 的权重
+		server 192.168.0.160:8089 weight 1;
+    # backup 标识备份机器，只有在其他机器 down 时，请求才会被发送到备份机
+		server 192.168.0.171:8089 weight 1 backup;
+	}
+	upstream renderServer {
+		server 192.168.0.160:3004;
+		server 192.168.0.171:3004;
+	}
+	upstream scheduleServer {
+		server 192.168.0.160:8095;
+		server 192.168.0.171:8095;
+	}
+	upstream edaServer {
+		server 192.168.0.160:8091;
+		server 192.168.0.171:8091;
+	}
+	# webPage
+	server {
+    # 只向外暴露 nginx 一台的 ip(还有可能是虚拟的)，其余服务都隐藏在后面
+    listen   8090;
+    server_name  localhost;
+    set $feFilePath /root/workspace/HA-test/fe;
+    location / {
+        root $feFilePath;
+        index index.html;
+        add_header Access-Control-Allow-Origin *;
+    }
+
+		# 前端请求页面后，在 localhost:8090 的域内，请求前缀直接是 /api， 会自动拼接 http://<nginx listen ip & port>/api
+		# 如果是其他地方请求，则需要直接写 http://<nginx listen ip & port>/api。或者写 keepalived 的虚拟 ip
+		location /api {
+			rewrite ^/api/(.*)$ /$1 break;
+			add_header Access-Control-Allow-Origin *;
+			proxy_pass http://edaServer;
+		}
+
+		# auth
+		location /sso {
+			rewrite ^/sso/(.*)$ /$1 break;
+			add_header Access-Control-Allow-Origin *;
+			proxy_pass http://authServer;
+		}
+
+		# render
+		location /nodejs {
+			rewrite ^/nodejs/(.*)$ /$1 break;
+			add_header Access-Control-Allow-Origin *;
+			proxy_pass http://renderServer;
+		}
+
+		# schedule 
+		location /schedule {
+			rewrite ^/schedule/(.*)$ /$1 break;
+			add_header Access-Control-Allow-Origin *;
+			proxy_pass http://scheduleServer;
+		}
+  }
+}
+```
+
 # 项目总结
 
 参考 [cleanCode](./cleanCode.md)
