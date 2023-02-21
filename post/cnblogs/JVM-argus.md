@@ -4,7 +4,7 @@
 
 JVM 参数模式
 
->   -XX:[+/-]<option>=<value(string/number)>
+>   -XX:[+/-]<option\>=<value(string/number)\>
 
 1.   `+` 表示开启该 option。如：`-XX:+UseG1GC` 表示使用 G1 垃圾收集器
 2.   `-` 表示关闭该 option。
@@ -23,7 +23,7 @@ JVM 空间大小配置参数
 |         -Xss         | 每个线程的堆栈大小  |  256k  |
 |  -XX:SurvivorRatio   | Survivor 区空间比例 |   6    |
 |  -XX:MetaspaceSize   | 元空间大小          |  256M  |
-| -XX:MaxMeatspaceSize | 最大元空间大小      |  256M  |
+| -XX:MaxMetaspaceSize | 最大元空间大小      |  256M  |
 
 GC 参数
 
@@ -44,15 +44,15 @@ GC log 配置
 |        -XX:+PrintGCTimeStamps        | 打印 GC 停顿耗时 |      |
 |           -XX:PrintGCCause           |                  |      |
 |      -XX:+UseGCLogFileRotation       |                  |      |
-| -XX:NumberOfGCLogFiles=<file number> |                  |      |
-|    -XX:GCLogFileSize=<file size>M    |                  |      |
+| -XX:NumberOfGCLogFiles=\<file number\> |                  |      |
+|    -XX:GCLogFileSize=\<file size\>M    |                  |      |
 
 Dump 配置
 
 |                   参数                   | 含义                       | 示例 |
 | :--------------------------------------: | -------------------------- | :--: |
 |     -XX:+HeapDumpOnOutOfMemoryError      | OOM 的时候输出当前堆栈信息 |      |
-| -XX:HeapDumpPath=<hprof file path>.hprof | dump 堆栈的文件路径        |      |
+| -XX:HeapDumpPath=\<hprof file path\>.hprof | dump 堆栈的文件路径        |      |
 
 
 
