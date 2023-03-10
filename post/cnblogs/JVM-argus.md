@@ -151,7 +151,7 @@ jstat -gcutil <vmid> <print time interval in millsecond>
 
 ### jmap
 
-展示 jvm 堆内存信息
+展示 jvm 堆内存信息（**可在其他命令因为 JVM hang 住而 attach 不上的时候进行 dump 堆栈信息**）
 
 一般格式：`jmap [options] pid`
 
@@ -180,6 +180,10 @@ options
 |       |                           |
 |       |                           |
 |       |                           |
+
+相关 api 
+- /histo/: 展示内存分布的直方图统计
+- /oqlhelp/: 展示如何使用 OQL（Object Query Language）类似 SQL 的用于查询对象的语言
 
 ### jstack
 
