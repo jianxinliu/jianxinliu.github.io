@@ -47,6 +47,16 @@ make makefile
 3. 使用 `envsubst` 命令将配置文件中的参数使用环境变量替换到 `config.tmpl` 中（`config.tmpl` 是配置的模板，只需要往里面填充对应的参数即可）
 4. 将替换结果写入到 `phone-api.yaml` 下。（最终生效的配置文件是这个）
 
+#### make 本地构建
+
+使用 make 进行不同阶段的构建，有点类似前端项目中 package.json 中的 scripts 声明，写好对应的命令后直接点击执行即可。
+
+项目中的 Makefile 支持的操作：
+
+1.   goct 代码生成， model, api, rpc 等代码生成。有改动后，直接运行相关的命令即可生成代码
+2.   项目构建
+3.   docker builder & push
+
 ### deploy
 
 使用 github pipeline 进行部署
@@ -79,6 +89,19 @@ phone-business 的 rpc 调用端
 go-zero 开发模式
 
 
+
+### Xphone 库表结构
+
+1. Model 表： 支持的类型（配置表）：
+     1. 金牌线路（golden）,金牌高清线路（goldenPlus）,银牌线路（Silvery），珀金线路（Platinum）
+     2. UPhone Mini, Phone X, Phone Live
+2. Product 表：产品表。记录所有的产品类型。属于配置表。通用版（universal）, 矩阵版（matrix），无网版（phone-noip）……
+
+
+
+### pathlive 库表结构
+
+1.   lines: 直播线路表，记录线路的起始、终止区域（上车点: 从国内节点上车，走专有通道到下车点、下车点：最终请求发出地是该 ip），ucloud 提供的 ip (**bgp_ip**, **vpc_ip**)
 
 # Tech
 
@@ -238,4 +261,55 @@ https://go-zero.dev/cn/docs/goctl/other
 
 
 ## gRPC
+
+
+
+### Protobuf 文件格式
+
+https://protobuf.dev/programming-guides/proto3/
+
+#### message
+
+定义一个消息传递的实体
+
+```protobuf
+message BaseResp {
+  string requestId = 1;
+  int32 code = 2;
+  string message = 3;
+}
+
+message StuUpdateReq {
+  string name = 1;
+  int32 age = 2;
+  int32 id = 3;
+  string userId = 4;
+}
+
+message StuUpdateResp {
+  BaseResp baseResp = 1;
+  bool ret = 2;
+}
+```
+
+Message 中包含的重点：
+
+1.   类型：可以是简单的类型，也可以是复杂类型
+2.   字段唯一码（Field Numbers）：**一旦这个 message 被使用，唯一码就不应该再更改。1-15 使用一个字节存储，包含常用的字段，15 开外的使用两个字节存储。一般需要在 15 以内保留一些空间用于增加。最小值是 1。**序列号定义可以采用 `10, 20, 30` 这样带间隔的，方便后续增加。
+3.   字段修饰符：
+     1.   `singular`: 默认修饰符，表示每个字段只能存在 0 个或 1 个。
+     2.   `optional`: 指定一个字段是否是必须的。未设置值时，不会被序列化；设置了值时，可以被序列化和反序列化
+     3.   `repeated`: 表示这个字段可以出现一次或者多次，会保留其原本的顺序。一般用来定义数组。`repeated string ids = 1;` 表示 ids 是一个字符串数组。
+     4.   `map`: 表示一个 map 结构 
+
+#### service
+
+格式：
+
+```protobuf
+service Rpc {
+  rpc Ping(Request) returns(Response);
+  rpc UpdateStu(StuUpdateReq) returns(StuUpdateResp);
+}
+```
 
