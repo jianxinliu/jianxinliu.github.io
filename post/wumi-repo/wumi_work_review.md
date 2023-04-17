@@ -35,6 +35,8 @@ docker dockerfile
 
 make makefile
 
+asynQ https://pkg.go.dev/github.com/hibiken/asynq#section-readme
+
 
 ## phone-business(比较通用的构建流程)
 
@@ -102,6 +104,150 @@ go-zero 开发模式
 ### pathlive 库表结构
 
 1.   lines: 直播线路表，记录线路的起始、终止区域（上车点: 从国内节点上车，走专有通道到下车点、下车点：最终请求发出地是该 ip），ucloud 提供的 ip (**bgp_ip**, **vpc_ip**)
+
+
+
+### 从创建一条线路开始
+
+
+
+#### 创建云手机
+
+
+
+1.   前端发送请求 `/order/create`, 接口实现在 `phone-bill-api` 项目 `ordercreatelogic.go`
+     1.   查询当前用户的信息：`userCenterRpc/UserInfo`
+     2.   子账号不支持创建订单
+     3.   账号未实名制不支持创建订单
+     4.   如果是矩阵版云手机，则限制 3 台起售
+
+
+
+#### 创建线路
+
+1.   **订单创建**：前端发送请求 `/order/create_path`, 接口实现在 `phone-bill-api` 项目 `createpathorderlogic.go`
+     1.   查询当前用户的信息：`userCenterRpc/UserInfo`
+     2.   子账号不支持创建订单
+     3.   账号未实名制不支持创建订单
+     4.   如果购买类型是“到月末”或者是“到下月末”，判断是否有资格
+          1.   根据该用户是否在白名单中
+          2.   如果是购买到月末，则根据当前距离月末是否大于 7 天
+     5.   根据订单的产品 id 获取产品信息（调用 resourceRpc.GetProductInfo，实际上是去 product 表根据 product_id 查询记录）
+     6.   根据产品 id 和区域 id 获取价格ID 。（调用 resourceRpc.GetResourcePrice，实际上是去 resource_price 表查询）（price_id 举例: //resource/products/path-golden/regions/uae-dubai）
+     7.   根据 priceId 获取实际的价格（调用 billingRpc.GetPurchasePriceV2）(计价规则单独列举)
+     8.   根据订单的 regionId 获取 region 信息（调用 resourceRpc.GetIpRegionInfo，实际上是去 ip_region 表根据 regionId 查询一条记录）
+     9.   获取订单指定组的组信息。（调用 userCenterRpc.GroupInfo, 实际上是去 group 表查询）。如果未指定，则默认采用“默认分组”
+     10.   order 表中插入一条记录
+     11.   将当前订单信息通过异步队列发送（实际上使用的是 Redis）
+           1.   事件名：asynq:order:timeout。任务 payload 携带信息： `<Order type>|<resource type path>|<order id>`
+           2.   事件 Handler： `order.asnycqServer.HandleOrderPayTimeoutTask`
+           3.   实际上是创建了一个超时未支付取消订单的任务（状态设置为 timeout）(1 分钟超时)
+2.   **支付**：代码路径（`phone-bill-api/orderpathlogic.go`）
+     1.   获取订单信息
+     2.   根据支付类型选择不同的处理方式
+          1.   支付宝（app/web）
+          2.   微信（app/web）
+          3.   余额
+               1.   `billingRpc/UserWalletDeduct` 更新用户钱包余额
+               2.   更新支付信息(payment 表)
+3.   **订单处理**：代码路径（`phone-bill-api/common.go -> OrderPaid`）
+     1.   区分是手机订单还是线路订单，续费订单还是充值订单
+     2.   线路订单：将任务 `asynq:order:process:v2` 加入 `resource` 队列，payload 携带 orderId。resource 队列 handler: `resource/asyncqserver.go.HandleOrderProcessTask`
+          1.   根据订单号查找订单。
+          2.   根据付费类型，计算此订单的有效期（开始、结束）。（`billingRpc/CalcExpireDate`）
+          3.   创建 resource。`createresourcelogic.CreateResource`
+               1.    **创建线路**：`create.go.CreateResource` 。调用 `turbolive-server/CreateUOLLine`，得到资源 id
+                    1.   请求参数：ChargeType, Quantity, SourceRegion, DestRegion, LineId, LineType
+                    2.   校验 DestRegion 是否是当前所支持的目的区域（ini 配置文件中的 dest-region section 配置）
+                    3.   根据目的区域决定上车点（sourceRegion） `SourceRegionDecision` 默认从广州上车
+                    4.   在 pathlive.lines 表创建 line 记录（循环创建 3 次，成功则停止，**为啥？**）
+                    5.   如果创建成功，将 line 的相关信息更新到该条记录上。（循环更新 3 次，成功则停止，**为啥？**）
+                         1.   如果更新成功，从 ini 配置文件中 `run-mode` section 读取配置是否需要创建 UHost
+                              1.   创建 UHost & EIP，创建成功则保存 UHost 相关信息到 line 记录上 （循环创建 10 次，成功则停止，**为啥？**）。并且根据 uhostId 异步获取 IP
+                                   1.   异步创建 UHost，尝试 3 次
+                                   2.   异步创建 EIP
+                                        1.   如果是铂金线路，尝试 3 次。使用 EIP 管理策略选出一个 EIP， 逻辑参考：**EIP 管理** 章节
+                                        2.   其他线路，则分配 EIP。重试 5 次进行分配 IP `allocateEip`。（原因是：<u>因指定了多个可申请的IP段，以防止某个段没IP了，或者UCloud后台把某个段锁定等情况，导致 allocateEip 失败，多重试几次</u>）
+                                        3.   判断 UHostId & EIPId 都创建成功。有则将 EIP 绑定到 UHost 上。
+                                             1.   如果是铂金路线，需要将 EIP 重置为使用中的状态（`eip.UsedTime = now`），并且将默认带宽增加到 10M
+                                        4.   否则，将创建好的 UHost 或者 EIP 对应删除掉（非铂金线路的 EIP 需要释放）
+                              2.   否则需要回滚
+                         2.   否则需要回滚
+                    6.   创建不成功需要**回滚** `rollback`。删除 line 记录。**计费、资源等回滚操作由网关层公共服务统一实现**
+               2.   所有资源 id 写入 resouce 表
+               3.   每个 id 都作为一个任务，写入 resouce 队列，事件名：`asynq:resource:create_check`。事件handler: `resouce/asynqserver.HandleCreateCheckTask`
+                    1.   根据 resourceId 找到 resource 表中的 resource 信息
+                    2.   根据 resourceId 请求 `turbolive-server/DescribeUOLLine` 找到 resource 对应的线路信息（ip、区域）
+                    3.   如果该线路可用（line.Enable）。在 resouce 表中标记该资源的状态为运行中，并设置该资源的过期检查任务
+                         1.   `utils.SetResourceExpire`。异步进行。向 resource 队列注册一个资源过期的事件 `asynq:resource:expired`， handler 为 `resource/asynqserver.HandleExpiredTask`，执行时间为过期时间，即在过期时间到的时候执行资源清理工作
+                              1.   再次检查过期时间是否在当前时间之前，否则再次设置过期检查事件 `utils.SetResourceExpire`（**过期时间可能被续费等操作更新**）
+                              2.   检查当前资源是否有设置自动续费，有则自动续费 `resource/asynqserver.autoRenew`
+                              3.   将该资源做关机操作 `PowerOffResource`，实际执行的是 `turbolive-server/SetUOLLineStatus`
+                              4.   更新 resource 表，标识该资源已到期
+                              5.   注册 7 天后删除该资源的事件 `utils.SetResourceExpireDelete`（如果 7 天内重新续费，则该事件被删除）
+                                   1.   事件： `asynq:resource:expired_delete` handler：`resource/asynqserver.HandleExpiredDeleteTask` ，七天后执行
+                                   2.   再次检查过期时间 + 7 天是否在当前时间之前，否则再次设置过期删除事件 `utils.SetResourceExpireDelete` （**理由同上**）
+                                   3.   此时不管设定的过期时间是否真的过期，过期则设置为"**已删除**"状态，否则设置为"**提前删除**"状态。
+                                        1.   调用 `turbolive-server/DeleteUOLLine` 执行实际删除操作
+                                             1.   从 pathlive.lines 表中获取线路信息
+                                             2.   更新其状态为不可用，vpcIp 为"删除中"
+                                             3.   异步执行删除。
+                                                  1.   如果是铂金线路，则不删除 EIP, 只是将线路的带宽变为 1M(**连接 UCloud 操作**)， 并标记 lastReleaseTime 为当前时间
+                                                  2.   否则删除云主机（**UHost**）
+                                                  3.   逻辑删除 lines 表记录（删除十次，一次成功则停止，**为啥？**）
+                                        2.   resource 表做逻辑删除（`resouce.Deleted = 1`）
+                    4.   如果不可用。查看该任务的重试次数，如果超过 90 次还未成功，则标记当前资源创建状态为失败，更新到 resource 表中
+
+##### UHost  & EIP 
+
+云主机用来走流量，EIP 作为该流量的起始地址
+
+
+
+##### EIP 管理
+
+`eip_manage.FindOneUsableEipWithRegion`
+
+从 `pathlive.eips` 表中查找一个指定区域的 EIP， 并且满足条件： `usable = true and last_release_time < now - eip_lock_days ` ，并从中随机选择一个
+
+其中：usable 是非时间条件管控，可能是出于其他原因需要禁用该 EIP, last_release_time 是时间条件的管控 
+
+
+
+##### 计价规则
+
+`billingRpc.GetPurchasePriceV2` 
+
+1.   参数：UserId, PricingId, ChargeType, Count(购买数量)
+
+
+
+#### 创建链接（使用线路）
+
+>   连接过程：
+>
+>   从国内的上车点（源 IP）到转发机（一般是香港的机器），再到下车点（国外的机器）
+>
+>   其中，上车点的端口和转发机上的端口一一对应。转发机到下车点的端口临时分配
+
+
+
+`turbolive-server/CreateUOLConnection`
+
+1.   从请求参数中获取 line Token, 并从 pathlive.line_tokens 表获取该 token 的记录
+2.   根据 token 中记录的 lineId 到 pathlive.lines 表中查询 line 信息
+3.   创建链接前，如果该线路之前存在连接（连接未关闭），则先关闭连接（`pathlive.connections.active = false`）
+4.   尝试选择一个未被使用的端口 `forward_server.OccupyOnePort`
+     1.   创建 WireGuard（一种 VPN） 配置
+     2.   循环 10 次尝试获取
+          1.   从 `pathlive.forward_servers` 表中选取可用的中转机。找不到则表示线路全忙
+               1.   起始区域和指定的起始区域一致的
+               2.   当前中转机上的连接不超过 200 （run-mode.max_load 设定）的
+          2.   从找到的转发机中找一个空闲的端口 `FindForwardServerPort`
+               1.   获取配置 `run-mode.fs-start-port` 表示起始端口
+               2.   找到该转发集群（forward_server）上最后一次使用的连接信息 `pathlive.connections` 表
+               3.    
+          3.   `DeployForwardServer` 对找到的转发机进行 ssh 配置下发部署（异步执行）
 
 # Tech
 
