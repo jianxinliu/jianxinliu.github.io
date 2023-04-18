@@ -37,6 +37,10 @@ make makefile
 
 asynQ https://pkg.go.dev/github.com/hibiken/asynq#section-readme
 
+Wireguard VPN 工具
+
+socat https://www.hi-linux.com/posts/61543.html   用于在中转机上连接 AB 两个网段，将中转机上某个端口的流量转发到 B 网段的某台机器的某个端口，这样 A 网段的机器就可以通过访问中转机上的端口访问到 B 网段的机器端口。
+
 
 ## phone-business(比较通用的构建流程)
 
@@ -104,6 +108,9 @@ go-zero 开发模式
 ### pathlive 库表结构
 
 1.   lines: 直播线路表，记录线路的起始、终止区域（上车点: 从国内节点上车，走专有通道到下车点、下车点：最终请求发出地是该 ip），ucloud 提供的 ip (**bgp_ip**, **vpc_ip**)
+     1.   bgp_ip(border gateway protocol): 下车点的外网 IP， 分配出来的 EIP，公网 IP
+     2.   vpc_ip: 下车点的内网 IP，最终应用运行的那个 IP（如 TK 能看到登录的 IP）
+
 
 
 
@@ -222,7 +229,7 @@ go-zero 开发模式
 
 
 
-#### 创建链接（使用线路）
+#### 创建连接（使用线路）
 
 >   连接过程：
 >
@@ -237,17 +244,63 @@ go-zero 开发模式
 1.   从请求参数中获取 line Token, 并从 pathlive.line_tokens 表获取该 token 的记录
 2.   根据 token 中记录的 lineId 到 pathlive.lines 表中查询 line 信息
 3.   创建链接前，如果该线路之前存在连接（连接未关闭），则先关闭连接（`pathlive.connections.active = false`）
-4.   尝试选择一个未被使用的端口 `forward_server.OccupyOnePort`
-     1.   创建 WireGuard（一种 VPN） 配置
-     2.   循环 10 次尝试获取
-          1.   从 `pathlive.forward_servers` 表中选取可用的中转机。找不到则表示线路全忙
+4.   尝试选择一个可用的中转机以及未被使用的端口 `forward_server.OccupyOnePort`
+     1.   创建 WireGuard（一种 VPN） 配置。设置目标 DNS (DestDNS)(ini 文件配置好的)
+     2.   循环 10 次尝试获取中转机、连接
+          1.   **寻找中转机**：从 `pathlive.forward_servers` 表中选取可用的中转机。找不到则表示线路全忙，则中止寻找
                1.   起始区域和指定的起始区域一致的
                2.   当前中转机上的连接不超过 200 （run-mode.max_load 设定）的
-          2.   从找到的转发机中找一个空闲的端口 `FindForwardServerPort`
-               1.   获取配置 `run-mode.fs-start-port` 表示起始端口
-               2.   找到该转发集群（forward_server）上最后一次使用的连接信息 `pathlive.connections` 表
-               3.    
-          3.   `DeployForwardServer` 对找到的转发机进行 ssh 配置下发部署（异步执行）
+          2.   **寻找可用端口**：从找到的转发机中找一个空闲的端口 `FindForwardServerPort`
+               1.   获取配置 `run-mode.fs-start-port` 表示**起始端口**
+               2.   找到该转发集群（forward_server）上最后一次使用的连接信息（ `pathlive.connections` 表），找到最后一个端口
+               3.   找到该转发机上所有可用的连接，如果没有在用连接，则**起始端口**就是可用的，返回即可
+               4.   按顺序，在 maxLoad 个端口中找一个没有在用的端口（在用的端口在查出来的所有 connecting 中有记录）
+          3.    **wireguard 配置**：（转发机的上车点 IP, 找到的可用端口，作为 wireguard 的入口设置）
+          4.   **生成 connection 对象**：并将该记录插入 `pathlive.connections` 表中（尝试插入 20 次，成功则停止）。connection 表会记录连接使用的**上车点信息，转发机信息，wireguard 配置**
+          5.   检测刚创建的连接是否可用。（**此时转发机及其端口还没正式使用，只是在 DB 中记录将被使用**）
+               1.   查询该转发机该端口上的启用连接是否只有一个（刚创建的那一个），若有多个，则说明该端口改转发机被占用，进入下一次尝试
+               2.   查询该线路上的可用连接是否只有一个（刚创建的那个），若有多个，则说明该线路有多个连接在使用，则进入下一次尝试（**一个线路只支持一个连接的时候，需要检测线路的占用情况。但是当前采用的是后一个连接会挤掉前一个的策略，所以此处检测线路占用情况的功能可以去除**）
+5.   `DeployForwardServer` 对找到的转发机进行 ssh 配置下发部署（异步执行）
+     1.   找到该连接对应的线路 & 转发机（relay,forward_server）
+     2.   部署：
+          1.   **在下车点部署 wireguard server**，用于 VPN（client 是 app 在直播时创建，连接这个 server ）
+               1.   生成 wireGuard 白名单。根据线路的 serviceType 选择白名单（TK-1, TK-2）
+                    1.   如果该账户有配置白名单覆盖的，则以这个配置的为准
+                    2.   获取白名单详细列表 `GetWhiteListConf(ServiceType)`  （**在白名单中的地址是可以通过的，其他的都会被阻拦**）
+                         1.   支持多个 serviceType, 用逗号分开
+                         2.   到 `pathlive.white_lists` 表中查询指定 serviceType 的白名单，并拼成特定格式的字符
+
+                    3.   将白名单生成写入 wireGuard 的白名单配置文件中的命令 `echo <whitelist> > /path/to/wireguard/whitelit.conf`
+
+               2.   在下车点部署 wireGuard server, 尝试 10 次，任何一次部署成功就停止
+                    1.   默认走香港代理，并且在多次尝试中，代理和直连的方式交替进行，可以在部署失败下次尝试时多一种选择
+                    2.   ssh 连接到下车点的机器。（ip: line.bgpIp, port: 22）。
+                         1.   如果使用代理。则使用内建的代理服务器进行连接（ini 中配置 xx-proxy）,通过代理连接下车点公网 IP（ip: line.bgpIp, port: 22）
+                         2.   否则通过下车点的公网 IP 直连（ip: line.bgpIp, port: 22）
+
+                    3.   运行命令，部署 wireGuard server (**本次连接会挤掉上一次的连接**)
+                         1.   停止已有的 wireGuard server
+                         2.   白名单配置写入配置文件
+                         3.   重启 wireGuard server
+
+          2.   **在中转机部署 socat,** 用于流量转发。尝试 10 次，任何一次部署成功就停止
+               1.   选择中转机的目标 IP `GetDestRelayIp`， 最终中转到的 IP（下车点）
+               2.   默认走代理， ssh 连接中转机
+               3.   执行命令，部署 socat
+                    1.   停止存在的 socat
+                    2.   将中转机的目标 IP 写入 socat 的配置（最终流量转到的 IP） `GenerateRelaySystemd`
+                    3.   重启 socat ，使配置生效
+
+     3.   如果 wireguard server 和 socat 都部署好了。将此条连接的信息写入  `pathlive.connections` 表
+
+
+#### 中断连接
+
+`tubrolive-server/TerminateUOLConn`
+
+将连接的 active 置为 false 即可。机器上安装的 wireguard & socat 下次使用的时候会覆盖
+
+
 
 # Tech
 
