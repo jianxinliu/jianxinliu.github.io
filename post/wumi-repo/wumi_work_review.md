@@ -42,6 +42,26 @@ Wireguard VPN 工具
 socat https://www.hi-linux.com/posts/61543.html   用于在中转机上连接 AB 两个网段，将中转机上某个端口的流量转发到 B 网段的某台机器的某个端口，这样 A 网段的机器就可以通过访问中转机上的端口访问到 B 网段的机器端口。
 
 
+
+## 🟩项目列表
+
+-   [ ] phone-business： 云手机业务
+-   [ ] turbolive-server： 直播加速底层 HTTP 服务
+-   [ ] resource：资源层 api & rpc 服务
+-   [x] usercenter： 用户中心 RPC & HTTP 服务
+-   [ ] Billing-rpc： 账单 RPC 服务
+-   [ ] Pathlive-rpc：直播快相关 RPC 服务
+-   [ ] Console-resource: 控制台前端
+-   [ ] Operation-api: 运营平台 HTTP 服务
+-   [ ] Operation-console: 运营平台前端
+-   [ ] order: 订单服务
+-   [ ] Phone-bill-api: 手机订单 HTTP 服务
+-   [ ] Luci-app-turbolive: 软路由 lua 脚本
+-   [ ] pathlive-router-tools： 软路由工具包
+-   [ ] pathlive-luci: 软路由系统定制页面，及 pathlive 线路集成
+-   [ ] Phone-backend-api: 云手机后端服务
+
+
 ## phone-business(比较通用的构建流程)
 
 ### build
@@ -108,8 +128,8 @@ go-zero 开发模式
 ### pathlive 库表结构
 
 1.   lines: 直播线路表，记录线路的起始、终止区域（上车点: 从国内节点上车，走专有通道到下车点、下车点：最终请求发出地是该 ip），ucloud 提供的 ip (**bgp_ip**, **vpc_ip**)
-     1.   bgp_ip(border gateway protocol): 下车点的外网 IP， 分配出来的 EIP，公网 IP
-     2.   vpc_ip: 下车点的内网 IP，最终应用运行的那个 IP（如 TK 能看到登录的 IP）
+     1.   bgp_ip(border gateway protocol): 下车点的外网 IP， 分配出来的 EIP，公网 IP，最终应用运行的那个 IP（如 TK 能看到登录的 IP）
+     2.   vpc_ip: 下车点的UCloud 网络的内网 IP，更快速，不算下车点的带宽
 
 
 
@@ -301,6 +321,86 @@ go-zero 开发模式
 将连接的 active 置为 false 即可。机器上安装的 wireguard & socat 下次使用的时候会覆盖
 
 
+
+
+
+## operation-api
+
+运营后端 api
+
+
+
+### 线路抓包功能
+
+最终实现：`pathlive-rpc/LineTcpDump` 
+
+实现： 顺着中间节点一个个连过去
+
+原因：当然可以直接通过公网连接下车点机器，执行 tcpdump 命令进行抓包，但是抓包的结果回传，如果直接在下车点上传，则会使用下车点机器的带宽，可能会影响用户的正常使用。所以抓包时，会顺着代理的一个个节点构建一条通道，最终抓包的结果顺着通道返回（通道一般会走 Ucloud 专线，也叫 UDPN,UCloud Dedicated Private Network）
+
+
+
+## UserCenter
+
+用户中心
+
+用户类型(`usercenter/userinfologin.go`)：
+
+```text
+// 账号类型分这些
+// - 直销客户
+// - 渠道1：UCloud SML、UCLOUD EIU、UCLOUD XX、王磊、以及离职销售组成的兼职小团队
+//                  这类客户会给我们带来终端客户，也会带来代理商。客户和收入都走我们这里
+//                  主账号和子账号分别用于看整合和名下销售的客户情况，通过邀请码关联客户
+//                  我们一般给这类渠道固定折扣，折扣之上属于渠道的利润。暂定长期返毛利
+// - 渠道2：UCLOUD离职销售或朋友
+//                  和渠道1很类似，带来的客户有可能是终端客户，也有可能是代理商。客户和收入都走我们这里
+//                  区别在于返佣方式不一样，渠道1侧重于长期合作，暂定长期返；渠道2则是短期行为，比如返三个月内每个月月销30%
+// - 代理：在我们这里体现为单个客户，他的客户我们看不见
+//                  直播快有一些代理，比如正心，我们看不到正心的终端客户情况
+//                  代理自行维护客户关系，并解决客户售后问题
+```
+
+### RPC
+
+包含功能： 
+
+1.   用户
+2.   群组：group 表
+3.   鉴权：使用 Redis 做 token 过期控制（一个月过期， 2592000 秒）
+4.   实名认证： user 表 & certification 表
+5.   资源过期通知：资源快到期或者已经到期，通过短信通知用户及时充值。此处不管是否自动续费的逻辑，如果设置的自动续费，但是余额不足，也需要进行通知。构造短信模板
+     1.   到期前 3 天进行通知，到期后 4 天进行资源删除
+6.   渠道用户管理（代理商）（user 表 channel 相关字段）
+7.   系统通知：企业微信群机器人通知
+
+### API
+
+-   [ ] ⚠️需要了解渠道 & 代理相关的业务逻辑
+
+包含功能：
+
+1.   微信、QQ第三方登录，获取 UnionId 存到 user 表里
+2.   发票服务：发票信息管理 & 卡票可开管理，发送通知，提醒相关人员进行开票操作
+     1.   invoice 表：发票及金额表
+     2.   invoice_info 表： 发票本身的信息，一般是已经开具的发票记录
+3.   🟪渠道（代理商）渠道 A: Ucloud 销售，直接返现金；渠道 B: 
+     1.   渠道 A：
+          1.   获取渠道信息`channel.GetChannelDataByUserId`（指定用户的这个渠道）：所有下级用户，折扣，返利，所有可用资源（线路 & 云手机）
+          2.   获取渠道消费信息`channel.GetChannelConsumptionByInviter`: **指定时间段内**的所有下级用户的线路 & 手机资源及其时间段内的消费信息。消费信息包括：
+               1.   订单金额，续费金额……计算方式：`GetConsumptionAndCalcTime`
+          3.   获取渠道用户返利 `GetChannelBonusByInviter`: 指定时间段内的所有下级用户的返利总和。计算方式：使用用户购买 & 充值的总金额进行计算
+          4.   获取渠道用户的支付信息 `GetChannelPaymentByInviter`
+     2.   渠道 B: 分为直销和代理。逻辑类似，只是返利不一样
+4.   子账号：
+     1.   创建`createsublogic.go`：账号名：用户名 + @主账号
+     2.   删除 `deletesublogic.go`：同时回收其名下资源
+     3.   登录`subloginlogic.go`: 密码做特殊处理，记录登录
+5.   老推新活动：用户表里，channel_inviter 为空，并且有具体的邀请人 inviter 为邀请人的 userId
+6.   用户充值：
+7.   登录注册`registerlogic.go`： 登录和注册活动都需要记录到表里。支持邀请码，渠道分销及其渠道定级（channel_invite_level）
+8.   验证码：验证码存在 Redis 中，以手机号为 key,  3 分钟过期
+9.   用户余额
 
 # Tech
 
@@ -511,4 +611,61 @@ service Rpc {
   rpc UpdateStu(StuUpdateReq) returns(StuUpdateResp);
 }
 ```
+
+
+
+## 计算机网络
+
+
+
+### 子网掩码
+
+参考： https://www.bookstack.cn/read/network-basic/7.md
+
+子网掩码的表示： 154.71.150.42/22 表示 154.71.150.42 这个 IP 的子网掩码是 255.255.252.0。计算方法如下：
+
+22 表示 32 位的子网掩码中，前 22 位都是 1, 后 10 位是 0， 即 `11111111 11111111 11111100 00000000`，这样转成十进制的就是 `255.255.252.0`
+
+前 22 位都是 1 ，表示这些位被**掩盖**了，不能用于表示该子网下的主机，即剩下能表示主机的位只剩 10 位，就是说，这个子网的这个 ID 下能表示的主机数是 $2^{10} = 1024$ , 是这个子网段下主机数最多的子网。
+
+可以看出，这是一个 B 类网络，前 16 位表示网络号，22 - 16 = 6 位表示子网，也就是这个 B 类网络下，能有的子网段数量是 $2^6 = 64$ 个，总共能容纳的主机数： $\Sigma^{i}_{1 \le i \le 6}{2^i * 2^{16-i}}$
+
+`154.71.150.42` 这个 IP 对应的二进制表示为： `10011010 1000111 100101/10 101010`， 因为其子网掩码为 22, 可以看出这是一个 B 类网络，则其前 16 （$\lfloor22 / 8\rfloor * 8 = 16$）位是不动的，并且其子网段总共有 6 ($22 \% 8 = 6$) 位
+
+
+
+## Kubernetes
+
+
+
+### 使用 cloud-native-sandbox 在本地运行
+
+安装 https://github.com/rootsongjc/cloud-native-sandbox.git 
+
+下载仓库代码，参考以下代码进行操作： https://github.com/rootsongjc/cloud-native-sandbox
+
+
+### 使用 minikube 在本地运行
+
+使用 Minikube 在本地运行 kubernetes 单机版。[安装方式](https://minikube.sigs.k8s.io/docs/start/) 
+
+通过 minikube 启动 k8s
+
+`minikube start` 会自动安装 k8s，并且可以使用 kubectl 进行控制
+
+`kubectl cluster-info` 命令可以看到当前通过 minikube 启动的 k8s 集群
+
+`kubectl get po -A` 展示当前集群上的 pod
+
+`minikube dashboard` 启动 k8s 控制面 UI
+
+
+
+
+
+
+
+
+
+
 
