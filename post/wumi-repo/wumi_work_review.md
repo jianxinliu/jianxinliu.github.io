@@ -49,17 +49,17 @@ socat https://www.hi-linux.com/posts/61543.html   用于在中转机上连接 AB
 -   [ ] turbolive-server： 直播加速底层 HTTP 服务
 -   [ ] resource：资源层 api & rpc 服务
 -   [x] usercenter： 用户中心 RPC & HTTP 服务
--   [ ] Billing-rpc： 账单 RPC 服务
--   [ ] Pathlive-rpc：直播快相关 RPC 服务
--   [ ] Console-resource: 控制台前端
--   [ ] Operation-api: 运营平台 HTTP 服务
--   [ ] Operation-console: 运营平台前端
+-   [ ] billing-rpc： 账单 RPC 服务
+-   [ ] pathlive-rpc：直播快相关 RPC 服务
+-   [ ] console-resource: 控制台前端
+-   [ ] operation-api: 运营平台 HTTP 服务
+-   [ ] operation-console: 运营平台前端
 -   [ ] order: 订单服务
--   [ ] Phone-bill-api: 手机订单 HTTP 服务
--   [ ] Luci-app-turbolive: 软路由 lua 脚本
+-   [ ] phone-bill-api: 手机订单 HTTP 服务
+-   [ ] luci-app-turbolive: 软路由 lua 脚本
 -   [ ] pathlive-router-tools： 软路由工具包
 -   [ ] pathlive-luci: 软路由系统定制页面，及 pathlive 线路集成
--   [ ] Phone-backend-api: 云手机后端服务
+-   [ ] phone-backend-api: 云手机后端服务
 
 
 ## phone-business(比较通用的构建流程)
@@ -402,6 +402,51 @@ go-zero 开发模式
 8.   验证码：验证码存在 Redis 中，以手机号为 key,  3 分钟过期
 9.   用户余额
 
+
+
+
+
+## Order & phone-bill-api
+
+用于处理各种订单 & 账单的 api
+
+
+
+### Order
+
+**现在该项目中的接口基本没怎么使用，主要用来提供订单相关的实体**
+
+#### 退款
+
+refund 表
+
+重要字段说明：
+
+| 字段名 |    含义    |                备注                 |
+| :----: | :--------: | :---------------------------------: |
+| total  | 总退款金额 | 单位：分；提供给其他服务时叫 refund |
+| count  |  退款数量  |                                     |
+|  all   | 订单总金额 | 单位：分；提供给其他服务时叫 total  |
+
+退款时，计算好应退金额，在 refund 表中记录一笔，发送异步通知：
+
+1.   通知 Key: `asynq:order:refund`
+2.   队列： `payment` 
+3.   payload: refundId
+4.   处理逻辑: `phone-bill-api/asyncserver.HandleOrderRefundTask`  (**该退款逻辑已启用。用于原先创建资源失败时自动退款，现在没有自动退款，只有运营平台可以操作退款**)
+     1.   根据 refundId 查询 refund 详情（创建退款单时写入的记录）
+     2.   根据订单信息找到这个订单的支付信息
+          1.   确认是否已经支付，以及支付金额
+          2.   确认支付方式，原路退回
+
+
+
+### phone-bill-api
+
+主要有订单处理、支付处理、续费、充值、计价等功能
+
+
+
 # Tech
 
 
@@ -661,7 +706,78 @@ service Rpc {
 
 
 
+## Docker cheatsheet
 
+https://www.runoob.com/docker/docker-command-manual.html
+
+```sh
+# list images
+docker images
+
+# run an image
+docker run ...
+# 以运行 mysql 为例
+docker run -itd --name mysql-local -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 mysql
+# i interactive
+# t tty
+# d detach run in background
+
+
+# redis
+docker run -itd --name redis-local -p 6379:6379 redis
+
+# with env 
+docker run -e k=v <name>
+
+# 查看当前运行容器的状态
+docker stats
+```
+
+#### image
+
+```sh
+# 查找镜像
+docker search <image name>
+
+# 拉取镜像
+docker pull <image name>:<version|lastest> (不带版本，默认拉取最新的)
+
+# 列出安装的所有镜像
+docker images
+
+# 删除镜像
+docker rmi <image name>
+```
+
+#### container
+
+```sh
+docker container -h
+
+docker container attach <id>
+
+# 查看容器信息
+docker container inspect <id>
+
+# 查看所有容器
+docker ps -a
+
+# 启动一个停止的容器 cid: 容器 id
+docker start <cid>
+
+# 查看容器的日志  docker logs --help
+docker logs -f <cid>
+
+# 查看容器的端口映射
+docker port <cid>
+
+# 查看容器中运行的进程情况
+docker top <cid>
+```
+
+#### Dockerfile
+
+https://www.runoob.com/docker/docker-dockerfile.html
 
 
 
