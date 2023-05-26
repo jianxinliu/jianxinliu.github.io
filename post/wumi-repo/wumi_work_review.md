@@ -340,6 +340,10 @@ go-zero 开发模式
 
 
 
+#### 获取抓的包
+
+`operation-api/tcpdump （get）` 获取生成的包。抓好的包会存放在 ofileos 上。`pathlive.tcpdump` 表存放文件名
+
 ## UserCenter
 
 用户中心
@@ -447,6 +451,19 @@ refund 表
 
 
 
+#### 续费——线路
+
+`phone-bill-api/orderrenewlogic.OrderRenew`  支持批量续费、支持手机 & 线路续费。此处只关注线路续费逻辑。列举需要关注的几个特殊点。
+
+1.   创建 **parentId**。因为支持批量续费，但是每个资源又都属于一个 order，故使用一个 parent order 将本次续费的所有资源关联起来，parent 也存储续费总额。
+2.   req.CreateOrder。 前端控制本次是否真正创建 order 记录。若指定不创建，一般是用于计算本次续费的总价。
+3.   查询线路价格时，需要 productId & ipRegion 两个数据，这两个值在 line 中本身是有记录的。但是不直接使用，而是再查询数据库的原因是，产品和地区都可能下架，如果续费时，产品或区域已经下架，则不能续费。
+4.   和新建订单一样。计算好价格，订单表新增记录后，等待用户支付，设置一个超时取消订单的任务
+
+
+
+
+
 # Tech
 
 
@@ -465,6 +482,71 @@ Hello user $USER in $DESKTOP_SESSION. It's time to say $HELLO!
 > export HELLO="good morning"
 > envsubst < welcome.txt
 > Hello user joe in Lubuntu. It's time to say good morning!
+
+
+
+### 🔲expect
+
+https://www.cnblogs.com/saneri/p/10819348.html
+
+https://linux.die.net/man/1/expect
+
+expect常用命令总结:
+
+>   spawn               交互程序开始后面跟命令或者指定程序
+>   expect              获取匹配信息匹配成功则执行expect后面的程序动作
+>   send exp_send       用于发送指定的字符串信息
+>   exp_continue        在expect中多次匹配就需要用到
+>   send_user           用来打印输出 相当于shell中的echo
+>   exit                退出expect脚本
+>   eof                 expect执行结束 退出
+>   set                 定义变量
+>   puts                输出变量
+>   set timeout         设置超时时间
+
+使用示例：
+
+```shell
+/usr/bin/expect << EOF
+spawn ssh root@${router}
+expect "*password:" {send "${pass}\r"}
+expect "*#" {send "./${bin} xxx\r"}
+expect "*#" {send "rm -f /root/router.init\r"}
+expect "*#" {send "reboot\r"}
+expect eof
+EOF
+```
+
+实验：
+
+1.   创建需要交互的程序 que.sh
+
+```sh
+#!/bin/bash
+ 
+echo "Enter your name"
+ 
+read $REPLY
+ 
+echo "Enter your age"
+ 
+read $REPLY
+ 
+echo "Enter your salary"
+ 
+read $REPLY
+```
+
+2.   使用 expect 进行交互
+
+```sh
+/usr/bin/expect <<  EOF
+spawn ./que.sh
+expect "Enter your name\r" {send "jianxin\r"}
+expect "Enter your age\r" {send "14\r"}
+expect "Enter your salary\r" {send "33333\r"}
+EOF
+```
 
 
 
@@ -775,13 +857,422 @@ docker port <cid>
 docker top <cid>
 ```
 
-#### Dockerfile
+#### 🔲Dockerfile
 
 https://www.runoob.com/docker/docker-dockerfile.html
 
 
 
+https://yeasy.gitbook.io/docker_practice/
+
+## SSH Config
+
+https://linuxize.com/post/using-the-ssh-config-file/
 
 
 
+具体如何配置可以参考 `man ssh_config`
+
+
+
+配置大致格式：
+
+```conf
+Host hostname1
+	SSH_OPTION value
+	SSH_OPTION value
+Host hostname2
+	SSH_OPTION value
+	SSH_OPTION value
+Host * (匹配所有 Host)
+	SSH_OPTION value
+```
+
+读取顺序是自上而下，一段段读取，先读取的 OPTION 优先级更高。
+
+
+
+所以如果有相同的 Host 定义，先定义的生效。一般地，更精确的定义放在文件开头，更一般性的定义放在文件末尾。
+
+
+
+## 缓存 & Db
+
+带缓存的数据库操作。
+
+1.   在写入时，先写入数据库，再写入缓存
+2.   在删除时，先删除数据库，再删除缓存
+3.   查询，则是先查询缓存，不中再查询数据库
+
+以 go-zero/cachedsql.go 中的方法为例：
+
+```go
+// ExecCtx runs given exec on given keys, and returns execution result.
+func (cc CachedConn) ExecCtx(ctx context.Context, exec ExecCtxFn, keys ...string) (
+	sql.Result, error) {
+  // 先执行数据库操作
+	res, err := exec(ctx, cc.db)
+	if err != nil {
+		return nil, err
+	}
+
+  // 再执行缓存操作。
+	if err := cc.DelCacheCtx(ctx, keys...); err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+```
+
+如果顺序反了：
+
+1.   写入的情况下。如果写入数据库失败，还要再回滚缓存，并且，如果有线程读到了缓存，就相当于读取到了一笔不存在的记录
+2.   删除情况下。如果缓存先被清除，但还没来得及写数据库，此时有线程读取，肯定是读取到数据库中的旧记录，但是这个数据是即将被删除的，所以也发生脏读
+
+
+
+## 🔲Frp
+
+https://sspai.com/post/52523
+
+
+
+## 通过 CSS 给 HTML 元素加水印
+
+HTML 结构：
+
+```html
+<div class="container">
+    <div :class="'ad' + (i || '') + ' ad'" v-for="(ad, i) in 3">
+        {{watermark}}
+    </div>
+    ...
+</div>
+```
+
+CSS:
+
+```scss
+.container {
+  // 重要
+  position: relative;
+
+  --marker-right: 40%;
+  --marker-top: 50%;
+
+  .ad1 {
+    --marker-right: 60%;
+    --marker-top: 30%;
+  }
+
+  .ad2 {
+    --marker-right: 20%;
+    --marker-top: 70%;
+  }
+
+  .ad {
+    font-weight: bold;
+    text-align: center;
+    width: 300px;
+    // 重要
+    position: absolute;
+    right: var(--marker-right);
+    top: var(--marker-top);
+    opacity: 0.15;
+    rotate: -36deg;
+    user-select: none;
+    overflow: hidden;
+    pointer-events: none;
+  }
+}
+```
+
+## Golang 异步确认 & 超时控制
+
+```go
+package logic
+
+import (
+	"context"
+
+	"github.com/zeromicro/go-zero/core/logx"
+	"time"
+)
+
+type RouterRecordReq struct {
+	RouterId    string
+	LineId      string
+	CheckUnbind bool
+}
+
+var checkInterval = 10 * time.Second
+var timeOut = 18 * checkInterval
+
+func (l *RouterAsyncLogic) RecordRouterAsync(in *RouterRecordReq) {
+	go func() {
+		timeOutChan := time.After(timeOut)
+		doRecord := false
+		for {
+			time.Sleep(checkInterval)
+			// 超时，或者 checkRouter 返回 true, 就停止循环
+			done := l.keepCheckUntil(timeOutChan, func() bool {
+				checked, err := l.checkRouter(in.RouterId, in.LineId, in.CheckUnbind)
+				// 执行出错或者返回 true，都不再循环
+				if err != nil || checked {
+					if checked {
+						// 返回 true , 则记录历史
+						doRecord = true
+					}
+					return true
+				}
+				return false
+			})
+			if done {
+				break
+			}
+		}
+		op := utils.Ternary(in.CheckUnbind, "解绑", "绑定")
+		// 记录路由器操作历史之前，先确定"绑定/解绑"操作成功再记录历史
+		if doRecord {
+			operationType := utils.Ternary(in.CheckUnbind,
+				resourceserver.RouterOperation_UNBIND,
+				resourceserver.RouterOperation_BIND)
+			_, _ = NewRouterHistoryLogic(l.ctx, l.svcCtx).RouterHistory(&resourceserver.RouterHistoryRequest{
+				OperationType: operationType,
+				RouterId:      in.RouterId,
+			})
+			l.Logger.Infof("%s 路由器操作历史, routerId: %s", op, in.RouterId)
+		} else {
+			l.Logger.Errorf("%s 路由器操作历史失败, routerId: %s", op, in.RouterId)
+		}
+	}()
+}
+
+func (l *RouterAsyncLogic) keepCheckUntil(timeOutChan <-chan time.Time, predictor func() bool) bool {
+	select {
+	case <-timeOutChan:
+		return true
+	case <-time.After(500 * time.Millisecond):
+		return predictor()
+	}
+}
+
+// checkRouter 检查 router 的状态。checkUnbind 表示是否检查 router 的未绑定状态；否则就检查绑定状态
+// 返回 bool, 表示是否满足指定的状态
+// 在绑定的过程中，可能会再次被绑定或者解绑。
+// 暂时在页面控制二者必须顺序发生。单个重复发生时，并不影响记录操作历史的准确性
+func (l *RouterAsyncLogic) checkRouter(routerId, lineId string, checkUnbind bool) (bool, error) {
+	router, err := l.svcCtx.PathliveRpc.GetRouter(l.ctx, &pathlive.GetRouterRequest{
+		RouterId: routerId,
+	})
+	if err != nil {
+		return false, err
+	}
+	r := router.Router
+	if checkUnbind {
+		// 当前是否是解绑状态
+		return r.LineInfo == nil || r.LineInfo.LineId == "", nil
+	} else {
+		return r.LineInfo != nil && r.LineInfo.LineId == lineId, nil
+	}
+}
+```
+
+
+
+## TikTok 简易爬虫实现
+
+tiktok web 页面，为各种爬虫准备了一份数据，就是其页面源码中，一个 id 为 `SIGI_STATE` 的 script 里的 json 数据。实际上，tiktok web 页面使用 sigi 框架，并且配合 SSR 将 sigi 应用的 state 保存在了 dom 里，相当于 vue 的 data。这个 state 里包含了用户的相关信息，用户发布的视频等等信息。
+
+所以需要做的就是拉取 web 页面，解析出这个 json, 并且获取感兴趣的字段。
+
+第一步，访问 tk 页面。tk 是限制了访问区域的，比如国内以及想干的大部分 ip 都不能够访问。所以第一步就是需要有一台能够访问 tk 的机器。
+
+第二步，在这台机器上使用 curl 访问 tk 主页
+
+第三步，从 html 页面中解析出 json
+
+第四步，从 JSON 中提取感兴趣的字段
+
+### 代码实现
+
+一：跳板机。因为 tk 对访问的区域敏感，所以准备了多个区域的多台机器备用。查询时，可以选择发起访问的区域
+
+```go
+// region: ip
+var TkDestIpMap = map[string][string]{}
+```
+
+使用 ssh 工具，连接到指定区域，并执行命令。这里写一个简易的 ssh 工具
+
+```go
+// 现在太菜，后面补
+```
+
+连接上之后，就可以执行命令了。但是因为命令比较多，而且使用 shell 编写也比较麻烦，所以使用 golang 编写，再打包成可执行命令，然后只需要触发一下就可以了。
+
+
+
+二：获取 HTML 并提取感兴趣的字段
+
+编写一个 golang 命令行工具
+
+```go
+package main
+
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"flag"
+	"fmt"
+	"os/exec"
+	"regexp"
+	"strings"
+)
+
+var tkId = flag.String("t", "", "tk user id")
+
+// 使用一下命令，将此 go 程序编译成可执行程序（这里编译后的可执行程序名为 fetch。 使用方式为 ./fetch -t <tk user id>）
+// build: CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ./fetch ./parseTkState.go
+func main() {
+	flag.Parse()
+
+	sw := bytes.Buffer{}
+	command := exec.Command("curl", "-s", "https://www.tiktok.com/@"+*tkId)
+	command.Stdout = &sw
+	err := command.Run()
+	if err != nil {
+		_ = fmt.Errorf("curl tk failed %v", err)
+		return
+	}
+
+  // 使用 curl 获取到的 tk 主页 html
+	html := sw.String()
+	script, err := extraJsonInScript(html)
+	if err != nil {
+		_ = fmt.Errorf("extra json failed %v", err)
+		return
+	}
+  // 将结果输出到 stdout，便于调用者获取
+	fmt.Print(script)
+}
+
+// 从 html 中解析出含有用户信息的 json
+var scriptsReg = regexp.MustCompile(`<script\s+.*?>(.*?)</script>`)
+func extraJsonInScript(html string) (string, error) {
+	ret := ""
+	rets := scriptsReg.FindAllStringSubmatch(html, -1)
+	for _, v := range rets {
+		isStateScript := strings.Contains(v[0], `id="SIGI_STATE"`)
+		if len(v) > 1 && isStateScript && json.Valid([]byte(v[1])) {
+			state := TKState{}
+			jsonStr := strings.Trim(v[1], " ")
+			err := json.Unmarshal([]byte(jsonStr), &state)
+			if err != nil {
+				continue
+			}
+			userMap := state.UserModule.Users
+			if userMap == nil || len(userMap) == 0 {
+				return "", errors.New("用户不存在或账号已注销")
+			}
+			// 返回什么内容，由 TKState 决定
+			stateStr, err := json.Marshal(state)
+			if err != nil {
+				continue
+			}
+			ret = string(stateStr)
+			break
+		}
+	}
+	return ret, nil
+}
+
+// 省略这个结构体的内容。具体内容可以手动把 tk 主页的 json 拉出来看，并且使用工具转换成结构体即可
+type TKState struct {
+}
+```
+
+有了 fetch 这个可执行程序，调用方就很简单了。
+
+```go
+sh := NewSSHHelper(sshConf)
+cmd := fmt.Sprintf("./fetch -t %s", url.PathEscape(tiktokId))
+Logger.Infof("show tk user cmd: %s", cmd)
+sshRet, err := sh.RunCMD(cmd)
+if err != nil {
+  l.Logger.Errorf("curl failed, %v", err)
+}
+return sshRet
+```
+
+但是因为访问 tk 主页是个网络请求行为，所以不得不考虑超时问题。以下是处理超时的逻辑：
+
+```go
+sh := NewSSHHelper(sshConf)
+// 接收 fetch 命令结构的 channel
+retChan := make(chan string, 1)
+// 异步执行，让 main 进入 select 流程 
+go func() {
+  cmd := fmt.Sprintf("./fetch -t %s", url.PathEscape(tiktokId))
+  Logger.Infof("show tk user cmd: %s", cmd)
+  sshRet, err := sh.RunCMD(cmd)
+  if err != nil {
+    l.Logger.Errorf("curl failed, %v", err)
+    // 出错了写入空值，后面会判断
+    retChan <- ""
+  }
+  retChan <- sshRet
+}()
+
+// 经典的 golang 超时控制结构
+select {
+  case <-time.After(45 * time.Second):
+  	return "", status.New(codes.DeadlineExceeded, "超时").Err()
+  case sshRet := <-retChan:
+    if sshRet == "" {
+      return "", status.New(codes.Unknown, "解析失败").Err()
+    } else {
+      return sshRet, nil
+    }
+}
+```
+
+至此，一个简易的 tk 爬虫便能够跑起来了。
+
+但是需要注意的是，fetch 程序是运行在能够访问 tk 的机器上的，而 fetch 程序的调用者，需要通过 ssh 连接到这台机器上去触发。并且，因为有很多区域，每个区域都有一个主机，所以 fetch 程序的部署也是一个繁琐的事情。
+
+一开始写了一个 shell 脚本，循环所有的机器列表，一个个通过 scp 把编译好的 fetch 程序部署上去。虽然也能用，但是由于机器数量巨大，机器分布在全球，访问时间长短不一，脚本又不能并行，所以就执行得很慢。
+
+后经同事指点，了解了 ansible 这个工具。那是真好用。
+
+所以现在的部署脚本就是：
+
+```shell
+# build
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ./fetch ./parseTkState.go
+echo 'build done'
+sleep 2
+
+# deploy
+ansible tk -i ./ansible.ini -m copy -a "src=./fetch dest=~/"
+echo 'copy done'
+
+ansible tk -i ./ansible.ini -m file -a "path=/root/fetch mode=0755"
+echo 'deploy done'
+```
+
+ansible.ini 就是配置机器列表，大致长这样：
+
+```ini
+[tk]
+hostname1 ansible_password=yyy
+hostname2
+...
+[tk:vars]
+ansible_connection=ssh
+ansible_user=root
+ansible_password=xxx
+```
 
