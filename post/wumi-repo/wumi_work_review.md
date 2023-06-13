@@ -462,7 +462,27 @@ refund 表
 
 
 
+## pathlive-ops-api
 
+### 换 IP 
+
+代码： `pathlive-ops-api/change-eip.go`
+
+线路换 ip 。大致流程为：
+
+1.   解绑原先的 EIP 和 uhost 的绑定
+2.   申请新 EIP
+     1.   查询当前可用的 IP 段（eip_segments 表，查询同区域，同线路类型的可用段，默认与原 ip 不在同一个网段，随机选择一个）
+     2.   调用 ucloud api 申请 EIP
+3.   绑定新 EIP 和原先的 uhost
+
+
+
+### 客户端实时 ping 结果
+
+代码：`pathlive-ops-api/ping-client.go`
+
+原理：连接到下车点，执行 ping 命令，得到返回结果
 
 # Tech
 
@@ -549,6 +569,42 @@ EOF
 ```
 
 
+
+### ping
+
+ping 用于网络诊断，判断连通性
+
+原理：一台设备给目标设备发送 ICMP 报文，等待其相应，并记录时间。所**耗费的时间喻示了路径长度**，**重复请求响应的一致性也表明了连接的质量**。ping 回答了两个问题： **是否有连接，连接的质量如何**。
+
+常用选项：
+
+```text
+-c count 设置发送报文的数量，Unix 系统不指定则会一直发，windwows 默认发四次
+-i wait 设置两次发送之间间隔的秒数。默认是 1s
+-n 输出数字形式
+```
+
+### telnet
+
+简化版的 ssh。也可用于连接远程机器。和 ping 相比，telnet 可以探测机器上的端口是否可用
+
+### nmap
+
+扫描机器上开放的端口机器被哪个程序占用
+
+执行后可以发现。echo -> 7; ftp -> 21; ssh -> 22; telnet -> 23; smtp -> 25; http -> 80 ……
+
+### traceroute
+
+展现到某个网络节点需要经过的中间节点以及其连接情况
+
+原理是通过给到达目标主机中间的所有节点发送 ICMP 请求，并计时。
+
+命令格式： `traceroute [options] host/ip packetSize`
+
+常用参数：
+
+1.   
 
 ## go-zero
 
@@ -1274,5 +1330,29 @@ hostname2
 ansible_connection=ssh
 ansible_user=root
 ansible_password=xxx
+```
+
+
+
+## js 实现限流
+
+```ts
+async function ratelimiter<R>(fns: Array<() => Promise<R>>, cap: number = 10) {
+    let cut = []
+    let lastIndex = 0
+    while ((cut = fns.slice(lastIndex, lastIndex + cap)).length) {
+        lastIndex += cut.length
+      	// 等这一批请求全部执行完再执行下一批，也可以增加间隔停留
+        await Promise.all(cut.map(c => c()))
+        console.log("done batch... ", cut.length);
+    }
+}
+
+// 使用
+await ratelimiter(tableList.map(row => () => doHardWork(row)), 10)
+
+async function doHardWork(row) {
+  // 耗时的请求
+}
 ```
 
