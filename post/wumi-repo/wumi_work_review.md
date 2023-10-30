@@ -320,7 +320,50 @@ go-zero 开发模式
 
 将连接的 active 置为 false 即可。机器上安装的 wireguard & socat 下次使用的时候会覆盖
 
+#### 线路流量是怎么走的
 
+在连接创建好之后，有几个重要的点
+
+1.   客户端 wireguard 配置
+
+```txt
+[Interface]
+Address = 10.13.13.2   (标识当前短点 VPN IP)
+PrivateKey = cMBcS9bDJ1u4aLp1VCf+we6t4fXfi5s7v93poGxv/XU=
+DNS = 8.8.8.8
+MTU = 1392
+
+[Peer]
+PublicKey = YnaDr0SXsp3OKD2i0XP3z7dUUHVGDlAs7+xQ3ZOHu2E=
+Endpoint = <上车点 IP>:30258   (上车点 IP)
+AllowedIPs = 0.0.0.0/0
+PersistentKeepalive = 30
+```
+
+ 此处配置，将用户客户端和上车点联通。（上车点作为 wireguard 的中继服务器）
+
+2.   上车点预先运行好 socat ，将流量转发到中转机
+
+使用脚本预先生成，具体 systemd 配置，在上车点机器根目录下 a.sh 文件内，配置大致如下：
+
+```txt
+[Unit]
+Description=Socat Wireguard 30258
+
+[Service]
+Type=simple
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=socat-wireguard-30258
+
+ExecStart=/usr/bin/socat -T 600 UDP4-LISTEN:30258,reuseaddr,fork UDP4:<中转机 IP>:30258
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+3.   中转机上的 socat 再将流量转发到下车点（**创建连接时部署**）
 
 
 
@@ -602,9 +645,63 @@ ping 用于网络诊断，判断连通性
 
 命令格式： `traceroute [options] host/ip packetSize`
 
-常用参数：
+### Systemd
 
-1.   
+https://www.ruanyifeng.com/blog/2016/03/systemd-tutorial-commands.html
+
+```shell
+systemctl start/stop/restart/status <service>
+```
+
+配置文件位置：
+
+1.   系统自启动时调用： /etc/systemd/system
+2.   自定义：/usr/lib/systemd/system
+
+
+
+### ifconfig
+
+https://www.computerhope.com/unix/uifconfi.htm
+
+ifconfig -> interface onfig 用来查看和操作网络配置的
+
+不带参数，直接执行，可以查看本机所有网络接口的情况
+
+```shell
+# 查看某个网口的信息
+ifconfig <interface name>
+```
+
+设置网络接口：
+
+```shell
+# 同时配置 ip 地址，子网掩码，广播地址
+sudo ifconfig <interface name> <ip> netmask <mask> broadcast <broadcast>
+```
+
+**ifconfig 只能分配静态 IP， 动态 IP 需要使用 DHCP **
+
+
+
+地址族说明：
+
+-   inet: tcp/ip, 也叫 ipv4
+-   inet6: ipv6
+
+### sed
+
+```shell
+# 文本、文件替换
+
+# 将 log.txt 文件中的 A 都替换成 B, 忽略大小写。并将结果写回 log.txt
+# 不带 -i 则将替换结果输出
+# -e 支持多个，标识替换的正则   -e '' -e ''
+# -e 后面的字符串格式 's/pattern/replacement/flags'
+sed -i -e 's/A/B/i' log.txt
+```
+
+
 
 ## go-zero
 
@@ -817,7 +914,15 @@ service Rpc {
 
 
 
-## Kubernetes
+### NAT
+
+Network Address Translation
+
+
+
+SNAT Source Network Address Translation https://www.juniper.net/documentation/en_US/contrail20/topics/task/configuration/snat-vnc.html
+
+## Kubernetes 实践
 
 
 
@@ -844,6 +949,127 @@ service Rpc {
 
 
 
+### kubectl 常用命令
+
+https://cloud.tencent.com/developer/article/1638810
+
+kubectl 常用选项
+
+>   -   `kubectl options` 展示所有选项
+>   -   此处的选项，可以传给任意子命令
+
+-   -n, --namespace=''。设置本次 cli 命令请求的 namespace
+
+#### get 获取资源信息
+
+-   -o, --output 指定输出格式。json,yaml, wide……
+
+-   -l: selector label selector, =, ==, !=
+
+-   --sort-by='': 按指定字段排序，字段可以通过指定输出为 json 来看。格式为： `--sort-by='{.status.podIP}'` 按 pod 的 IP 排序
+
+-   -A, --all-namespace=false. 如果指定，表示列出所有 namespace 下的资源，不指定，则只列出当前 namespace 下的
+
+```she
+kubectl get pods -o wide --sort-by='{.status.podIP}'
+```
+
+**常用资源类型列表**
+
+`kubectl api-resources` 可列出所有资源类型
+
+-   namespace, ns
+-   nodes, no
+-   presistenctVolumes, pv
+-   pods, po
+-   replicationControllers, rc
+-   Services, svc
+-   daemonSets, ds
+-   replicaSets, rs
+-   statefulSets, sts
+-   Cronjobs, cj
+-   Events, ev
+
+##### pod
+
+-n: namespace 指定 namespace
+
+
+
+### 实验 k8s app 版本回滚
+
+1.   使用 go-zero 时间一个简单的 echo api server， 监听 8888 端口
+2.   将程序打包成镜像，并上传 docker hub（k8s 镜像需要从某个 registry 中拉取，可以在本地起，也可以直接 push 到 docker.io）
+     1.   `docker buildx build -f ./app/Dockerfile -t xiawan12/docker-starter:002 . --push ` 推到 docker.io xiawan12 这个账号下
+3.   通过配置文件，启动 k8s。`kubectl create namespace local-test`,  `kubectl apply -f test-docker.yml`
+4.   `minikube node list` 查看当前集群的 ip <hostIP> (`kubectl -n local-test describe pods` Node)
+5.   浏览器访问： `http://<hostIp>:30004/from/me` (根据具体 api server 接口调整)
+6.   调整版本： 
+     1.   edit deployment: `kubectl -n local-test edit deployment -f test-docker.yml`。修改 image 到对应的版本。保存后自动生效
+     2.   set image: `kubectl set image deployment/test-docker test-docker=xiawan12/docker-starter:001 -n local-test ` 执行后自动生效
+     3.   Rollout:
+          1.   查看所有版本：`kubectl -n local-test rollout history deployment test-docker`
+          2.   回滚至上一版本：`kubectl -n local-test rollout undo deployment test-docker ` **优点：可在很紧急，并且明确回滚到上一个版本就可以解决问题的情况下，立即恢复服务，而不用管具体哪个版本**
+          3.   回滚至指定版本： `kubectl -n local-test rollout undo deployment test-docker --to-revision=<>` **缺点：需要明确知道每个版本号代表的功能**
+7.   验证版本功能
+8.   停止 `kubectl -n local-test delete deployment/test-docker`
+
+test-docker.yml 内容
+
+```xml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-docker
+  namespace: local-test
+  labels:
+    app: test-docker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: test-docker
+  template:
+    metadata:
+      labels:
+        app: test-docker
+    spec:
+      containers:
+      - name: test-docker
+        image: xiawan12/docker-starter:001
+        ports:
+        - containerPort: 8888
+
+        resources:
+          limits:
+            cpu: 2
+            memory: 1Gi
+          requests:
+            cpu: 200m
+            memory: 256Mi
+        
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    app: test-docker
+  name: test-docker
+  namespace: local-test
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    port: 8888
+    protocol: TCP
+    targetPort: 8888
+    nodePort: 30004
+  selector:
+    app: test-docker
+```
+
+
+
 ## Docker cheatsheet
 
 https://www.runoob.com/docker/docker-command-manual.html
@@ -859,6 +1085,9 @@ docker run -itd --name mysql-local -p 3306:3306 -e MYSQL_ROOT_PASSWORD=123456 my
 # i interactive
 # t tty
 # d detach run in background
+# --privileged 给容器内的程序提升执行权限
+# --rm 容器停止时删除
+# --restart=always 容器启动失败时自动重启，也可以设置重启次数
 
 
 # redis
@@ -885,6 +1114,10 @@ docker images
 
 # 删除镜像
 docker rmi <image name>
+
+docker tag source_image[:tag] target_image[:tag]
+
+docker push <hub server>
 ```
 
 #### container
@@ -893,6 +1126,9 @@ docker rmi <image name>
 docker container -h
 
 docker container attach <id>
+
+# 在容器内部执行
+docker exec -it <id> <cmd>
 
 # 查看容器信息
 docker container inspect <id>
@@ -919,7 +1155,288 @@ https://www.runoob.com/docker/docker-dockerfile.html
 
 
 
-https://yeasy.gitbook.io/docker_practice/
+https://yeasy.gitbook.io/docker_practice/  以下内容主要参考该文档
+
+#### 管理数据
+
+docker 中的数据管理主要有两种方式：
+
+1.   数据卷（volumes）
+2.   挂载主机目录（bind mounts）
+
+##### 数据卷
+
+数据卷是和容器分开的，可以独立于容器的生命周期，也可以挂载到多个容器上。
+
+```shell
+# 创建数据卷
+docker volume create my-volumn
+# 查看所有数据卷
+docker volume ls
+# 查看指定数据卷信息
+docker volume inspect <volume_name>
+# 给容器指定数据卷。使用 --mount 来将数据卷挂载到容器里(可一次挂载多个)
+docker run -d --name web --mount source=my-volume,target=/usr/share/nginx/html nginx:alpine
+
+# 删除（volume 独立于容器生命周期，容器删除不会删除 volume（除非 docker rm -v）, 未被引用的 volume 也不会主动删除）
+docker volume rm my-volume
+# 清理无用的 volume 来精简空间
+docker volume prune
+```
+
+##### 挂载主机目录
+
+就是将主机的目录或者文件挂载到容器里，使用方式：`--mount type=bind,source=<host absolute path>,target=<container path>[,readonly]`
+
+一般用来测试，可以通过操作本地文件来达到操作容器中文件的目的。测试比较方便。一个场景是，如果容器内的 app 可以实时读取配置文件的内容的变更，则可以把主机上这个文件挂载到容器里，通过在主机上调整配置文件
+
+#### 使用网络
+
+容器使用网络主要是两种方式：
+
+1.   外部访问容器
+2.   容器互联
+
+##### 外部访问容器
+
+该种方式主要是通过设定**端口映射**来实现容器内部的网络应用访问网络。可以通过 1. `-P` 随机分配端口映射 2. `-p <host port>:<container port>` 来指定容器和主机的端口映射。
+
+如：`docker run -d --name nginx -p 80:80 nginx:alpine` 可以将 NGINX 运行在容器内，并通过主机的 80 端口访问。
+
+`-p` 的一般格式：
+
+1.   `ip:hostPort:containerPort`。映射指定地址的指定端口到容器的端口。如 `127.0.0.1:80:80` 映射 127.0.0.1 的 80 端口到容器的 80 端口
+2.   `ip::containerPort`。映射指定地址的所有端口到容器的端口
+3.   `hostPort:containerPort`。映射本地所有接口的端口到容器的端口（**常用**）
+
+`-p` 可以使用多次来映射多个端口
+
+##### 容器互联
+
+要实现容器之间网络互联，一般会在 run 的时候通过 `--link` 来链接容器。
+
+```shell
+docker run -itd --name cc --link c1
+```
+
+但更好的做法是将网络独立出来。使用 `docker network create` 创建一个网络，在将需要互联的容器都关联到同一个网络即可
+
+```shell
+# create network
+docker network create ap_net
+
+# 启动两个容器
+docker run -itd --name ap0 alpine ash
+docker run -itd --name ap1 alpine ash
+
+# 在容器里 ping 另一个容器，会发现网络不通
+ping ap1
+
+# 将 ap0 ap1 加入网络 ap_net
+docker network connect ap_net ap0
+docker network connect ap_net ap1
+
+# 再次 ping 发现可以 ping 通
+```
+
+```shell
+docker network --help
+Usage:  docker network COMMAND
+
+Manage networks
+
+Commands:
+  connect     Connect a container to a network
+  create      Create a network
+  disconnect  Disconnect a container from a network
+  inspect     Display detailed information on one or more networks
+  ls          List networks
+  prune       Remove all unused networks
+  rm          Remove one or more networks
+```
+
+使用 `docker network inspect <network>` 可以查看这个网络的详情，包括有哪些容器在使用这个网络。
+
+(实际上，最终还是通过宿主机的 **iptables** 来控制容器间的网络)
+
+
+
+## Docker Compose
+
+`docker compose [command]`
+
+支持同时运行多个容器。使用 `docker-compose.yaml` 文件定义项目以及服务。
+
+概念：
+
+-   服务：实际运行的容器
+-   项目：多个服务组成。在 docker-compose.yaml 文件中声明
+
+
+
+### 实验
+
+1.   创建一个可以持续运行一段时间的脚本
+2.   使用 Dockerfile 将这个脚本做成一个镜像
+3.   使用 Docker Componse 将这个镜像运行成多个服务，并自动扩缩容
+
+
+
+#### 持续运行的脚本
+
+WORKDIR: ./docker
+
+```shell
+#!/bin/ash
+
+echo 'hhhhh'
+
+# 暂停，便于后面的操作
+sleep 600
+
+echo 'container done'
+```
+
+#### 将脚本做成镜像
+
+WORKDIR: ./docker
+
+```dockerfile
+FROM alpine:3.16
+
+ENV NAME=hello AGE=11
+
+WORKDIR /app
+
+COPY /app.sh .
+
+RUN chmod +x app.sh
+
+ENTRYPOINT [ "/app/app.sh" ]
+```
+
+├── docker
+│   ├── Dockerfile
+│   └── app.sh
+├── docker-compose.yaml
+
+#### Compose It
+
+```yaml
+version: "3"
+
+services:
+  ap1:
+    build: ./docker
+    networks: 
+        - ap_net
+
+  ap2:
+    build: ./docker
+    networks: 
+        - ap_net
+    depends_on:
+    		- ap1
+
+networks:
+  ap_net:
+```
+
+#### Run
+
+```shell
+# start all service
+$ docker compose up -d
+[+] Running 3/3
+ ✔ Network docker-starter_ap_net   Created
+ ✔ Container docker-starter-ap1-1  Started
+ ✔ Container docker-starter-ap2-1  Started
+ 
+$ docker container ls -a
+CONTAINER ID   IMAGE              COMMAND       CREATED          STATUS       PORTS     NAMES
+f8e29fb8becd   docker-starter-ap2 "/app/app.sh" 6 seconds ago    Up 5 seconds           docker-starter-ap2-1
+2ff6891de6ac   docker-starter-ap1 "/app/app.sh" 6 seconds ago    Up 5 seconds           docker-starter-ap1-1
+
+# scala
+$ docker compose up -d --scale ap1=2
+[+] Running 3/3
+ ✔ Container docker-starter-ap1-1  Running
+ ✔ Container docker-starter-ap2-1  Running
+ ✔ Container docker-starter-ap1-2  Started
+ 
+ $ docker container ls -a
+ CONTAINER ID   IMAGE              COMMAND          CREATED        STATUS       PORTS NAMES
+cfe654dcdabc   docker-starter-ap1  "/app/app.sh"    1 minute ago   Up 2 minutes       docker-starter-ap1-2
+f8e29fb8becd   docker-starter-ap2  "/app/app.sh"    2 minutes ago  Up 2 minutes       docker-starter-ap2-1
+2ff6891de6ac   docker-starter-ap1  "/app/app.sh"    2 minutes ago  Up 2 minutes       docker-starter-ap1-1
+
+# scala
+$ docker compose up -d --scale ap1=1
+[+] Running 2/2
+ ✔ Container docker-starter-ap1-1  Running
+ ✔ Container docker-starter-ap2-1  Running
+ 
+ $ docker container ls -a
+CONTAINER ID   IMAGE              COMMAND       CREATED          STATUS       PORTS     NAMES
+f8e29fb8becd   docker-starter-ap2 "/app/app.sh" 6 seconds ago    Up 5 seconds           docker-starter-ap2-1
+2ff6891de6ac   docker-starter-ap1 "/app/app.sh" 6 seconds ago    Up 5 seconds           docker-starter-ap1-1
+
+# test container link
+$ docker exec -it docker-starter-ap1-1 sh
+/app # ping docker-starter-ap2-1
+PING docker-starter-ap2-1 (192.168.107.3): 56 data bytes
+64 bytes from 192.168.107.3: seq=0 ttl=64 time=0.394 ms
+64 bytes from 192.168.107.3: seq=1 ttl=64 time=0.179 ms
+^C
+--- docker-starter-ap2-1 ping statistics ---
+2 packets transmitted, 2 packets received, 0% packet loss
+round-trip min/avg/max = 0.179/0.286/0.394 ms
+/app # 
+
+# stop
+$ docker compose down
+[+] Running 3/3
+ ✔ Container docker-starter-ap2-1  Removed
+ ✔ Container docker-starter-ap1-1  Removed
+ ✔ Network docker-starter_ap_net   Removed
+```
+
+
+
+## Docker Swarm
+
+类似 k8s 的集群管理与编排工具。
+
+**节点**：运行 docker 的**宿主机**被看作是 docker swarm 的一个节点。节点分为**管理节点**（manager）和**工作节点**（worker）。docker swarm 命令基本只能在管理节点执行。可以有多个管理节点，但只会有一个 leader, 通过 raft 协议选举。
+
+**服务和任务**： 任务是 swarm 中最小的调度单位，也就是 docker 的容器。服务是一系列任务的集合。
+
+建议直接使用 k8s。
+
+
+
+## Kubernetes 理论
+
+目标：管理跨多个主机的容器，提供基本的部署、维护以及应用的伸缩。
+
+基本概念：https://yeasy.gitbook.io/docker_practice/kubernetes/concepts
+
+-   节点 Node：是运行 kubernetes 的主机
+    -   可以是物理主机，也可以是虚拟机，每个节点都需要运行一些必要的服务以运行容器，如 docker, kubelet, 代理服务……
+    -   容器状态用来描述节点当前的状态。主要有：Running, Pending, 
+-   容器组 Pod: 一个 Pod 是由若干个容器组成的容器组，同个组内的容器共享相同的存储卷
+-   容器组生命周期 Pod-states: 是容器所有状态的集合。包括：pod 类型，pod 生命周期，事件，重启策略，replication controllers
+-   副本控制器 Replication controllers: 负责指定数量的 pod 在同一时间一起运行
+-   服务 services: 是 pod 的高级抽象，同时提供外部访问 pod 的策略
+-   卷 volumes: 就是一个目录
+-   标签 labels: 用来连接一组对象，比如 pod。标签可以用来组织和选择子对象
+-   接口权限: 端口、IP和代理的防火墙规则
+-   web 界面： 可以通过 ui 操控 kubernetes
+-   cli 命令： Kubectl
+
+
+
+
 
 ## SSH Config
 
@@ -1356,3 +1873,158 @@ async function doHardWork(row) {
 }
 ```
 
+
+
+## go-zero 相关代码学习
+
+
+
+### syncx 包
+
+代码位置：go-zero/core/syncx/singleflight.go
+
+
+
+
+
+## frp
+
+
+
+## Vim
+
+https://coolshell.cn/articles/5426.html
+
+实验的时候最好是找一些代码来操作
+
+### 命令模式相关命令：
+
+#### 编辑相关：
+
+-   x -> 删除当前光标所在的一个字符
+-   dd -> 删除当前行，并存入到剪切板。就相当于剪切功能 （dd 中间可加数字，表示要剪切的行数）
+-   p -> 粘贴剪切板的内容到当前行
+-   y -> 复制当前行
+-   gu -> 变小写，gU 变大写。开启大小写转换选择，后面跟光标移动操作来确定选择哪些字符进行大小写转换。如：gUe -> 将当前光标到单词结尾的字符变大写
+-   Ctrl V -> 块选择模式。
+    -   Ctrl V -> 进入块选择模式
+    -   jhkl, ^$，上下左右 等等方式进行选择
+    -   I -> 插入
+    -   ESC 退出模式，并将输入的内容应用到选择的行
+
+##### 配合光标移动
+
+-   ye -> 从当前光标复制到当前单词结尾。同样的，w, b,W, B 都可以结合来复制单词中的一部分
+
+##### 重复
+
+-   . -> 重复上次的命令
+-   N<command> -> 重复某个命令 N 次
+-   100iabcd [ESC] -> 插入 `abcd ` 100 次
+
+#### 插入模式：
+
+-   a -> 在光标处插入（在光标处切换到插入模式）
+-   A -> 在行尾插入
+-   o -> 在当前行后插入
+-   O -> 在当前行前插入
+-   cw -> 替换从光标到单词结尾的所有字符（删除当前位置到单词结尾的所有字符，并切换到插入模式）
+
+#### 光标移动：
+
+-   0 -> 到行首（不论开头是不是 blank）
+-   $ -> 到行尾（不论开头是不是 blank）
+-   ^ -> 到行首（到第一个不是 blank 的字符）
+-   g_ -> 到行尾（到第最后一个不是 blank 的字符）
+-   G -> 到文件尾， gg -> 到文件开头
+-   <N>G -> 直接跳到第N行开头，也可以直接 `:N` 。gg 到第一行，G 到最后一行
+-   w -> 移动到下一个单词的开头
+-   e -> 移动到下一个单词的结尾
+-   b -> 移动到上一个单词的开头
+    -   注：`w/e/b` 对应的 `W/E/B` 功能相似，只是大写的会认为单词是用 blank 分割的，小写的会认为单词是由字母数字下划线组成的（其他符号则认为是单词的分割符）
+-   f<char> -> 在本行内，移动到下一个 char 的位置 (find)
+-   t<char> -> 在本行内，移动到下一个 char 之前的位置（till）
+-   % -> 在括号的开闭符号间移动，支持 ( [ {    (需要先把光标移动到其中一个括号上)
+-   `*/#` -> 匹配光标所在的单词，并移动到上/下一个匹配的单词，`*` 是下一个，`#`是上一个。（实际上是用搜索实现的，只不过会自动匹配查找关键词，查找一次后，用 n/N 都可以继续查找）
+-   Ctrl O -> 回到光标的上一个位置，可以无视文件、tab 页、窗口
+-   Ctrl I -> 回到光标的下一个位置，可以无视文件、tab 页、窗口
+
+#### Undo/redo：
+
+-   u -> undo
+-   Ctrl + r -> redo
+
+#### 文件操作：
+
+-   :e <path/to/file> -> 打开新的文件
+-   :bn / :bp -> 上下切换打开的多个文件
+-   :w -> 文件编辑后存盘， 若后带文件路径，则会保存到指定文件名
+-   :saveas <path/to/file> -> 另存为
+-   :x / :q -> 退出
+
+#### 宏录制
+
+-   qa -> 开启录制宏 a (可以是其他名字)， q -> 结束录制
+-   @a -> 回放宏 a
+-   @@ -> 回放最近创建的一个宏，前面可叠加数量来重复操作
+
+例子：
+
+在一个只有一行 1 的文本中进行如下操作：
+
+1.   qa 开启录制
+2.   Yp 复制粘贴一行
+3.   Ctrl a 将当前行数 + 1
+4.   q 结束录制
+5.   100@a 将创建 102 行按顺序排好的数字
+
+#### 可视化选择
+
+开启：
+
+-   v -> 可视化选择
+-   V -> 可视化行选择
+-   Ctrl v -> 可视化块选择
+
+可视化选择的操作：
+
+-   J -> 把所选的行 join 起来
+-   <, > -> 进行增减缩进
+-   = -> 自动缩进（目前还不明确缩进的规则是啥，缩进出来不好看）
+
+#### 执行 shell 命令
+
+-   :r!<command> -> 将 command 在 shell 中的执行结果读取并写入到当前位置
+-   :pwd -> 展示当前工作目录
+
+#### 分屏
+
+-   :split -> 开启横向分屏
+-   :vsplit -> 开启纵向分屏
+-   :sp filename -> 上下分割，并打开一个新文件
+-   :vsp filename -> 左右分割，并打开一个新文件
+-   :q -> 关闭当前分屏
+-   Ctrl w -> 窗口操作
+    -   hjkl -> 上下左右选择窗口(方向键也可) (对应大写的功能是移动窗口，此时不能用方向键了)
+    -   _ -> 横向最大化窗口
+    -   | -> 纵向最大化窗口
+    -   = -> 所有窗口尺寸一样
+    -   `-` -> 横向减小尺寸
+    -   `+` -> 横向增加尺寸
+    -   c -> 关闭当前窗口, 如果只剩最后一个窗口，则关闭失败
+    -   q -> 如果只剩最后一个分屏，则关闭 VIM
+    -   s -> 上下分割当前文件
+    -   v -> 左右分割当前文件
+
+用 vim 打开多个文件并分屏展示：
+
+-   vim -on file1 file2 -> 水平分屏
+-   vim -On file1 file2 -> 垂直分屏
+
+n 是数量，可以指定，也可以写 n 来更加文件数量自动判断
+
+如：vim -On file1 -> 打开一个文件，不分屏
+
+### 插入模式相关命令：
+
+-   Ctrl n/ Ctrl p -> 自动提示。输入单词开头，会出现候选
