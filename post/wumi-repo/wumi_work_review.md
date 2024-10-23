@@ -703,6 +703,64 @@ sed -i -e 's/A/B/i' log.txt
 
 
 
+### tc
+
+使用 tc (traffic control) 限制主机带宽
+
+tc man page https://man7.org/linux/man-pages/man8/tc.8.html
+
+https://catbro666.github.io/posts/357ad3ec/
+
+
+
+```shell
+UPLOAD_SPEED=2
+DOWNLOAD_SPEED=2
+
+### add upload
+ip link add dev ifb0 type ifb
+ip link set ifb0 up
+# redirect ingress to ifb0
+tc qdisc add dev eth0 ingress handle ffff:
+tc filter add dev eth0 parent ffff: protocol ip u32 match u32 0 0 action mirred egress redirect dev ifb0
+# add qdisc
+tc qdisc add dev ifb0 root handle 1:0 htb default 1
+# add default class
+tc class add dev ifb0 parent 1:0 classid 1:1 htb rate ${UPLOAD_SPEED}mbit ceil ${UPLOAD_SPEED}mbit
+### add download
+tc qdisc add dev eth0 root handle 1:0 htb default 1
+tc class add dev eth0 parent 1:0 classid 1:1 htb rate ${DOWNLOAD_SPEED}mbit ceil ${DOWNLOAD_SPEED}mbit
+```
+
+更新带宽（以 ifb0 接口为例）：
+
+```shell
+# 先删除
+tc class del dev ifb0 parent 1:0 classid 1:1 htb rate ${UPLOAD_SPEED}mbit ceil ${UPLOAD_SPEED}mbit
+# 再增加
+tc class add dev ifb0 parent 1:0 classid 1:1 htb rate ${UPLOAD_SPEED}mbit ceil ${UPLOAD_SPEED}mbit
+```
+
+
+
+### ssh
+
+使用 pem 证书链接服务器。注意：本地 pem 证书的权限不能太大，否则会被拒绝连接
+
+```
+ssh -i /path/to/xxx.pem root@xx.xx.xx.xx
+```
+
+
+
+### speedtest
+
+```shell
+curl -s https://raw.githubusercontent.com/sivel/speedtest-cli/master/speedtest.py | python -
+
+wget --output-document=/dev/null http://speedtest.wdc01.softlayer.com/downloads/test500.zip
+```
+
 ## go-zero
 
 https://go-zero.dev/cn/docs/goctl/goctl
@@ -837,6 +895,50 @@ https://go-zero.dev/cn/docs/goctl/other
 
 
 
+### jwt
+
+go-zero 的 jwt 中间件，在登录后可以根据请求头中带的 token, 解析出用户名，并将用户名放在每个请求的 context 中
+
+大致原理是：
+
+​	1.	**拦截请求**：中间件拦截每一个传入的 HTTP 请求，检查是否包含有效的 JWT 令牌。
+
+​	2.	**解析和验证 JWT**：使用配置中的密钥解析 JWT 令牌，并验证其有效性（如签名、过期时间等）。
+
+​	3.	**提取用户信息**：从 JWT 的声明（claims）中提取 userId 等信息。
+
+​	4.	**注入上下文**：将提取的 userId 添加到请求的上下文中，以便后续处理程序可以访问。
+
+```go
+func getJwtToken(secretKey, userId string, iat, seconds int64) (string, error) {
+	claims := make(jwt.MapClaims)
+	claims["exp"] = iat + seconds
+	claims["iat"] = iat
+  // 声明携带的字段
+	claims["userId"] = userId
+	token := jwt.New(jwt.SigningMethodHS256)
+	token.Claims = claims
+	return token.SignedString([]byte(secretKey))
+}
+```
+
+路由定义中，需要声明 Jwt 中间件
+
+```go
+server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodPost,
+				Path:    "/account/add",
+				Handler: ops.AddAccountHandler(serverCtx),
+			},
+		},
+  	// 启用 jwt
+		rest.WithJwt(serverCtx.Config.Auth.AccessSecret),
+		rest.WithPrefix("/api/v1/ops"),
+	)
+```
+
 
 
 ## gRPC
@@ -921,6 +1023,15 @@ Network Address Translation
 
 
 SNAT Source Network Address Translation https://www.juniper.net/documentation/en_US/contrail20/topics/task/configuration/snat-vnc.html
+
+
+
+### DNS
+
+-   查询域名的 DNS 解析结果： `nslookup <domain>`
+-   使用指定 DNS 服务器解析域名：`dig @<dns server> domain`。 可用来验证配置的 DNS 解析是否正常工作
+
+
 
 ## Kubernetes 实践
 
@@ -1012,7 +1123,8 @@ kubectl get pods -o wide --sort-by='{.status.podIP}'
           2.   回滚至上一版本：`kubectl -n local-test rollout undo deployment test-docker ` **优点：可在很紧急，并且明确回滚到上一个版本就可以解决问题的情况下，立即恢复服务，而不用管具体哪个版本**
           3.   回滚至指定版本： `kubectl -n local-test rollout undo deployment test-docker --to-revision=<>` **缺点：需要明确知道每个版本号代表的功能**
 7.   验证版本功能
-8.   停止 `kubectl -n local-test delete deployment/test-docker`
+8.   停止 `kubectl -n local-test delete deployment/test-docker` 
+9.   **重启** `kubectl -n local-test rollout restart deployment/test-docker`
 
 test-docker.yml 内容
 
@@ -1067,6 +1179,292 @@ spec:
   selector:
     app: test-docker
 ```
+
+
+
+### 标签与选择器
+
+#### 标签
+
+https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/labels/
+
+k8s 标签系统，可以用来给各种资源增加标签，资源之间连接时，也通过标签来选择匹配。是一种**松耦合的组织系统资源的方式**。
+
+标签可以用来标记资源，对资源分组，配合选择器，就可以让资源之间精准协作。一般以**键值对**的形式存在，如 app=demo。
+
+如，在 demo app 下部署两个应用，一个是 api 服务，需要对外开放，另一个是 cronjob 不需要对外开放，则配置可以这样设置
+
+```yaml
+# service
+Service
+	selector:
+		app: demo
+		role: api
+	
+-----------------
+# 因为 role: api 的匹配，service 的流量只会导到这个 pod
+apiPod
+	image：api:v1
+	label:
+		app: demo  # 起分组功能
+		role: api  # 起标记功能
+		
+---------
+
+cronPod
+	image: api:v1
+	label:
+		app: demo
+		role: cronjob
+```
+
+lable 进行匹配时，多个 lable 之间是 **与** 的关系
+
+**也可以对 node 打标签，可以做到在指定的 node 部署 pod**
+
+
+
+标签键命名规则：
+
+1.   由前缀+名称组成，用 `/` 分割，如： `kubenetes.io/`。
+2.   名称是必须的,len < 64，前缀省略表示该标签对用户私有
+3.   名称组成：字母或数字开头结尾，`-._` 是允许的符号
+4.   前缀若指定，必须是由 `.` 分割的一系列标签，后跟 `/` 以示结束
+
+标签操作：
+
+更多示例参考`kubectl lable --help`
+
+```shell
+# 给 pod test 加 prod=true 的标签
+kubectl lable pods test prod=true
+# 给 pod test 更新 prod 标签为 false（overwrite 不存在的 label 会报错）
+kubectl lable pods test prod=true --overwrite
+# 给 pod test 删除 prod 标签
+kubectl label pods test prod-
+```
+
+
+
+#### 选择器
+
+用来匹配资源，符合选择器规则的资源才会被调用或者使用。
+
+```shell
+# 查询资源的 label
+kubectl get service --show-labels
+
+# 使用选择器(-l 后跟选择器)
+kubectl get svc -l 'app in (api, cronjob)' --show-labels
+# 多维选择器(选择版本不是 1， 且 app = api 的 service)
+kubectl get svc -l version!=1,'app in (api)' --show-labels
+```
+
+选择器运算符：
+
+1.   分两类：**基于等值**，**基于集合**。多组选择器用`,` 分割，多组之间是 `&&` 的关系。需要注意的是：<u>否定选择会匹配键名的补集</u>
+2.   **等值类**支持的运算符： `=`, `==`, `!=`。如：`tier != frontend` 会匹配**所有键名等于 `tire` 并且值不等于 `frontend`** 加上**所有键名不是 `tire`** 的资源
+3.   集合类支持的运算符：`in`, `notin`, `exists`，并且可以只用在键名上，。如：
+     1.   `env in (dev, prod)` 匹配所有键等于 `env` 并且值是 `dev` 或者 `prod` 的资源
+     2.   `tire notin (frontend, backend)` 匹配**所有键等于 `tire` 并且值不等 `frontend`, `backend`** 加上**所有没有 `tire` 键**的资源。
+     3.   `partition` 匹配所有键是 `partition` 的资源，而不管其值是什么
+     4.   `!partition` 匹配所有键**不是** `partition` 的资源，而不管其值是什么
+
+
+
+### 节点驱逐 pod
+
+```shell
+# 驱逐节点上的所有 pod, daemonset 类型的除外。并给这个节点打上污点，不会再被调度到
+kubectl drain --ignore-daemonsets <节点名称>
+```
+
+可能需要一点时间，会等 pod 做完收尾工作才算结束
+
+
+
+如果有被驱逐，但是没被删掉的 pod, 需要手动删除
+
+`kubectl get pods -n <> --field-selector=status.phase=Failed | grep Evicted | awk '{print $1}' | xargs kubectl delete pod -n <>` **找出 Evicted 的节点并删除**
+
+### 服务回滚、重启、扩缩容
+
+-   回滚：
+    -   回滚至上一版本：`kubectl -n local-test rollout undo deployment test-docker ` **优点：可在很紧急，并且明确回滚到上一个版本就可以解决问题的情况下，立即恢复服务，而不用管具体哪个版本**
+    -   回滚至指定版本： `kubectl -n local-test rollout undo deployment test-docker --to-revision=<>` **缺点：需要明确知道每个版本号代表的功能**
+-   重启：
+    -   重启指定 pod。如果是以 deploy 的方式起的，可以直接 delete 这个 pod, deploy 会自动起一个新的 pod。delete deploy 的话，再重启就需要有配置文件了，相当于 stop & start, 而不是 restart。
+    -   重启整个资源。 `kubectl rollout restart RESOURCE`。会自动 scale down 0 & scale up 到指定副本数
+-   扩缩容：
+    -   `kubectl scale --replicas=n RESOURCE`。适用于 deployment, replica set, replication controller, or stateful set 这些资源。
+
+
+
+### 服务亲和性，反亲和性配置
+
+https://kubernetes.io/zh-cn/docs/concepts/scheduling-eviction/assign-pod-node/
+
+此配置可以让副本尽量分布在不同的 node 上，应对压力时，可以让集群内的每台服务器都最大化利用起来
+
+```yaml
+spec:
+  affinity:
+          podAntiAffinity:
+            preferredDuringSchedulingIgnoredDuringExecution:
+              - weight: 50
+                podAffinityTerm:
+                  labelSelector:
+                    matchExpressions:
+                      - key: app
+                        operator: In
+                        values:
+                          - ${APP}
+                  topologyKey: "kubernetes.io/hostname"
+```
+
+
+
+
+
+### 集群问题排查
+
+-   `kubectl top node`， `kubectl -n <> pod [-A]` 查看 node 或者 pod 的 CPU， 内存占用情况。可以通过看服务对资源的要求，来设置 request
+    -   `kubectl top node --sort-by [cpu|memory] [--sum]`
+
+
+
+### 从运行中的资源生成配置文件
+
+一般可以用来备份资源
+
+```shell
+kubectl get deployment my-deployment -o yaml > deployment.yaml
+```
+
+这样生成的配置文件， 可能包含一些不需要的信息，比如 status、metadata 中的 creationTimestamp、resourceVersion 等字段。如果你希望创建一个新的资源配置文件，可以手动移除这些字段。
+
+
+
+### 拉取私有仓库镜像
+
+```shell
+kubectl -n <ns> create secret generic <secret-name> \
+    --from-file=.dockerconfigjson=<path/to/.docker/config.json> \
+    --type=kubernetes.io/dockerconfigjson
+```
+
+https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+
+
+
+## 网站增加 HTTPS 支持
+
+域名购买：[godaddy.com](godaddy.com), 支持设置 DNS 转发。不过尽量使用二级域名指向服务器 IP，一级域名会被默认设置一些 DNS。
+
+
+
+域名买好，并配好 DNS 后，还需要 SSL 证书，有付费的，也有免费的。这里以免费的 [let's Encrypto](https://letsencrypt.org/zh-cn/getting-started/) 为例
+
+使用更简单的脚本： [acme.sh](https://github.com/acmesh-official/acme.sh) 按照说明，一步步执行就好
+
+如果方便增加 DNS记录，则推荐使用 DNS 方式获取证书。(如果 DNS 服务商有API，则推荐使用 API，如 goDaddy 可以配置  `--dns dns_gd`)
+
+
+
+```shell
+acme.sh --issue -d <domain> --dns dns_gd
+```
+
+
+
+
+
+证书获取到之后，如果要集成到 k8s Ingress 上，则需要：
+
+```shell
+# 新增 secrets
+kubectl create secret tls <tls-name> -n <namespce> \
+--cert=<abslute path to crt file> \
+--key=<abslute path to key file>
+
+# 这里使用的 cert 文件最好是生成的 fullchain.cer ，否则一些应用会报链式验证失败
+```
+
+Ingress 配置这个 ssl
+
+https://kubernetes.io/docs/concepts/services-networking/ingress/#tls
+
+```yaml
+Kind: Ingress
+....
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+  		- "ssl host" (aa.bb.com) 需要和下面 rules 配的域名完全一致
+    secretName: secret name
+  rules:
+  - host: aa.bb.com
+```
+
+### 验证
+
+https://www.digicert.com/help/ 可以验证网站的证书是否正常
+
+也可以用命令行：
+
+```shell
+openssl s_client -debug -connect <hostname>:443
+```
+
+使用非 fullchain 的证书，验证时会输出类似 "unable to verify the first certificate" 的异常（如果是 https 接口的话，可以用 postman 之类的工具发起请求，也能测出类似结果）
+
+使用 fullchain 证书，输出的结果：
+
+```text
+Certificate chain
+ 0 s:CN=*.aa.com
+   i:C=AT, O=ZeroSSL, CN=ZeroSSL ECC Domain Secure Site CA
+   a:PKEY: id-ecPublicKey, 256 (bit); sigalg: ecdsa-with-SHA384
+   v:NotBefore: Apr  3 00:00:00 2024 GMT; NotAfter: Jul  2 23:59:59 2024 GMT
+ 1 s:C=AT, O=ZeroSSL, CN=ZeroSSL ECC Domain Secure Site CA
+   i:C=US, ST=New Jersey, L=Jersey City, O=The USERTRUST Network, CN=USERTrust ECC Certification Authority
+   a:PKEY: id-ecPublicKey, 384 (bit); sigalg: ecdsa-with-SHA384
+   v:NotBefore: Jan 30 00:00:00 2020 GMT; NotAfter: Jan 29 23:59:59 2030 GMT
+ 2 s:C=US, ST=New Jersey, L=Jersey City, O=The USERTRUST Network, CN=USERTrust ECC Certification Authority
+   i:C=GB, ST=Greater Manchester, L=Salford, O=Comodo CA Limited, CN=AAA Certificate Services
+   a:PKEY: id-ecPublicKey, 384 (bit); sigalg: RSA-SHA384
+   v:NotBefore: Mar 12 00:00:00 2019 GMT; NotAfter: Dec 31 23:59:59 2028 GMT
+```
+
+
+
+自动更新 k8s 证书
+
+```shell
+#!/bin/bash
+
+# 查看 secret 使用证书的 serial, 可以与更新后的证书文件进行对比
+# openssl x509 -noout -serial -in <(kubectl -n ${namespace} get secret/${secret_name} -o jsonpath='{.data.tls\.crt}' | base64 -d)
+
+domain=zrqsmcx.top
+namespace=sdk-h5
+cert_dir=/home/ubuntu/ingress/ssl
+cert_file=${cert_dir}/fullchain.cer
+key_file=${cert_dir}/${domain}.key
+secret_name=zrqsmcx.top1
+
+if [ "$(openssl x509 -noout -serial -in ${cert_file})" != "$(openssl x509 -noout -serial -in <(kubectl -n ${namespace} get secret/${secret_name} -o jsonpath='{.data.tls\.crt}' | base64 -d))" ]; then
+    kubectl create secret tls ${secret_name} -n ${namespace} --cert=${cert_file} --key=${key_file} --dry-run=client -o yaml | kubectl apply -f -
+    echo 'secret renew'
+else
+    echo 'no need renew secret'
+fi
+```
+
+
+
+
 
 
 
@@ -1261,6 +1659,20 @@ Commands:
 
 
 
+### docker hub
+
+Local registry: `docker run -d -p 5000:5000 --restart=always --name local_registry registry:latest`
+
+1.   Login: `docker login -u <username> -p <password>`
+2.   docker.io
+     1.   `docker tag local_image:tag_name username/repository_name:tag_name`
+     2.   `docker push username/repository_name:tag_name`
+3.   local registry
+     1.   `docker tag local_image:tag_name registry_address/repository_name:tag_name`
+     2.   `docker push registry_address/repository_name:tag_name`
+
+
+
 ## Docker Compose
 
 `docker compose [command]`
@@ -1315,10 +1727,14 @@ RUN chmod +x app.sh
 ENTRYPOINT [ "/app/app.sh" ]
 ```
 
+```txt
 ├── docker
 │   ├── Dockerfile
 │   └── app.sh
 ├── docker-compose.yaml
+```
+
+
 
 #### Compose It
 
@@ -1502,6 +1918,58 @@ func (cc CachedConn) ExecCtx(ctx context.Context, exec ExecCtxFn, keys ...string
 
 1.   写入的情况下。如果写入数据库失败，还要再回滚缓存，并且，如果有线程读到了缓存，就相当于读取到了一笔不存在的记录
 2.   删除情况下。如果缓存先被清除，但还没来得及写数据库，此时有线程读取，肯定是读取到数据库中的旧记录，但是这个数据是即将被删除的，所以也发生脏读
+
+
+
+### MySQL
+
+#### 联合索引
+
+形式： `index <索引名> on <表名> (col_1, col_2, col_3，……)`
+
+索引名，需要见名知意，如这个索引是给某个功能加的，就可以直接用功能描述来命名
+
+多列组成联合索引，一般用于比较固定的查询，如 ETL ，报表等 SQL 固定，执行频繁的场景。
+
+因为联合索引生效的前提是，`(col_1, col_2, col_3， ……)` 需要**从左到右**依次命中才能使用完整的索引，中间任何一个未命中都会停止走索引匹配。同时，遇到范围查询（`>, <, between, like`）也会停止匹配。
+
+索引除了对 `where`  子句里的过滤条件生效，也会对分组条件生效。
+
+
+
+#### 日志清理
+
+```shell
+# 清理当前所有的 binlog。也可以指定时间
+PURGE BINARY LOGS BEFORE now();
+```
+
+
+
+#### mysql 问题排查
+
+##### 查看当前在执行的事务
+
+`SELECT trx_mysql_thread_id, trx_state, trx_query, trx_requested_lock_id, trx_tables_locked, trx_rows_locked, trx_isolation_level, trx_started FROM INFORMATION_SCHEMA.INNODB_TRX;` 
+
+-   可以知道事务状态 trx_state
+-   开启时间 trx_started
+-   执行的 SQL trx_query
+-   锁 ID trx_requested_lock_id
+-   锁表情况 trx_tables_locked
+-   行锁情况 trx_rows_locked
+-   事务隔离级别 trx_isolation_level
+-   mysql 线程 ID trx_mysql_thread_id
+
+##### 查看当前打开的表
+
+`SHOW OPEN TABLES` 
+
+如果 In_use =1 表示此表当前有锁
+
+
+
+
 
 
 
@@ -1875,6 +2343,157 @@ async function doHardWork(row) {
 
 
 
+## go-zero 接口参数加解密
+
+```go
+package utils
+
+import (
+	"encoding/base64"
+
+	"github.com/zeromicro/go-zero/core/codec"
+)
+
+// 加密 message。 key 必须是 base64 格式。返回的密文是 base64 格式的
+func EncryptBase64(key string, message []byte) (string, error) {
+	messageBase64 := base64.StdEncoding.EncodeToString(message)
+	return codec.EcbEncryptBase64(key, messageBase64)
+}
+
+// 解密 cipher。 key 必须是 base64 格式
+func DecryptBase64(key string, cipher string) ([]byte, error) {
+	message, err := codec.EcbDecryptBase64(key, cipher)
+	if err != nil {
+		return []byte{}, err
+	}
+	bys, err := base64.StdEncoding.DecodeString(message)
+	return bys, err
+}
+```
+
+```go
+package middleware
+
+import (
+	"bufio"
+	"bytes"
+	"errors"
+	"io"
+	"net"
+	"net/http"
+
+	"github.com/zeromicro/go-zero/core/logx"
+
+	"utils"
+)
+
+type CryptoMiddleware struct {
+	KeyBase64 string
+}
+
+func NewCryptoMiddleware(keyBase64 string) *CryptoMiddleware {
+	return &CryptoMiddleware{
+		KeyBase64: keyBase64,
+	}
+}
+
+func (m *CryptoMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// 加密返回值
+		cw := newCryptionResponseWriter(w)
+		defer cw.flush([]byte(m.KeyBase64))
+
+		// 解密请求体
+		if err := decryptionRequest(m.KeyBase64, r); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		// 响应体重写
+		next.ServeHTTP(cw, r)
+	}
+}
+
+// https://github.com/zeromicro/go-zero/blob/master/rest/handler/cryptionhandler.go
+func decryptionRequest(key string, r *http.Request) error {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+	plantText, err := utils.DecryptBase64(key, string(body))
+	if err != nil {
+		return err
+	}
+
+	var buf bytes.Buffer
+	buf.Write(plantText)
+	r.Body = io.NopCloser(&buf)
+	return nil
+}
+
+type cryptionResponseWriter struct {
+	http.ResponseWriter
+	buf *bytes.Buffer
+}
+
+func newCryptionResponseWriter(w http.ResponseWriter) *cryptionResponseWriter {
+	return &cryptionResponseWriter{
+		ResponseWriter: w,
+		buf:            new(bytes.Buffer),
+	}
+}
+
+func (w *cryptionResponseWriter) Flush() {
+	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+
+func (w *cryptionResponseWriter) Header() http.Header {
+	return w.ResponseWriter.Header()
+}
+
+// Hijack implements the http.Hijacker interface.
+// This expands the Response to fulfill http.Hijacker if the underlying http.ResponseWriter supports it.
+func (w *cryptionResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if hijacked, ok := w.ResponseWriter.(http.Hijacker); ok {
+		return hijacked.Hijack()
+	}
+
+	return nil, nil, errors.New("server doesn't support hijacking")
+}
+
+func (w *cryptionResponseWriter) Write(p []byte) (int, error) {
+	return w.buf.Write(p)
+}
+
+func (w *cryptionResponseWriter) WriteHeader(statusCode int) {
+	w.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (w *cryptionResponseWriter) flush(key []byte) {
+	if w.buf.Len() == 0 {
+		return
+	}
+
+	content, err := utils.EncryptBase64(string(key), w.buf.Bytes())
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if n, err := io.WriteString(w.ResponseWriter, content); err != nil {
+		logx.Errorf("write response failed, error: %s", err)
+	} else if n < len(content) {
+		logx.Errorf("actual bytes: %d, written bytes: %d", len(content), n)
+	}
+}
+```
+
+
+
+
+
 ## go-zero 相关代码学习
 
 
@@ -2028,3 +2647,420 @@ n 是数量，可以指定，也可以写 n 来更加文件数量自动判断
 ### 插入模式相关命令：
 
 -   Ctrl n/ Ctrl p -> 自动提示。输入单词开头，会出现候选
+
+
+
+## JS/TS Map 对象序列化与反序列化
+
+JS  中的 Map 对象，直接使用 `JSON.stringify` 序列化时，不能正确按预想中的变成 `{}` 对象的形式，所以需要特殊处理。
+
+序列化函数
+
+```ts
+// 将对象中 Map 对象序列化成带标记的对象
+function mapStringifyReplacer(key: any, value: any) {
+    if (value instanceof Map) {
+        return {
+            dataType: "Map",
+            value: Array.from(value.entries())
+        }
+    } else {
+        return value
+    }
+}
+JSON.stringify(obj, mapStringifyReplacer)
+// {a: [1,2]} => {a: {dataType: 'Map', value: ['a', [1,2]]}}
+```
+
+反序列化：
+
+```ts
+function mapParseReceiver(key: any, value: any) {
+    if (typeof value === 'object' && value !== null) {
+        if (value.dataType === 'Map') {
+            return new Map(value.value);
+        }
+    }
+    return value;
+}
+JSON.parse(str, mapParseReceiver)
+// {a: {dataType: 'Map', value: ['a', [1,2]]}} => map 对象
+```
+
+若不需要反序列化，反而是要序列化成对象的格式，方便和外部系统协作，则序列化函数可以这样写：
+
+```ts
+function mapStringifyToObjReplacer(key: any, value: any) {
+    if (value instanceof Map) {
+        let obj = {}
+        for (const iterator of value.entries()) {
+            // @ts-ignore
+            obj[iterator[0]] = iterator[1]
+        }
+        return obj
+    } else {
+        return value
+    }
+}
+```
+
+## JS 中将生成器生成的 Promise 同步化
+
+参考： [**Javascript 中通过 yield 和 promise 使异步变同步**](https://blog.51cto.com/u_15283585/2957703)
+
+生成器教程： https://zh.javascript.info/generators
+
+核心原理： 利用递归对生成器进行迭代，每次**遇见 Promise 则在 then 中再次递归**，则可以保证下次执行一定是在 promise resolve 之后的。
+
+```ts
+function awaitable(gen: Generator) {
+    const item = gen.next()
+    const { value, done } = item
+    if (value instanceof Promise) {
+        value.then(() => awaitable(gen))
+    } else {
+      	// 其他类型的值，正常迭代
+        awaitable(gen)
+    }
+    if (done) {
+        return item.value
+    }
+}
+```
+
+可以再根据需求调整此函数
+
+
+
+## Loki on Grafana 记录
+
+参考 grafana 文档进行配置，grafana 配置面板，数据源选择 loki ， 发现需要填一个 url，即 loki 的服务地址。先运行 loki 服务。
+
+https://medium.com/@amolbansal1234/how-to-install-loki-and-grafana-in-kubernetes-cluster-through-helm-chart-dae514d7f1c
+
+https://ezeugwagerrard.com/blog/Deploy-A-Scalable-Loki-Instance-To-Kubernetes-Via-Helm
+
+###  安装 helm （如果没有的话）
+
+
+
+### 通过 Helm 安装 loki chart 
+
+>    loki-stack 虽然已经不再维护了，但还是最简单的使用方式
+
+1.   添加源 `helm repo add grafana https://grafana.github.io/helm-charts`
+2.   `helm repo update`
+3.   在 k8s 集群上部署 `helm upgrade --install loki --namespace=loki-stack grafana/loki-stack`
+
+部署完成后，`kubectl -n loki-stack get all` 可以看到 helm 自动运行了一下服务：
+
+```shell
+$ kubectl -n loki-stack get all
+NAME                      READY   STATUS    RESTARTS   AGE
+pod/loki-0                1/1     Running   0          26m
+pod/loki-promtail-24v89   1/1     Running   0          26m
+pod/loki-promtail-4lgmz   1/1     Running   0          26m
+pod/loki-promtail-g7xql   1/1     Running   0          26m
+pod/loki-promtail-j4crf   1/1     Running   0          26m
+pod/loki-promtail-mtxx2   1/1     Running   0          26m
+pod/loki-promtail-pbb89   1/1     Running   0          26m
+pod/loki-promtail-qxmvh   1/1     Running   0          26m
+pod/loki-promtail-trdzk   1/1     Running   0          26m
+
+NAME                      TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
+service/loki              ClusterIP   172.17.220.240   <none>        3100/TCP   26m
+service/loki-headless     ClusterIP   None             <none>        3100/TCP   26m
+service/loki-memberlist   ClusterIP   None             <none>        7946/TCP   26m
+
+NAME                           DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR   AGE
+daemonset.apps/loki-promtail   8         8         8       8            8           <none>          26m
+
+NAME                    READY   AGE
+statefulset.apps/loki   1/1     26m
+```
+
+有收集 pod 日志并发往 loki 的 promtail，对对外提供接口的 service。
+
+### grafana 配置 loki 作为数据源
+
+loki 的 url 可以通过 `kubectl -n loki-stack get svc/loki` 查看，或者上面 `get all` 时也输出了，是 `http://loki.loki-stack:3100`，配置到 grafana 上，就可以进行查询了。
+
+### 自定义 helm chart 里 loki 的配置
+
+Values.yaml
+
+```yaml
+loki:
+  enabled: true
+  # 开启本地持久化，会自动创建 pvc
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClassName: csi-udisk-rssd # pvc class name
+  isDefault: true
+  url: http://{{(include "loki.serviceName" .)}}:{{ .Values.loki.service.port }}
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: http-metrics
+    initialDelaySeconds: 45
+  livenessProbe:
+    httpGet:
+      path: /ready
+      port: http-metrics
+    initialDelaySeconds: 45
+  datasource:
+    jsonData: "{}"
+    uid: ""
+  # 直接在这里写 loki 的各种配置
+  auth_enabled: false
+  chunk_store_config:
+    max_look_back_period: 0s
+  compactor:
+    shared_store: filesystem
+    working_directory: /data/loki/boltdb-shipper-compactor
+    compaction_interval: 30m
+    retention_enabled: true
+    retention_delete_delay: 12h
+    retention_delete_worker_count: 50
+    delete_request_store: filesystem
+  ingester:
+    chunk_block_size: 262144
+    chunk_idle_period: 15m
+    chunk_retain_period: 1m
+    lifecycler:
+      ring:
+        replication_factor: 1
+    max_transfer_retries: 0
+    wal:
+      dir: /data/loki/wal
+  limits_config:
+    retention_period: 72h
+    enforce_metric_name: false
+    max_entries_limit_per_query: 5000
+    reject_old_samples: true
+    reject_old_samples_max_age: 168h
+  memberlist:
+    join_members:
+    - 'loki-memberlist'
+  schema_config:
+    configs:
+    - from: "2020-10-24"
+      index:
+        period: 24h
+        prefix: index_
+      object_store: filesystem
+      schema: v11
+      store: boltdb-shipper
+  server:
+    grpc_listen_port: 9095
+    http_listen_port: 3100
+  storage_config:
+    boltdb_shipper:
+      active_index_directory: /data/loki/boltdb-shipper-active
+      cache_location: /data/loki/boltdb-shipper-cache
+      cache_ttl: 24h
+      shared_store: filesystem
+    filesystem:
+      directory: /data/loki/chunks
+  table_manager:
+    retention_deletes_enabled: true
+    retention_period: 336h
+
+promtail:
+  enabled: true
+  config:
+    logLevel: info
+    serverPort: 3101
+    clients:
+      - url: http://{{ .Release.Name }}:3100/loki/api/v1/push
+
+grafana:
+  enabled: false
+  sidecar:
+    datasources:
+      label: ""
+      labelValue: ""
+      enabled: true
+      maxLines: 1000
+  image:
+    tag: 10.3.3
+
+prometheus:
+  enabled: false
+  isDefault: false
+  url: http://{{ include "prometheus.fullname" .}}:{{ .Values.prometheus.server.service.servicePort }}{{ .Values.prometheus.server.prefixURL }}
+  datasource:
+    jsonData: "{}"
+```
+
+使用配置部署 loki :
+
+```shell
+helm upgrade --install loki --namespace loki-stack --values loki-values.yaml grafana/loki-stack
+```
+
+验证 pvc 是否起作用：
+
+```shell
+# loki 默认会花在 emptyDir 作为存储，所以重启后，之前的日志会丢失。如果 pvc 生效的话，重启后日志还在
+helm uninstall loki --namespace loki-stack
+```
+
+
+
+## 限流控制
+
+需求： API 接口对发来的请求做限制。根据请求带的唯一性 ID 作为区分，假设每个 ID 每 24H 内最多只允许通过三次。
+
+初始想法：ID 第一次请求来的时候，ID 作为 key，允许次数作为 value 存到 redis，并设置过期时间为 24H，每发来一个请求，如果通过，则 value 加一。value 大于等于 3 时拒绝请求。直到这个 ID key 过期。
+
+这种方法存在的问题是，在极端情况下，短时间内会出现最大 5 次的请求被通过。这显然是不符合预期的。
+
+>   第一个 24H |O-------------------O-O|
+>
+>   第二个 24H |O-O-O------------------|
+
+
+
+知道一种由 TCP 滑动窗口演变而来，比较适合这种场景的方法。基于 redis zset 实现，大致步骤如下：
+
+使用带有效期的 zset 存储允许通过的次数，score 是请求发生的时间戳
+
+1.   `zremrangebyscore` 清除有效期外的值。`zremrangebyscore key -inf now-<limit seconds>`。这一步可以保证时间窗口移动之后，有效期外的次数不会限制新时间窗口下的次数
+2.   `zcard key` 判断记录的次数是否达到限制。这里获取到的次数，是在有效期内通过的请求次数。
+3.   如果请求被通过。则使用 `zadd key now nowString` 记录，并更新 key 的过期时间为新的 24H `expire key <limit seconds>`。更新 key 的过期时间为新的 24H 表示时间窗口的滑动
+
+大致示意图
+
+>   第一次请求 |O----------------------|
+>
+>   第二次请求       |O----------------------|
+>
+>   第三次请求               |O----------------------|
+>
+>   第四次请求: 因为次数达到 3 ，被拦截
+>
+>   第五次请求    |-----------------------||O----------------------|     请求发生在第一次请求的超时时间之外，但由于每次第一步先移除有效期外的次数，此时第一次请求记录的数被清除，在当前时间段内，已通过的请求只有两次，所以第五次请求也被允许通过
+
+
+
+
+
+## Android
+
+[安卓基础概念及相关源码](https://github.com/jeanboydev/Android-ReadTheFuckingSourceCode/blob/master/article/android/basic/01_activity.md)
+
+[ADB 相关命令](https://adbshell.com/commands/adb-shell-pm-list-packages)
+
+
+
+问题排查：
+```shell
+# 查看 APP 的内存占用情况
+dumpsys meminfo <package name>
+
+# 查看系统中的 activity
+dumpsys activity activities
+
+# 查看系统日志
+logcat
+```
+
+
+
+## Git
+
+ubuntu 上更新 Git 版本
+
+```shell
+sudo add-apt-repository -y ppa:git-core/ppa
+sudo apt-get update
+sudo apt-get install git -y
+```
+
+
+
+## Nginx
+
+相关命令：
+
+```shell
+# 启动
+systemctl start nginx
+# 重载配置
+sytemctl reload nginx
+# 停止
+systemctl stop nginx
+# 验证配置文件
+nginx -t -c <file>
+```
+
+### 配置相关
+
+一般 nginx 会使用默认的 `/etc/nginx/nginx.conf` 作为配置文件，这个文件里定义了 `http` 等顶级模块，并且会引入 `/etc/nginx/conf.d/*.conf` 所以可以把业务相关的 `server` 配置放到这个目录下，以 `.conf` 结尾。
+
+
+
+另外需要注意的是， `/etc/nginx/nginx.conf`  使用的默认用户是 `www-data` 可能对某些文件，或者反向代理时的配置读取不到。可以视情况而定换成 root。
+
+
+
+#### 反向代理配置
+
+```conf
+server {
+	listen 80;
+	listen 443 ssl; # HTTPS 支持
+
+	# SSL 证书
+	ssl_certificate      /root/deploys/apps/nginx/ssl/id.pem;
+  ssl_certificate_key  /root/deploys/apps/nginx/ssl/id.key;
+
+	# 监听这个域名的请求
+	server_name admin.test.com;
+	access_log /var/log/nginx/access.ops.log;
+	error_log /var/log/nginx/err.ops.log;		
+
+	# 路径配置
+	location / {
+		proxy_redirect off;
+		
+		# 反向代理
+		proxy_pass http://localhost:3002;
+	}
+	
+	location /api/ {
+		proxy_redirect off;
+		proxy_pass http://localhost:8888;
+		proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+	}
+}
+
+server {
+	listen 80;
+	listen 443 ssl;
+
+	ssl_certificate      /root/deploys/apps/nginx/ssl/id.pem;
+	ssl_certificate_key  /root/deploys/apps/nginx/ssl/id.key;
+
+	server_name web.test.com;
+	access_log /var/log/nginx/access.ssp.log;
+	error_log /var/log/nginx/err.ssp.log;
+
+	# gzip
+	gzip            on;
+	gzip_vary       on;
+	gzip_proxied    any;
+	gzip_comp_level 6;
+	gzip_types      text/plain text/css text/xml application/json application/javascript application/rss+xml application/atom+xml image/svg+xml;
+	
+	location / {
+		proxy_pass http://localhost:3001;
+	}
+}
+```
+
